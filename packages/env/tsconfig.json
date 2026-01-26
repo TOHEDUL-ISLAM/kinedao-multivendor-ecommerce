@@ -1,0 +1,3 @@
+{
+  "extends": "@kineDao.com/config/tsconfig.base.json"
+}

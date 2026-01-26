@@ -1,0 +1,24 @@
+{
+  "name": "@kineDao.com/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@kineDao.com/db": "workspace:*",
+    "@kineDao.com/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@kineDao.com/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
