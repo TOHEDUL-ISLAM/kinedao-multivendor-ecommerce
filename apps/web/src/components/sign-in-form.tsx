@@ -13,9 +13,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
-  const navigate = useNavigate({
-    from: "/",
-  });
+  const navigate = useNavigate();
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -33,10 +31,9 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         },
         {
           onSuccess: () => {
-            navigate({
-              to: "/",
-            });
             toast.success("Welcome back!");
+            // Use window.location for reliable redirect after auth
+            window.location.href = "/";
           },
           onError: () => {
             setServerError("Invalid email or password");

@@ -15,11 +15,12 @@
     "@kineDao.com/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
-    "resend": "^6.9.0",
+    "nodemailer": "^7.0.13",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@kineDao.com/config": "workspace:*",
+    "@types/nodemailer": "^7.0.9",
     "typescript": "catalog:"
   }
 }

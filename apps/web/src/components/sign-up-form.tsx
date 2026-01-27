@@ -25,9 +25,7 @@ const signUpSchema = z
   });
 
 export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
-  const navigate = useNavigate({
-    from: "/",
-  });
+  const navigate = useNavigate();
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 

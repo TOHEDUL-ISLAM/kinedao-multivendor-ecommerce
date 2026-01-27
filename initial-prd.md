@@ -156,7 +156,7 @@
 **Points:** 2 | **Priority:** P0
 
 **UI Components (Visible First):**
-- User sees a `Header` component with: Logo, Search bar, Language toggle (BN/EN), Cart icon with count, User menu
+- User sees a `Header` component with: Logo, Search bar, toggle light & dark mode, Language toggle (BN/EN), Cart icon with count, User menu
 - User sees a `HeroSection` component with promotional banner
 - User sees a `CategoryGrid` component showing baby product categories (6-8 categories)
 - User sees a `FeaturedProducts` section showing 8 product cards

@@ -26,13 +26,22 @@ function ForgotPasswordComponent() {
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        await authClient.forgetPassword({
+        console.log("[FORGOT-PASSWORD] Attempting to send reset email to:", value.email);
+        const { data, error } = await authClient.requestPasswordReset({
           email: value.email,
-          redirectTo: "/reset-password",
+          redirectTo: `${window.location.origin}/reset-password`,
         });
-        setIsSubmitted(true);
-        toast.success("Password reset email sent!");
+
+        if (error) {
+          console.error("[FORGOT-PASSWORD] Error:", error);
+          setServerError("Failed to send reset email. Please try again.");
+        } else {
+          console.log("[FORGOT-PASSWORD] Success!", data);
+          setIsSubmitted(true);
+          toast.success("Password reset email sent!");
+        }
       } catch (error) {
+        console.error("[FORGOT-PASSWORD] Caught error:", error);
         setServerError("Failed to send reset email. Please try again.");
       }
     },
