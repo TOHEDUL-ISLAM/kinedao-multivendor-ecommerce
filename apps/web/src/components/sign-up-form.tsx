@@ -6,6 +6,7 @@ import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
+import FacebookSignInButton from "./facebook-sign-in-button";
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -202,6 +203,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
       </div>
 
       <GoogleSignInButton />
+      {/* <FacebookSignInButton /> */}
 
       <div className="mt-4 text-center">
         <Button

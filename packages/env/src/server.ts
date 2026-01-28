@@ -11,6 +11,8 @@ export const env = createEnv({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
+    FACEBOOK_CLIENT_ID: z.string().min(1),
+    FACEBOOK_CLIENT_SECRET: z.string().min(1),
     EMAIL_USER: z.string().email(),
     EMAIL_PASS: z.string().min(1),
   },

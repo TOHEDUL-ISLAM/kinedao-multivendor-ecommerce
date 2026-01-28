@@ -39,7 +39,7 @@ export default function GoogleSignInButton() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: window.location.origin,
       });
     } catch (error) {
       toast.error("Failed to sign in with Google. Please try again.");

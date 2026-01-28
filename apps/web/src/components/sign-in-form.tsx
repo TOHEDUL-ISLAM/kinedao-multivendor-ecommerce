@@ -1,11 +1,12 @@
 import { useForm } from "@tanstack/react-form";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
+import FacebookSignInButton from "./facebook-sign-in-button";
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -13,7 +14,6 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
-  const navigate = useNavigate();
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -150,6 +150,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
       </div>
 
       <GoogleSignInButton />
+      {/* <FacebookSignInButton /> */}
 
       <div className="mt-4 text-center">
         <Button
