@@ -5,8 +5,8 @@ import { useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { env } from "@/lib/env";
 
-import FacebookSignInButton from "./facebook-sign-in-button";
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -39,24 +39,34 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
     },
     onSubmit: async ({ value }) => {
       setServerError(null);
-      await authClient.signUp.email(
-        {
-          email: value.email,
-          password: value.password,
-          name: value.name,
-        },
-        {
-          onSuccess: () => {
-            navigate({
-              to: "/verify-email",
-            });
-            toast.success("Account created! Please check your email to verify.");
+      try {
+        const response = await fetch(`${env.VITE_SERVER_URL}/api/auth/sign-up`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          onError: (error) => {
-            setServerError(error.error.message || "Registration failed. Please try again.");
-          },
-        },
-      );
+          credentials: "include",
+          body: JSON.stringify({
+            email: value.email,
+            password: value.password,
+            name: value.name,
+            callbackURL: `${window.location.origin}/login`,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          setServerError(data?.message || "Registration failed. Please try again.");
+          return;
+        }
+
+        navigate({
+          to: "/verify-email",
+        });
+        toast.success("Account created! Please check your email to verify.");
+      } catch (error) {
+        setServerError("Registration failed. Please try again.");
+      }
     },
     validators: {
       onSubmit: signUpSchema,

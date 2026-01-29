@@ -5,22 +5,57 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { sendEmail } from "./email";
 
+const isSecureOrigin = env.BETTER_AUTH_URL.startsWith("https://");
+const cookieSameSite = isSecureOrigin ? "none" : "lax";
+const frontendBaseUrl = env.FRONTEND_URL.replace(/\/+$/, "");
+const frontendOrigin = new URL(frontendBaseUrl).origin;
+
+const getSafeFrontendCallback = (value?: string | null) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value, frontendBaseUrl);
+    return url.origin === frontendOrigin ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const buildFrontendUrl = (path: string, params?: Record<string, string>) => {
+  const url = new URL(path, frontendBaseUrl);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.set(key, value);
+      }
+    });
+  }
+  return url.toString();
+};
+
 export const auth = betterAuth({
+  baseURL: env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: schema,
   }),
-  trustedOrigins: [env.CORS_ORIGIN],
+  trustedOrigins: Array.from(
+    new Set([env.CORS_ORIGIN, env.FRONTEND_URL, env.BETTER_AUTH_URL])
+  ),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
+    autoSignIn: false,
     sendResetPassword: async ({ user, url }) => {
       console.log("[AUTH] sendResetPassword callback triggered!");
       console.log("[AUTH] User:", user.email);
       console.log("[AUTH] Reset URL (original):", url);
 
-      // Replace backend port (3000) with frontend port (3001) for the reset link
-      const frontendUrl = url.replace(":3000", ":3001");
+      const parsedUrl = new URL(url);
+      const pathParts = parsedUrl.pathname.split("/").filter(Boolean);
+      const token = pathParts[pathParts.length - 1] || "";
+      const frontendUrl = buildFrontendUrl("/reset-password", {
+        token,
+      });
       console.log("[AUTH] Reset URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
@@ -61,8 +96,15 @@ export const auth = betterAuth({
       console.log("[AUTH] User:", user.email);
       console.log("[AUTH] Verification URL (original):", url);
 
-      // Replace backend port (3000) with frontend port (3001) for the verification link
-      const frontendUrl = url.replace(":3000", ":3001");
+      const parsedUrl = new URL(url);
+      const token = parsedUrl.searchParams.get("token") || "";
+      const callbackURL = getSafeFrontendCallback(
+        parsedUrl.searchParams.get("callbackURL")
+      );
+      const frontendUrl = buildFrontendUrl("/verify-email", {
+        token,
+        callbackURL: callbackURL ?? "",
+      });
       console.log("[AUTH] Verification URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
@@ -97,7 +139,7 @@ export const auth = betterAuth({
       });
     },
     sendOnSignUp: true,
-    autoSignInAfterVerification: true,
+    autoSignInAfterVerification: false,
   },
   socialProviders: {
     google: {
@@ -111,8 +153,8 @@ export const auth = betterAuth({
   },
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
+      sameSite: cookieSameSite,
+      secure: isSecureOrigin,
       httpOnly: true,
     },
   },

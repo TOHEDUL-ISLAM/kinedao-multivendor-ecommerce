@@ -1,0 +1,223 @@
+import { Hono } from "hono";
+import { db } from "@kineDao.com/db";
+import {
+  products,
+  campaigns,
+  brands,
+  categories,
+} from "@kineDao.com/db/schema";
+import { eq, and, lte, sql, asc } from "drizzle-orm";
+import type {
+  HomePageResponse,
+  ProductCardDTO,
+  CampaignDTO,
+  CategoryDTO,
+  BrandDTO,
+} from "../types/catalog";
+
+const homeRouter = new Hono();
+
+// Helper to format product card from relational data
+function formatProductFromRelation(
+  product: typeof products.$inferSelect & {
+    vendor: { id: string; name: string; slug: string; isVerified: boolean | null };
+    category: { id: string; name: string; slug: string };
+    images: { url: string; alt: string | null; sortOrder: number | null }[];
+    skus: { priceAmount: number; compareAtAmount: number | null; currency: string; isAvailable: boolean | null }[];
+  }
+): ProductCardDTO {
+  // Get first image
+  const image = product.images.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))[0];
+
+  // Get lowest price SKU
+  // Filter for available ones first
+  const availableSkus = product.skus.filter((s) => s.isAvailable);
+  const skusToCheck = availableSkus.length > 0 ? availableSkus : product.skus;
+  
+  const sku = skusToCheck.sort((a, b) => a.priceAmount - b.priceAmount)[0];
+
+  return {
+    id: product.id,
+    title: product.title,
+    titleBn: product.titleBn,
+    slug: product.slug,
+    brand: product.brand,
+    ageRange: product.ageRange,
+    ratingAvg: product.ratingAvg,
+    ratingCount: product.ratingCount,
+    isNew: product.isNew,
+    isHot: product.isHot,
+    imageUrl: image?.url || null,
+    imageAlt: image?.alt || null,
+    priceAmount: sku?.priceAmount || 0,
+    compareAtAmount: sku?.compareAtAmount || null,
+    currency: sku?.currency || "BDT",
+    isAvailable: availableSkus.length > 0,
+    vendor: {
+      id: product.vendor.id,
+      name: product.vendor.name,
+      slug: product.vendor.slug,
+      isVerified: product.vendor.isVerified ?? false,
+    },
+    category: {
+      id: product.category.id,
+      name: product.category.name,
+      slug: product.category.slug,
+    },
+  };
+}
+
+// GET /api/home - Homepage data
+homeRouter.get("/", async (c) => {
+  try {
+    const now = new Date();
+
+    // Fetch active campaigns
+    const activeCampaigns = await db
+      .select()
+      .from(campaigns)
+      .where(
+        and(
+          lte(campaigns.startsAt, now),
+          sql`(${campaigns.endsAt} IS NULL OR ${campaigns.endsAt} >= ${now})`
+        )
+      )
+      .orderBy(asc(campaigns.sortOrder));
+
+    const heroCarouselCampaigns: CampaignDTO[] = activeCampaigns
+      .filter((c) => c.placement === "heroCarousel")
+      .map((c) => ({
+        id: c.id,
+        placement: c.placement,
+        title: c.title,
+        titleBn: c.titleBn,
+        subtitle: c.subtitle,
+        subtitleBn: c.subtitleBn,
+        imageUrl: c.imageUrl,
+        theme: c.theme,
+        ctaText: c.ctaText,
+        ctaTextBn: c.ctaTextBn,
+        ctaLink: c.ctaLink,
+        discountPercent: c.discountPercent,
+        startsAt: c.startsAt.toISOString(),
+        endsAt: c.endsAt?.toISOString() || null,
+      }));
+
+    const dealWallCampaigns: CampaignDTO[] = activeCampaigns
+      .filter((c) => c.placement === "dealWall")
+      .map((c) => ({
+        id: c.id,
+        placement: c.placement,
+        title: c.title,
+        titleBn: c.titleBn,
+        subtitle: c.subtitle,
+        subtitleBn: c.subtitleBn,
+        imageUrl: c.imageUrl,
+        theme: c.theme,
+        ctaText: c.ctaText,
+        ctaTextBn: c.ctaTextBn,
+        ctaLink: c.ctaLink,
+        discountPercent: c.discountPercent,
+        startsAt: c.startsAt.toISOString(),
+        endsAt: c.endsAt?.toISOString() || null,
+      }));
+
+    // Fetch products with relations - OPTIMIZED
+    const productsRaw = await db.query.products.findMany({
+      where: eq(products.isActive, true),
+      with: {
+        vendor: true,
+        category: true,
+        images: true,
+        skus: true,
+      },
+    });
+
+    // Format all products
+    const allProducts = productsRaw.map(formatProductFromRelation);
+
+    // Filter by criteria
+    const flashDeals = allProducts
+      .filter((p) => p.compareAtAmount !== null)
+      .sort((a, b) => {
+        const discountA = a.compareAtAmount
+          ? ((a.compareAtAmount - a.priceAmount) / a.compareAtAmount) * 100
+          : 0;
+        const discountB = b.compareAtAmount
+          ? ((b.compareAtAmount - b.priceAmount) / b.compareAtAmount) * 100
+          : 0;
+        return discountB - discountA;
+      })
+      .slice(0, 12);
+
+    const bestSellers = [...allProducts]
+      .sort((a, b) => (b.ratingCount || 0) - (a.ratingCount || 0))
+      .slice(0, 12);
+
+    const newArrivals = allProducts.filter((p) => p.isNew).slice(0, 12);
+
+    // Fetch top categories (parent categories with product counts)
+    const categoriesWithCounts = await db
+      .select({
+        category: categories,
+        productCount: sql<number>`count(${products.id})::int`,
+      })
+      .from(categories)
+      .leftJoin(products, eq(products.categoryId, categories.id))
+      .where(sql`${categories.parentId} IS NULL`)
+      .groupBy(categories.id)
+      .orderBy(asc(categories.sortOrder))
+      .limit(8);
+
+    const topCategories: CategoryDTO[] = categoriesWithCounts.map((row) => ({
+      id: row.category.id,
+      name: row.category.name,
+      nameBn: row.category.nameBn,
+      slug: row.category.slug,
+      parentId: row.category.parentId,
+      iconKey: row.category.iconKey,
+      imageUrl: row.category.imageUrl,
+      sortOrder: row.category.sortOrder,
+      productCount: row.productCount,
+    }));
+
+    // Fetch popular brands
+    const brandsData = await db
+      .select()
+      .from(brands)
+      .where(eq(brands.isActive, true))
+      .orderBy(asc(brands.sortOrder))
+      .limit(8);
+
+    const popularBrands: BrandDTO[] = brandsData.map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+      logoUrl: b.logoUrl,
+    }));
+
+    const response: HomePageResponse = {
+      heroCarouselCampaigns,
+      dealWallCampaigns,
+      flashDeals,
+      bestSellers,
+      newArrivals,
+      topCategories,
+      popularBrands,
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error("Error in /api/home:", error);
+    return c.json(
+      {
+        message: "Internal Server Error",
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      500
+    );
+  }
+});
+
+export { homeRouter };

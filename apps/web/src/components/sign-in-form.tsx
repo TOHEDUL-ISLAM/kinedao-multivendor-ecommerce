@@ -6,7 +6,6 @@ import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
-import FacebookSignInButton from "./facebook-sign-in-button";
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -28,6 +27,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         {
           email: value.email,
           password: value.password,
+          callbackURL: window.location.origin,
         },
         {
           onSuccess: () => {
