@@ -7,6 +7,7 @@ import { logger } from "hono/logger";
 // Import route modules
 import { homeRouter } from "./routes/home";
 import { catalogRouter } from "./routes/catalog";
+import { categoriesRouter } from "./routes/categories";
 import { productsRouter } from "./routes/products";
 import { searchRouter } from "./routes/search";
 import { authRouter } from "./routes/auth";
@@ -31,6 +32,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 // API routes
 app.route("/api/home", homeRouter);
 app.route("/api/catalog", catalogRouter);
+app.route("/api/categories", categoriesRouter);
 app.route("/api/products", productsRouter);
 app.route("/api/search", searchRouter);
 

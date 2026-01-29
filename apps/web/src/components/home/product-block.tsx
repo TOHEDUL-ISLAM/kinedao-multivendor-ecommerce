@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { Link } from "@tanstack/react-router";
@@ -44,61 +44,61 @@ export function ProductBlock({
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">{title}</h2>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Carousel scroll buttons - desktop only */}
-          {layout === "carousel" && (
-            <div className="hidden md:flex gap-2">
-              <button
-                onClick={() => scroll("left")}
-                className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors focus-ring"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => scroll("right")}
-                className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors focus-ring"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* View All Link */}
-          <Link
-            to={viewAllLink}
-            search={viewAllParams}
-            className="group flex items-center gap-1 text-sm font-medium text-primary hover:underline focus-ring rounded"
+          {/* View All Button */}
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex"
           >
-            <span className="hidden xs:inline">{t("home.viewAll")}</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
+            <Link to={viewAllLink} search={viewAllParams}>
+              {t("home.viewAll")}
+            </Link>
+          </Button>
         </div>
       </div>
 
       {/* Products */}
       {layout === "carousel" ? (
         // Carousel Layout - horizontal scroll
-        <div
-          ref={scrollRef}
-          className={cn(
-            "flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2",
-            // Negative margin + padding for edge-to-edge scroll on mobile
-            "-mx-4 px-4 sm:mx-0 sm:px-0"
-          )}
-        >
-          {products.map((product, index) => (
-            <div
-              key={product.id}
-              className={cn(
-                "flex-shrink-0",
-                // Responsive card widths for carousel
-                "w-[160px] xs:w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px] xl:w-[260px]"
-              )}
-            >
-              <ProductCard product={product} index={index} />
-            </div>
-          ))}
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            className={cn(
+              "flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2",
+              // Negative margin + padding for edge-to-edge scroll on mobile
+              "-mx-4 px-4 sm:mx-0 sm:px-0"
+            )}
+          >
+            {products.map((product, index) => (
+              <div
+                key={product.id}
+                className={cn(
+                  "flex-shrink-0",
+                  // Responsive card widths for carousel
+                  "w-[160px] xs:w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px] xl:w-[260px]"
+                )}
+              >
+                <ProductCard product={product} index={index} />
+              </div>
+            ))}
+          </div>
+
+          {/* Carousel scroll buttons - centered on sides */}
+          <button
+            onClick={() => scroll("left")}
+            className="hidden md:flex items-center justify-center absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 h-9 w-9 rounded-full bg-background/90 shadow-md ring-1 ring-border hover:bg-background transition-colors focus-ring"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="hidden md:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 h-9 w-9 rounded-full bg-background/90 shadow-md ring-1 ring-border hover:bg-background transition-colors focus-ring"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       ) : (
         // Grid Layout
@@ -120,7 +120,6 @@ export function ProductBlock({
         <Link to={viewAllLink} search={viewAllParams} className="w-full">
           <Button variant="outline" className="w-full">
             {t("home.viewAll")}
-            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </Link>
       </div>

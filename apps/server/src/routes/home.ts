@@ -163,11 +163,14 @@ homeRouter.get("/", async (c) => {
         productCount: sql<number>`count(${products.id})::int`,
       })
       .from(categories)
-      .leftJoin(products, eq(products.categoryId, categories.id))
+      .leftJoin(
+        products,
+        and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+      )
       .where(sql`${categories.parentId} IS NULL`)
       .groupBy(categories.id)
       .orderBy(asc(categories.sortOrder))
-      .limit(8);
+      .limit(10);
 
     const topCategories: CategoryDTO[] = categoriesWithCounts.map((row) => ({
       id: row.category.id,

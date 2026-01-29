@@ -157,16 +157,66 @@ async function seed() {
 
   // Parent Categories (10 main categories)
   const parentCategories = [
-    { name: "Baby Clothing & Fashion", nameBn: "পোশাক ও ফ্যাশন", icon: "Shirt" },
-    { name: "Feeding & Nursing", nameBn: "খাওয়ানো ও স্তন্যপান", icon: "Milk" },
-    { name: "Diapering & Potty", nameBn: "ডায়াপার ও পটি", icon: "Shield" },
-    { name: "Bath & Skincare", nameBn: "গোসল ও ত্বক যত্ন", icon: "Bath" },
-    { name: "Toys & Entertainment", nameBn: "খেলনা ও বিনোদন", icon: "ToyBrick" },
-    { name: "Nursery & Furniture", nameBn: "নার্সারি ও আসবাবপত্র", icon: "Bed" },
-    { name: "Safety & Health", nameBn: "নিরাপত্তা ও স্বাস্থ্য", icon: "ShieldCheck" },
-    { name: "Gear & Travel", nameBn: "যন্ত্রপাতি ও ভ্রমণ", icon: "Car" },
-    { name: "Mom & Baby Care", nameBn: "মা ও শিশু যত্ন", icon: "Heart" },
-    { name: "Gift Sets & Hampers", nameBn: "উপহার সেট ও হ্যাম্পার", icon: "Gift" },
+    {
+      name: "Baby Clothing & Fashion",
+      nameBn: "পোশাক ও ফ্যাশন",
+      icon: "Shirt",
+      imageUrl: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600",
+    },
+    {
+      name: "Feeding & Nursing",
+      nameBn: "খাওয়ানো ও স্তন্যপান",
+      icon: "Milk",
+      imageUrl: "https://images.unsplash.com/photo-1590859808308-3d2d9c515b1a?w=600",
+    },
+    {
+      name: "Diapering & Potty",
+      nameBn: "ডায়াপার ও পটি",
+      icon: "Shield",
+      imageUrl: "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600",
+    },
+    {
+      name: "Bath & Skincare",
+      nameBn: "গোসল ও ত্বক যত্ন",
+      icon: "Bath",
+      imageUrl: "https://images.unsplash.com/photo-1600369672770-985fd30004eb?w=600",
+    },
+    {
+      name: "Toys & Entertainment",
+      nameBn: "খেলনা ও বিনোদন",
+      icon: "ToyBrick",
+      imageUrl: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=600",
+    },
+    {
+      name: "Nursery & Furniture",
+      nameBn: "নার্সারি ও আসবাবপত্র",
+      icon: "Bed",
+      imageUrl: "https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=600",
+    },
+    {
+      name: "Safety & Health",
+      nameBn: "নিরাপত্তা ও স্বাস্থ্য",
+      icon: "ShieldCheck",
+      imageUrl: "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?w=600",
+    },
+    {
+      name: "Gear & Travel",
+      nameBn: "যন্ত্রপাতি ও ভ্রমণ",
+      icon: "Car",
+      imageUrl: "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=600",
+    },
+    {
+      name: "Mom & Baby Care",
+      nameBn: "মা ও শিশু যত্ন",
+      icon: "Heart",
+      imageUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600",
+    },
+    {
+      name: "Gift Sets & Hampers",
+      nameBn: "উপহার সেট ও হ্যাম্পার",
+      icon: "Gift",
+      imageUrl: "https://images.unsplash.com/photo-1562040506-a9b32cb51b94?w=600",
+    },
   ];
 
   const insertedParents = await db
@@ -177,6 +227,7 @@ async function seed() {
         nameBn: c.nameBn,
         slug: slugify(c.name),
         iconKey: c.icon,
+        imageUrl: c.imageUrl,
         sortOrder: i,
       }))
     )

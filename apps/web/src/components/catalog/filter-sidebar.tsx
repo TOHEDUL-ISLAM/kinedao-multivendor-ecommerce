@@ -16,6 +16,7 @@ interface CategoryFilter {
   nameBn: string | null;
   slug: string;
   parentId: string | null;
+  sortOrder?: number | null;
   productCount?: number;
 }
 
@@ -110,7 +111,9 @@ export function FilterSidebar({
   );
 
   // Group categories by parent
-  const parentCategories = categories.filter((c) => !c.parentId);
+  const parentCategories = categories
+    .filter((c) => !c.parentId)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   const childCategoriesMap = categories.reduce(
     (acc, c) => {
       if (c.parentId) {
@@ -174,7 +177,9 @@ export function FilterSidebar({
           {parentCategories.map((category) => {
             const displayName =
               language === "bn" && category.nameBn ? category.nameBn : category.name;
-            const children = childCategoriesMap[category.id] || [];
+            const children = [...(childCategoriesMap[category.id] || [])].sort(
+              (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+            );
 
             return (
               <div key={category.id}>

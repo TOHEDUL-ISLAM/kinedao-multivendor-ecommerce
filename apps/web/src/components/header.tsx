@@ -34,6 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
+import { useCategories } from "@/hooks/use-categories";
 import { useCartStore } from "@/stores/cart-store";
 import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
@@ -41,25 +42,20 @@ import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
 import { authClient } from "@/lib/auth-client";
 import { SearchBar } from "./search-bar";
-
-const categories = [
-  { name: "Clothing", icon: "👶" },
-  { name: "Toys", icon: "🧸" },
-  { name: "Feeding", icon: "🍼" },
-  { name: "Nursery", icon: "🛏️" },
-  { name: "Bath & Care", icon: "🛁" },
-  { name: "Safety", icon: "🔒" },
-  { name: "Strollers", icon: "🚼" },
-  { name: "Car Seats", icon: "🚗" },
-];
+import { CATEGORY_ICON_MAP } from "@/lib/category-icons";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { theme, setTheme } = useTheme();
   const cartCount = useCartStore((state) => state.getItemCount());
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+  } = useCategories("parents");
   
   const { data: session, isPending } = authClient.useSession();
   const isLoggedIn = !!session;
@@ -185,12 +181,38 @@ export default function Header() {
                   <div className="flex flex-col gap-6 mt-6">
                     <SearchBar className="w-full" />
                     <nav className="flex flex-col gap-2">
-                      {categories.map((cat) => (
-                        <Button key={cat.name} variant="ghost" className="justify-start gap-2 h-12 text-base">
-                          <span>{cat.icon}</span>
-                          {cat.name}
-                        </Button>
-                      ))}
+                      {categoriesLoading ? (
+                        [...Array(6)].map((_, i) => (
+                          <Skeleton key={i} className="h-12 w-full rounded-full" />
+                        ))
+                      ) : categoriesError ? (
+                        <div className="text-sm text-muted-foreground px-3 py-2">
+                          {t("common.error")}
+                        </div>
+                      ) : (
+                        categories.map((category) => {
+                          const displayName =
+                            language === "bn" && category.nameBn
+                              ? category.nameBn
+                              : category.name;
+                          const Icon =
+                            CATEGORY_ICON_MAP[category.iconKey || "default"] ||
+                            CATEGORY_ICON_MAP.default;
+                          return (
+                            <Button
+                              key={category.id}
+                              variant="ghost"
+                              className="justify-start gap-2 h-12 text-base"
+                              asChild
+                            >
+                              <Link to="/catalog" search={{ category: category.slug }}>
+                                <Icon className="h-4 w-4 text-primary" />
+                                {displayName}
+                              </Link>
+                            </Button>
+                          );
+                        })
+                      )}
                       {!isLoggedIn && !isPending && (
                         <Button 
                           className="mt-4 rounded-full" 
@@ -212,18 +234,44 @@ export default function Header() {
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide">
               <DropdownMenu>
-                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "secondary" }), "gap-2 rounded-full font-semibold shrink-0")}>
+                <DropdownMenuTrigger
+                  className={cn(
+                    buttonVariants({ variant: "secondary" }),
+                    "gap-2 rounded-full font-semibold shrink-0"
+                  )}
+                >
                     <Menu className="w-4 h-4" />
-                    All Categories
+                    {t("common.all")} {t("catalog.categories")}
                     <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
-                  {categories.map((cat) => (
-                    <DropdownMenuItem key={cat.name} className="gap-2 cursor-pointer">
-                      <span>{cat.icon}</span>
-                      {cat.name}
-                    </DropdownMenuItem>
-                  ))}
+                  {categoriesLoading ? (
+                    <DropdownMenuItem disabled>{t("common.loading")}</DropdownMenuItem>
+                  ) : categoriesError ? (
+                    <DropdownMenuItem disabled>{t("common.error")}</DropdownMenuItem>
+                  ) : (
+                    categories.map((category) => {
+                      const displayName =
+                        language === "bn" && category.nameBn
+                          ? category.nameBn
+                          : category.name;
+                      const Icon =
+                        CATEGORY_ICON_MAP[category.iconKey || "default"] ||
+                        CATEGORY_ICON_MAP.default;
+                      return (
+                        <DropdownMenuItem
+                          key={category.id}
+                          className="gap-2 cursor-pointer"
+                          asChild
+                        >
+                          <Link to="/catalog" search={{ category: category.slug }}>
+                            <Icon className="h-4 w-4 text-primary" />
+                            {displayName}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 

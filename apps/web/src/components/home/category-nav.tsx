@@ -2,46 +2,13 @@
 
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import {
-  Shirt,
-  Baby,
-  Gift,
-  Bed,
-  Heart,
-  Blocks,
-  ChevronLeft,
-  ChevronRight,
-  // New icons for comprehensive categories
-  Milk,
-  Shield,
-  Bath,
-  ShieldCheck,
-  Car,
-  User,
-  CloudRain,
-  Moon,
-  Cookie,
-  Leaf,
-  Package,
-  Droplets,
-  Backpack,
-  Sparkles,
-  Scissors,
-  Music,
-  Book,
-  Home,
-  Radio,
-  Activity,
-  Cross,
-  Plane,
-  Users,
-  Utensils,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion } from "@/hooks/use-media-query";
 import { Link } from "@tanstack/react-router";
 import { FadeInView, softSpring } from "@/components/ui/motion-wrappers";
+import { CATEGORY_ICON_MAP } from "@/lib/category-icons";
 
 export interface CategoryData {
   id: string;
@@ -57,64 +24,9 @@ interface CategoryNavProps {
   className?: string;
 }
 
-// Icon mapping - comprehensive set for all categories
-const iconMap: Record<string, typeof Shirt> = {
-  // Original icons
-  Shirt,
-  Baby,
-  Gift,
-  Bed,
-  Heart,
-  ToyBrick: Blocks,
-
-  // Clothing & Fashion
-  User,
-  CloudRain,
-  Moon,
-
-  // Feeding & Nursing
-  Milk,
-  Utensils,
-  Cookie,
-  Leaf,
-
-  // Diapering & Potty
-  Shield,
-  Package,
-  Droplets,
-  Backpack,
-
-  // Bath & Skincare
-  Bath,
-  Sparkles,
-  Scissors,
-
-  // Toys & Entertainment
-  Music,
-  Book,
-
-  // Nursery & Furniture
-  Home,
-
-  // Safety & Health
-  ShieldCheck,
-  Radio,
-  Activity,
-  Cross,
-
-  // Gear & Travel
-  Car,
-  Plane,
-
-  // Mom & Baby Care
-  Users,
-
-  // Default fallback
-  default: Shirt,
-};
-
 export function CategoryNav({ categories, className }: CategoryNavProps) {
   const { t, language } = useTranslation();
+  const itemsLabel = t("common.items");
   const prefersReducedMotion = usePrefersReducedMotion();
   // const isMobile = useIsMobile();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -160,7 +72,8 @@ export function CategoryNav({ categories, className }: CategoryNavProps) {
         className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 sm:mx-0 sm:px-0"
       >
         {categories.map((category, index) => {
-          const IconComponent = iconMap[category.iconKey || "default"] || iconMap.default;
+          const IconComponent =
+            CATEGORY_ICON_MAP[category.iconKey || "default"] || CATEGORY_ICON_MAP.default;
           const displayName = language === "bn" && category.nameBn ? category.nameBn : category.name;
 
           const categoryCard = (
@@ -197,9 +110,9 @@ export function CategoryNav({ categories, className }: CategoryNavProps) {
               <span className="mt-2 text-xs sm:text-sm font-medium text-center line-clamp-1 max-w-[4.5rem] sm:max-w-[5.5rem] lg:max-w-[6.5rem]">
                 {displayName}
               </span>
-              {category.productCount !== undefined && (
+              {category.productCount !== undefined && category.productCount > 0 && (
                 <span className="text-[10px] sm:text-xs text-muted-foreground">
-                  {category.productCount} {language === "bn" ? "টি" : "items"}
+                  {category.productCount} {itemsLabel}
                 </span>
               )}
             </Link>
