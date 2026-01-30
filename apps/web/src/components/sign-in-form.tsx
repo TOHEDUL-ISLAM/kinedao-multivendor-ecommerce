@@ -1,20 +1,21 @@
 import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
+import FacebookSignInButton from "./facebook-sign-in-button";
+import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
-  const navigate = useNavigate({
-    from: "/",
-  });
   const { isPending } = authClient.useSession();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -22,6 +23,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
       password: "",
     },
     onSubmit: async ({ value }) => {
+      setServerError(null);
       await authClient.signIn.email(
         {
           email: value.email,
@@ -29,21 +31,20 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         },
         {
           onSuccess: () => {
-            navigate({
-              to: "/dashboard",
-            });
-            toast.success("Sign in successful");
+            toast.success("Welcome back!");
+            // Use window.location for reliable redirect after auth
+            window.location.href = "/";
           },
-          onError: (error) => {
-            toast.error(error.error.message || error.error.statusText);
+          onError: () => {
+            setServerError("Invalid email or password");
           },
         },
       );
     },
     validators: {
       onSubmit: z.object({
-        email: z.email("Invalid email address"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        email: z.string().email("Invalid email format"),
+        password: z.string().min(1, "Password is required"),
       }),
     },
   });
@@ -55,6 +56,12 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
   return (
     <div className="mx-auto w-full mt-10 max-w-md p-6">
       <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+
+      {serverError && (
+        <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+          {serverError}
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -76,9 +83,10 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="you@example.com"
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-red-500">
                     {error?.message}
                   </p>
                 ))}
@@ -91,7 +99,16 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={field.name}>Password</Label>
+                  <Button
+                    asChild
+                    variant="link"
+                    className="h-auto p-0 text-xs text-indigo-600 hover:text-indigo-800"
+                  >
+                    <Link to="/forgot-password">Forgot Password?</Link>
+                  </Button>
+                </div>
                 <Input
                   id={field.name}
                   name={field.name}
@@ -101,7 +118,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
+                  <p key={error?.message} className="text-sm text-red-500">
                     {error?.message}
                   </p>
                 ))}
@@ -117,11 +134,23 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
               className="w-full"
               disabled={!state.canSubmit || state.isSubmitting}
             >
-              {state.isSubmitting ? "Submitting..." : "Sign In"}
+              {state.isSubmitting ? "Signing in..." : "Login"}
             </Button>
           )}
         </form.Subscribe>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+        </div>
+      </div>
+
+      <GoogleSignInButton />
+      {/* <FacebookSignInButton /> */}
 
       <div className="mt-4 text-center">
         <Button
@@ -129,7 +158,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
           onClick={onSwitchToSignUp}
           className="text-indigo-600 hover:text-indigo-800"
         >
-          Need an account? Sign Up
+          Don't have an account? Register
         </Button>
       </div>
     </div>

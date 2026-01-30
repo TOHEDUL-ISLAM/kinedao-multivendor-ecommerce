@@ -41,7 +41,7 @@
     "typescript": "catalog:"
   },
   "lint-staged": {
-    "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": ""
+    "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": "echo 'Linting skipped (no linter configured)'"
   },
   "packageManager": "bun@1.3.6"
 }
