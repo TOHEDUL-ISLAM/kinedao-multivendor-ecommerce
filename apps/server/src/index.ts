@@ -11,6 +11,8 @@ import { categoriesRouter } from "./routes/categories";
 import { productsRouter } from "./routes/products";
 import { searchRouter } from "./routes/search";
 import { authRouter } from "./routes/auth";
+import { newsletterRouter } from "./routes/newsletter";
+import { categoryRouter } from "./routes/category";
 
 const app = new Hono();
 
@@ -35,6 +37,8 @@ app.route("/api/catalog", catalogRouter);
 app.route("/api/categories", categoriesRouter);
 app.route("/api/products", productsRouter);
 app.route("/api/search", searchRouter);
+app.route("/api/newsletter", newsletterRouter);
+app.route("/api/category", categoryRouter);
 
 // Health check
 app.get("/", (c) => {

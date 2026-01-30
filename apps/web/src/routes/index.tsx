@@ -9,6 +9,11 @@ import { CategoriesSection, CategoriesSectionSkeleton } from "@/components/home/
 import { ProductBlock, ProductBlockSkeleton } from "@/components/home/product-block";
 import { PopularBrands, PopularBrandsSkeleton } from "@/components/home/popular-brands";
 import { TrustBadges, TrustBadgesSkeleton } from "@/components/home/trust-badges";
+import { AgeGroupSection, AgeGroupSectionSkeleton } from "@/components/home/age-group-section";
+import { TestimonialsSection, TestimonialsSectionSkeleton } from "@/components/home/testimonials-section";
+import { InstagramGallery, InstagramGallerySkeleton } from "@/components/home/instagram-gallery";
+import { FeaturedCollections, FeaturedCollectionsSkeleton } from "@/components/home/featured-collections";
+import { NewsletterSection } from "@/components/home/newsletter-section";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -22,6 +27,9 @@ interface HomePageData {
   newArrivals: any[];
   topCategories: any[];
   popularBrands: any[];
+  testimonials: any[];
+  featuredCollections: any[];
+  instagramPosts: any[];
 }
 
 const EMPTY_HOME_DATA: HomePageData = {
@@ -32,6 +40,9 @@ const EMPTY_HOME_DATA: HomePageData = {
   newArrivals: [],
   topCategories: [],
   popularBrands: [],
+  testimonials: [],
+  featuredCollections: [],
+  instagramPosts: [],
 };
 
 async function fetchHomeData(): Promise<HomePageData> {
@@ -78,6 +89,9 @@ function HomePage() {
 
       {/* Trust Badges - Slim Info Bar */}
       {isLoading ? <TrustBadgesSkeleton /> : <TrustBadges />}
+
+      {/* Shop by Age Section */}
+      {isLoading ? <AgeGroupSectionSkeleton /> : <AgeGroupSection />}
 
       {/* Categories Section - Database Driven */}
       {isLoading ? (
@@ -136,18 +150,49 @@ function HomePage() {
         </section>
       )}
 
-      {/* Popular Brands */}
+      {/* Popular Brands + Featured Collections */}
       {(isLoading || (data?.popularBrands && data.popularBrands.length > 0)) && (
         <section className="bg-secondary/30 py-8 sm:py-10 lg:py-12">
           <div className="container mx-auto px-4">
             {isLoading ? (
-              <PopularBrandsSkeleton />
+              <>
+                <PopularBrandsSkeleton />
+                <FeaturedCollectionsSkeleton />
+              </>
             ) : (
-              <PopularBrands brands={data!.popularBrands} />
+              <>
+                <PopularBrands brands={data!.popularBrands} />
+                <FeaturedCollections collections={data?.featuredCollections} />
+              </>
             )}
           </div>
         </section>
       )}
+
+      {/* Testimonials */}
+      {(isLoading || (data?.testimonials && data.testimonials.length > 0)) && (
+        <>
+          {isLoading ? (
+            <TestimonialsSectionSkeleton />
+          ) : (
+            <TestimonialsSection testimonials={data?.testimonials} />
+          )}
+        </>
+      )}
+
+      {/* Instagram Gallery */}
+      {(isLoading || (data?.instagramPosts && data.instagramPosts.length > 0)) && (
+        <>
+          {isLoading ? (
+            <InstagramGallerySkeleton />
+          ) : (
+            <InstagramGallery posts={data?.instagramPosts} />
+          )}
+        </>
+      )}
+
+      {/* Newsletter Section */}
+      <NewsletterSection />
 
       {/* Footer Spacer */}
       <div className="h-8 sm:h-12" />

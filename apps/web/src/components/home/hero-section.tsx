@@ -65,7 +65,7 @@ export const HeroSection = () => {
     <section className="container py-6 mx-auto px-4">
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Main carousel */}
-        <div className="lg:col-span-2 relative rounded-2xl overflow-hidden h-[400px] shadow-sm">
+        <div className="lg:col-span-2 relative rounded-2xl overflow-hidden h-[350px] md:h-[450px] shadow-sm">
           {slides.map((slide, index) => (
             <div
               key={slide.id}
@@ -82,23 +82,23 @@ export const HeroSection = () => {
                 alt={slide.title}
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-              <div className="relative h-full flex flex-col justify-center p-8 md:p-12 text-white max-w-lg">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+              <div className="relative h-full flex flex-col justify-center px-6 py-10 md:p-12 text-white max-w-lg">
                 <span className="inline-block bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full mb-4 w-fit animate-fade-in">
                   {slide.tag}
                 </span>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-extrabold mb-2 animate-fade-in animation-delay-100">
+                <h2 className="text-2xl md:text-4xl lg:text-5xl font-heading font-extrabold mb-2 animate-fade-in animation-delay-100 leading-tight">
                   {slide.title}
                 </h2>
-                <p className="text-lg opacity-90 mb-2 animate-fade-in animation-delay-200">
+                <p className="text-base md:text-lg opacity-90 mb-2 animate-fade-in animation-delay-200 line-clamp-2 md:line-clamp-none">
                   {slide.subtitle}
                 </p>
-                <p className="text-2xl font-bold text-primary mb-6 animate-fade-in animation-delay-300">
+                <p className="text-xl md:text-2xl font-bold text-primary mb-6 animate-fade-in animation-delay-300">
                   {slide.price}
                 </p>
                 <Button 
                   size="lg" 
-                  className="w-fit rounded-full px-8 font-semibold animate-fade-in animation-delay-400"
+                  className="w-fit rounded-full px-8 font-semibold animate-fade-in animation-delay-400 h-10 md:h-11"
                 >
                   {slide.cta} →
                 </Button>
@@ -106,11 +106,11 @@ export const HeroSection = () => {
             </div>
           ))}
 
-          {/* Navigation arrows */}
+          {/* Navigation arrows (Desktop only) */}
           <Button
             variant="secondary"
             size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full shadow-sm opacity-80 hover:opacity-100"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 rounded-full shadow-md opacity-80 hover:opacity-100 transition-all z-10"
             onClick={prevSlide}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -118,53 +118,74 @@ export const HeroSection = () => {
           <Button
             variant="secondary"
             size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full shadow-sm opacity-80 hover:opacity-100"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 rounded-full shadow-md opacity-80 hover:opacity-100 transition-all z-10"
             onClick={nextSlide}
           >
             <ChevronRight className="w-5 h-5" />
           </Button>
 
-          {/* Dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
-                    ? "w-6 bg-primary" 
-                    : "bg-white/50"
-                }`}
-              />
-            ))}
+          {/* Bottom navigation (Mobile: Dots only, Desktop: Dots only) */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center z-10">
+            <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-1.5 md:bg-transparent md:backdrop-blur-none md:p-0">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`rounded-full transition-all duration-300 ${
+                    index === currentSlide 
+                      ? "w-6 h-2 bg-primary" 
+                      : "w-2 h-2 bg-white/70 hover:bg-white"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Side promo cards */}
-        <div className="flex lg:flex-col gap-4">
+        <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
           {promoCards.map((card, index) => (
             <div
               key={index}
-              className={`relative flex-1 rounded-2xl ${card.color} overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow min-h-[120px] group`}
+              className={`relative flex-shrink-0 w-[180px] sm:w-[220px] lg:w-auto lg:flex-1 rounded-3xl lg:rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all group ${card.color}`}
             >
-              <img
-                src={card.image}
-                alt={card.title}
-                className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 " />
-
-              <div className="relative p-6 h-full flex flex-col justify-center">
-                <div className="absolute top-3 left-3 bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                  {card.discount}
+              {/* Mobile: Image Top, Text Bottom layout. Desktop: Overlay layout */}
+              <div className="flex flex-col h-full lg:block">
+                {/* Image Container: Mobile height fixed, Desktop full absolute */}
+                <div className="h-28 sm:h-32 w-full lg:absolute lg:inset-0 lg:h-full relative overflow-hidden">
+                   <img
+                    src={card.image}
+                    alt={card.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 lg:opacity-70"
+                  />
+                  {/* Discount Badge */}
+                  <div className="absolute top-2 left-2 lg:top-3 lg:left-3 bg-white/90 lg:bg-destructive lg:text-white backdrop-blur-sm lg:backdrop-blur-none text-foreground text-[10px] font-bold px-2 py-1 lg:py-0.5 rounded-full lg:rounded-md shadow-sm">
+                    {card.discount}
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <h3 className="text-lg font-heading font-bold text-foreground">
+
+                {/* Content Container: Mobile solid bg, Desktop transparent overlay */}
+                <div className="p-4 flex flex-col justify-center flex-1 lg:absolute lg:inset-0 lg:p-6 lg:justify-center">
+                  <h3 className="text-sm sm:text-base font-heading font-bold text-foreground/90 lg:text-foreground lg:text-lg mb-1 lg:mt-2 leading-tight">
                     {card.title}
                   </h3>
-                  <Button variant="link" className="p-0 h-auto text-primary hover:text-pink-600 font-semibold text-xs">
-                    Shop Now →
-                  </Button>
+                  
+                  {/* Mobile-only View Details */}
+                  <div className="flex items-center justify-between lg:hidden">
+                    <span className="text-xs font-medium text-foreground/70">
+                       Shop Now
+                    </span>
+                    <div className="h-6 w-6 rounded-full bg-white/50 flex items-center justify-center">
+                       <ChevronRight className="w-3 h-3 text-foreground/70" />
+                    </div>
+                  </div>
+                  
+                  {/* Desktop-only Link */}
+                  <div className="hidden lg:block">
+                    <Button variant="link" className="p-0 h-auto text-primary hover:text-pink-600 font-semibold text-xs justify-start">
+                      Shop Now →
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

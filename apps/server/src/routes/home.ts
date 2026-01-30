@@ -5,6 +5,9 @@ import {
   campaigns,
   brands,
   categories,
+  testimonials,
+  featuredCollections,
+  instagramPosts,
 } from "@kineDao.com/db/schema";
 import { eq, and, lte, sql, asc } from "drizzle-orm";
 import type {
@@ -13,6 +16,9 @@ import type {
   CampaignDTO,
   CategoryDTO,
   BrandDTO,
+  TestimonialDTO,
+  FeaturedCollectionDTO,
+  InstagramPostDTO,
 } from "../types/catalog";
 
 const homeRouter = new Hono();
@@ -199,6 +205,59 @@ homeRouter.get("/", async (c) => {
       logoUrl: b.logoUrl,
     }));
 
+    // Fetch testimonials
+    const testimonialsData = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.isActive, true))
+      .orderBy(asc(testimonials.sortOrder))
+      .limit(6);
+
+    const testimonialsDTO: TestimonialDTO[] = testimonialsData.map((t) => ({
+      id: t.id,
+      quote: t.quote,
+      quoteBn: t.quoteBn,
+      customerName: t.customerName,
+      location: t.location,
+      locationBn: t.locationBn,
+      avatarUrl: t.avatarUrl,
+      rating: t.rating,
+    }));
+
+    // Fetch featured collections
+    const collectionsData = await db
+      .select()
+      .from(featuredCollections)
+      .where(eq(featuredCollections.isActive, true))
+      .orderBy(asc(featuredCollections.sortOrder))
+      .limit(3);
+
+    const featuredCollectionsDTO: FeaturedCollectionDTO[] = collectionsData.map((c) => ({
+      id: c.id,
+      title: c.title,
+      titleBn: c.titleBn,
+      description: c.description,
+      descriptionBn: c.descriptionBn,
+      imageUrl: c.imageUrl,
+      link: c.link,
+      bgColor: c.bgColor,
+    }));
+
+    // Fetch instagram posts
+    const instagramData = await db
+      .select()
+      .from(instagramPosts)
+      .where(eq(instagramPosts.isActive, true))
+      .orderBy(asc(instagramPosts.sortOrder))
+      .limit(8);
+
+    const instagramPostsDTO: InstagramPostDTO[] = instagramData.map((p) => ({
+      id: p.id,
+      imageUrl: p.imageUrl,
+      alt: p.alt,
+      link: p.link,
+    }));
+
     const response: HomePageResponse = {
       heroCarouselCampaigns,
       dealWallCampaigns,
@@ -207,6 +266,9 @@ homeRouter.get("/", async (c) => {
       newArrivals,
       topCategories,
       popularBrands,
+      testimonials: testimonialsDTO,
+      featuredCollections: featuredCollectionsDTO,
+      instagramPosts: instagramPostsDTO,
     };
 
     return c.json(response);

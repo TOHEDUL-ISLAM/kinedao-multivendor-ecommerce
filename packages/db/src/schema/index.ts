@@ -6,3 +6,6 @@ export * from "./vendors";
 export * from "./categories";
 export * from "./products";
 export * from "./campaigns";
+
+// Homepage content schemas
+export * from "./home";

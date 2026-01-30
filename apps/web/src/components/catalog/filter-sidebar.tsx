@@ -27,20 +27,41 @@ interface VendorFilter {
   productCount?: number;
 }
 
+interface BrandFilter {
+  name: string;
+  count: number;
+}
+
+interface AgeRangeFilter {
+  value: string;
+  label: string;
+  labelBn: string;
+  count: number;
+}
+
 interface FilterSidebarProps {
-  categories: CategoryFilter[];
-  vendors: VendorFilter[];
+  categories?: CategoryFilter[];
+  vendors?: VendorFilter[];
+  brands?: BrandFilter[];
+  ageRanges?: AgeRangeFilter[];
   priceRange: { min: number; max: number };
-  selectedCategories: string[];
-  selectedVendors: string[];
+  selectedCategories?: string[];
+  selectedVendors?: string[];
+  selectedBrands?: string[];
+  selectedAgeRanges?: string[];
   selectedMinPrice?: number;
   selectedMaxPrice?: number;
   selectedRating?: number;
-  onCategoryChange: (slugs: string[]) => void;
-  onVendorChange: (slugs: string[]) => void;
+  onCategoryChange?: (slugs: string[]) => void;
+  onVendorChange?: (slugs: string[]) => void;
+  onBrandChange?: (brands: string[]) => void;
+  onAgeRangeChange?: (ageRanges: string[]) => void;
   onPriceChange: (min?: number, max?: number) => void;
-  onRatingChange: (rating?: number) => void;
+  onRatingChange?: (rating?: number) => void;
   onClearFilters: () => void;
+  showCategories?: boolean;
+  showVendors?: boolean;
+  showRating?: boolean;
   className?: string;
 }
 
@@ -86,19 +107,28 @@ function AccordionSection({ title, defaultOpen = true, children }: AccordionSect
 }
 
 export function FilterSidebar({
-  categories,
-  vendors,
+  categories = [],
+  vendors = [],
+  brands = [],
+  ageRanges = [],
   priceRange,
-  selectedCategories,
-  selectedVendors,
+  selectedCategories = [],
+  selectedVendors = [],
+  selectedBrands = [],
+  selectedAgeRanges = [],
   selectedMinPrice,
   selectedMaxPrice,
   selectedRating,
   onCategoryChange,
   onVendorChange,
+  onBrandChange,
+  onAgeRangeChange,
   onPriceChange,
   onRatingChange,
   onClearFilters,
+  showCategories = true,
+  showVendors = true,
+  showRating = true,
   className,
 }: FilterSidebarProps) {
   const { t, language } = useTranslation();
@@ -126,6 +156,7 @@ export function FilterSidebar({
   );
 
   const handleCategoryToggle = (slug: string) => {
+    if (!onCategoryChange) return;
     if (selectedCategories.includes(slug)) {
       onCategoryChange(selectedCategories.filter((s) => s !== slug));
     } else {
@@ -134,10 +165,29 @@ export function FilterSidebar({
   };
 
   const handleVendorToggle = (slug: string) => {
+    if (!onVendorChange) return;
     if (selectedVendors.includes(slug)) {
       onVendorChange(selectedVendors.filter((s) => s !== slug));
     } else {
       onVendorChange([...selectedVendors, slug]);
+    }
+  };
+
+  const handleBrandToggle = (brand: string) => {
+    if (!onBrandChange) return;
+    if (selectedBrands.includes(brand)) {
+      onBrandChange(selectedBrands.filter((b) => b !== brand));
+    } else {
+      onBrandChange([...selectedBrands, brand]);
+    }
+  };
+
+  const handleAgeRangeToggle = (value: string) => {
+    if (!onAgeRangeChange) return;
+    if (selectedAgeRanges.includes(value)) {
+      onAgeRangeChange(selectedAgeRanges.filter((a) => a !== value));
+    } else {
+      onAgeRangeChange([...selectedAgeRanges, value]);
     }
   };
 
@@ -150,6 +200,8 @@ export function FilterSidebar({
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedVendors.length > 0 ||
+    selectedBrands.length > 0 ||
+    selectedAgeRanges.length > 0 ||
     selectedMinPrice !== undefined ||
     selectedMaxPrice !== undefined ||
     selectedRating !== undefined;
@@ -172,65 +224,120 @@ export function FilterSidebar({
       </div>
 
       {/* Categories */}
-      <AccordionSection title={t("catalog.categories")}>
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-          {parentCategories.map((category) => {
-            const displayName =
-              language === "bn" && category.nameBn ? category.nameBn : category.name;
-            const children = [...(childCategoriesMap[category.id] || [])].sort(
-              (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-            );
+      {showCategories && categories.length > 0 && (
+        <AccordionSection title={t("catalog.categories")}>
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+            {parentCategories.map((category) => {
+              const displayName =
+                language === "bn" && category.nameBn ? category.nameBn : category.name;
+              const children = [...(childCategoriesMap[category.id] || [])].sort(
+                (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+              );
 
-            return (
-              <div key={category.id}>
-                <label className="flex items-center gap-2 cursor-pointer group">
+              return (
+                <div key={category.id}>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <Checkbox
+                      checked={selectedCategories.includes(category.slug)}
+                      onCheckedChange={() => handleCategoryToggle(category.slug)}
+                    />
+                    <span className="text-sm group-hover:text-primary transition-colors">
+                      {displayName}
+                    </span>
+                    {category.productCount !== undefined && (
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        ({category.productCount})
+                      </span>
+                    )}
+                  </label>
+
+                  {/* Child categories */}
+                  {children.length > 0 && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {children.map((child) => {
+                        const childName =
+                          language === "bn" && child.nameBn ? child.nameBn : child.name;
+                        return (
+                          <label
+                            key={child.id}
+                            className="flex items-center gap-2 cursor-pointer group"
+                          >
+                            <Checkbox
+                              checked={selectedCategories.includes(child.slug)}
+                              onCheckedChange={() => handleCategoryToggle(child.slug)}
+                            />
+                            <span className="text-sm group-hover:text-primary transition-colors">
+                              {childName}
+                            </span>
+                            {child.productCount !== undefined && (
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                ({child.productCount})
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </AccordionSection>
+      )}
+
+      {/* Brands */}
+      {brands.length > 0 && (
+        <AccordionSection title={t("catalog.brands")}>
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+            {brands.map((brand) => (
+              <label
+                key={brand.name}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <Checkbox
+                  checked={selectedBrands.includes(brand.name)}
+                  onCheckedChange={() => handleBrandToggle(brand.name)}
+                />
+                <span className="text-sm group-hover:text-primary transition-colors truncate">
+                  {brand.name}
+                </span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  ({brand.count})
+                </span>
+              </label>
+            ))}
+          </div>
+        </AccordionSection>
+      )}
+
+      {/* Age Range */}
+      {ageRanges.length > 0 && (
+        <AccordionSection title={t("catalog.ageRange")}>
+          <div className="space-y-2">
+            {ageRanges.map((option) => {
+              const displayLabel = language === "bn" ? option.labelBn : option.label;
+              return (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
                   <Checkbox
-                    checked={selectedCategories.includes(category.slug)}
-                    onCheckedChange={() => handleCategoryToggle(category.slug)}
+                    checked={selectedAgeRanges.includes(option.value)}
+                    onCheckedChange={() => handleAgeRangeToggle(option.value)}
                   />
                   <span className="text-sm group-hover:text-primary transition-colors">
-                    {displayName}
+                    {displayLabel}
                   </span>
-                  {category.productCount !== undefined && (
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      ({category.productCount})
-                    </span>
-                  )}
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    ({option.count})
+                  </span>
                 </label>
-
-                {/* Child categories */}
-                {children.length > 0 && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {children.map((child) => {
-                      const childName =
-                        language === "bn" && child.nameBn ? child.nameBn : child.name;
-                      return (
-                        <label
-                          key={child.id}
-                          className="flex items-center gap-2 cursor-pointer group"
-                        >
-                          <Checkbox
-                            checked={selectedCategories.includes(child.slug)}
-                            onCheckedChange={() => handleCategoryToggle(child.slug)}
-                          />
-                          <span className="text-sm group-hover:text-primary transition-colors">
-                            {childName}
-                          </span>
-                          {child.productCount !== undefined && (
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              ({child.productCount})
-                            </span>
-                          )}
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </AccordionSection>
+              );
+            })}
+          </div>
+        </AccordionSection>
+      )}
 
       {/* Price Range */}
       <AccordionSection title={t("catalog.priceRange")}>
@@ -267,64 +374,68 @@ export function FilterSidebar({
       </AccordionSection>
 
       {/* Rating */}
-      <AccordionSection title={t("catalog.rating")}>
-        <div className="space-y-2">
-          {ratingOptions.map((rating) => (
-            <label
-              key={rating}
-              className="flex items-center gap-2 cursor-pointer group"
-            >
-              <Checkbox
-                checked={selectedRating === rating}
-                onCheckedChange={() =>
-                  onRatingChange(selectedRating === rating ? undefined : rating)
-                }
-              />
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      i < rating
-                        ? "fill-warning text-warning"
-                        : "text-muted-foreground/30"
-                    )}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {t("catalog.ratingUp")}
-              </span>
-            </label>
-          ))}
-        </div>
-      </AccordionSection>
+      {showRating && onRatingChange && (
+        <AccordionSection title={t("catalog.rating")}>
+          <div className="space-y-2">
+            {ratingOptions.map((rating) => (
+              <label
+                key={rating}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <Checkbox
+                  checked={selectedRating === rating}
+                  onCheckedChange={() =>
+                    onRatingChange(selectedRating === rating ? undefined : rating)
+                  }
+                />
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        i < rating
+                          ? "fill-warning text-warning"
+                          : "text-muted-foreground/30"
+                      )}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {t("catalog.ratingUp")}
+                </span>
+              </label>
+            ))}
+          </div>
+        </AccordionSection>
+      )}
 
       {/* Vendors */}
-      <AccordionSection title={t("catalog.vendors")} defaultOpen={false}>
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-          {vendors.slice(0, 15).map((vendor) => (
-            <label
-              key={vendor.id}
-              className="flex items-center gap-2 cursor-pointer group"
-            >
-              <Checkbox
-                checked={selectedVendors.includes(vendor.slug)}
-                onCheckedChange={() => handleVendorToggle(vendor.slug)}
-              />
-              <span className="text-sm group-hover:text-primary transition-colors truncate">
-                {vendor.name}
-              </span>
-              {vendor.productCount !== undefined && (
-                <span className="text-xs text-muted-foreground ml-auto">
-                  ({vendor.productCount})
+      {showVendors && vendors.length > 0 && (
+        <AccordionSection title={t("catalog.vendors")} defaultOpen={false}>
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+            {vendors.slice(0, 15).map((vendor) => (
+              <label
+                key={vendor.id}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <Checkbox
+                  checked={selectedVendors.includes(vendor.slug)}
+                  onCheckedChange={() => handleVendorToggle(vendor.slug)}
+                />
+                <span className="text-sm group-hover:text-primary transition-colors truncate">
+                  {vendor.name}
                 </span>
-              )}
-            </label>
-          ))}
-        </div>
-      </AccordionSection>
+                {vendor.productCount !== undefined && (
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    ({vendor.productCount})
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+        </AccordionSection>
+      )}
     </div>
   );
 }

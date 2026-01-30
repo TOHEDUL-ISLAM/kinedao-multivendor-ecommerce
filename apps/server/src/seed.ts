@@ -9,6 +9,9 @@ import {
   productSkus,
   campaigns,
   campaignProducts,
+  testimonials,
+  featuredCollections,
+  instagramPosts,
 } from "@kineDao.com/db/schema";
 import { faker } from "@faker-js/faker";
 
@@ -99,6 +102,10 @@ async function seed() {
   await db.delete(categories);
   await db.delete(vendors);
   await db.delete(brands);
+  // Clear homepage content tables
+  await db.delete(testimonials);
+  await db.delete(featuredCollections);
+  await db.delete(instagramPosts);
 
   // 1. Seed Vendors (10 vendors)
   console.log("Creating vendors...");
@@ -615,11 +622,163 @@ async function seed() {
 
   await db.insert(campaignProducts).values(campaignProductInserts);
 
+  // 7. Seed Homepage Content
+  console.log("Creating homepage content...");
+
+  // Testimonials
+  const testimonialData = [
+    {
+      quote: "KineDao has everything I need for my baby. The quality is amazing and delivery is super fast!",
+      quoteBn: "কিনেদাও-তে আমার শিশুর জন্য যা দরকার সব আছে। গুণমান অসাধারণ এবং ডেলিভারি খুব দ্রুত!",
+      customerName: "Fatima Rahman",
+      location: "Dhaka",
+      locationBn: "ঢাকা",
+      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+      rating: 5,
+      sortOrder: 0,
+    },
+    {
+      quote: "Best baby products marketplace in Bangladesh. I love the variety and the prices are very reasonable.",
+      quoteBn: "বাংলাদেশের সেরা শিশু পণ্যের মার্কেটপ্লেস। আমি বৈচিত্র্য পছন্দ করি এবং দামও অনেক যুক্তিসঙ্গত।",
+      customerName: "Ayesha Khan",
+      location: "Chittagong",
+      locationBn: "চট্টগ্রাম",
+      avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+      rating: 5,
+      sortOrder: 1,
+    },
+    {
+      quote: "The organic baby products selection is excellent. My baby's skin has never been better!",
+      quoteBn: "জৈব শিশু পণ্যের নির্বাচন চমৎকার। আমার শিশুর ত্বক আগের চেয়ে অনেক ভালো!",
+      customerName: "Nadia Islam",
+      location: "Sylhet",
+      locationBn: "সিলেট",
+      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+      rating: 5,
+      sortOrder: 2,
+    },
+    {
+      quote: "Safe packaging and genuine products. Finally a trustworthy online baby store in Bangladesh!",
+      quoteBn: "নিরাপদ প্যাকেজিং এবং আসল পণ্য। অবশেষে বাংলাদেশে একটি বিশ্বস্ত অনলাইন শিশু স্টোর!",
+      customerName: "Rashida Begum",
+      location: "Rajshahi",
+      locationBn: "রাজশাহী",
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+      rating: 5,
+      sortOrder: 3,
+    },
+    {
+      quote: "Customer service is outstanding. They helped me choose the perfect stroller for my needs.",
+      quoteBn: "গ্রাহক সেবা অসাধারণ। তারা আমাকে আমার প্রয়োজনের জন্য নিখুঁত স্ট্রলার বেছে নিতে সাহায্য করেছে।",
+      customerName: "Tasnim Ahmed",
+      location: "Khulna",
+      locationBn: "খুলনা",
+      avatarUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop",
+      rating: 5,
+      sortOrder: 4,
+    },
+  ];
+
+  const insertedTestimonials = await db.insert(testimonials).values(testimonialData).returning();
+
+  // Featured Collections
+  const featuredCollectionData = [
+    {
+      title: "Newborn Essentials",
+      titleBn: "নবজাতক প্রয়োজনীয়",
+      description: "Everything you need for your newborn's first months",
+      descriptionBn: "আপনার নবজাতকের প্রথম মাসের জন্য যা দরকার সব",
+      imageUrl: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600",
+      link: "/catalog?age=0-3months",
+      bgColor: "baby-pink",
+      sortOrder: 0,
+    },
+    {
+      title: "Organic & Natural",
+      titleBn: "জৈব ও প্রাকৃতিক",
+      description: "Safe, chemical-free products for sensitive skin",
+      descriptionBn: "সংবেদনশীল ত্বকের জন্য নিরাপদ, রাসায়নিক-মুক্ত পণ্য",
+      imageUrl: "https://images.unsplash.com/photo-1600369672770-985fd30004eb?w=600",
+      link: "/catalog?category=organic-skincare",
+      bgColor: "baby-mint",
+      sortOrder: 1,
+    },
+    {
+      title: "Playtime Favorites",
+      titleBn: "খেলার সময়ের প্রিয়",
+      description: "Educational toys that make learning fun",
+      descriptionBn: "শিক্ষামূলক খেলনা যা শেখাকে মজাদার করে",
+      imageUrl: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=600",
+      link: "/catalog?category=toys-entertainment",
+      bgColor: "baby-blue",
+      sortOrder: 2,
+    },
+  ];
+
+  const insertedCollections = await db.insert(featuredCollections).values(featuredCollectionData).returning();
+
+  // Instagram Posts (curated baby lifestyle images)
+  const instagramPostData = [
+    {
+      imageUrl: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&h=400&fit=crop",
+      alt: "Baby in cute outfit",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 0,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop",
+      alt: "Colorful baby toys",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 1,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=400&h=400&fit=crop",
+      alt: "Cozy nursery setup",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 2,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop",
+      alt: "Baby sleeping peacefully",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 3,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=400&fit=crop",
+      alt: "Baby products flatlay",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 4,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&h=400&fit=crop",
+      alt: "Baby playing with toys",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 5,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1559715745-e1b33a271c8f?w=400&h=400&fit=crop",
+      alt: "Cute stuffed animal",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 6,
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1604917621956-10dfa7cce2e7?w=400&h=400&fit=crop",
+      alt: "Baby essentials",
+      link: "https://instagram.com/kinedao",
+      sortOrder: 7,
+    },
+  ];
+
+  const insertedInstagramPosts = await db.insert(instagramPosts).values(instagramPostData).returning();
+
   console.log("✅ Database seeded successfully!");
   console.log(`   - ${insertedVendors.length} vendors`);
   console.log(`   - ${allCategories.length} categories`);
   console.log(`   - ${insertedProducts.length} products`);
   console.log(`   - ${insertedCampaigns.length} campaigns`);
+  console.log(`   - ${insertedTestimonials.length} testimonials`);
+  console.log(`   - ${insertedCollections.length} featured collections`);
+  console.log(`   - ${insertedInstagramPosts.length} instagram posts`);
 
   process.exit(0);
 }

@@ -120,6 +120,38 @@ export interface CampaignDTO {
   endsAt: string | null;
 }
 
+// Testimonial DTO
+export interface TestimonialDTO {
+  id: string;
+  quote: string;
+  quoteBn: string | null;
+  customerName: string;
+  location: string | null;
+  locationBn: string | null;
+  avatarUrl: string | null;
+  rating: number | null;
+}
+
+// Featured Collection DTO
+export interface FeaturedCollectionDTO {
+  id: string;
+  title: string;
+  titleBn: string | null;
+  description: string | null;
+  descriptionBn: string | null;
+  imageUrl: string;
+  link: string;
+  bgColor: string | null;
+}
+
+// Instagram Post DTO
+export interface InstagramPostDTO {
+  id: string;
+  imageUrl: string;
+  alt: string | null;
+  link: string | null;
+}
+
 // =====================
 // API Response Types
 // =====================
@@ -132,6 +164,10 @@ export interface HomePageResponse {
   newArrivals: ProductCardDTO[];
   topCategories: CategoryDTO[];
   popularBrands: BrandDTO[];
+  // New homepage content
+  testimonials: TestimonialDTO[];
+  featuredCollections: FeaturedCollectionDTO[];
+  instagramPosts: InstagramPostDTO[];
 }
 
 export interface CatalogProductsResponse {
@@ -180,3 +216,66 @@ export const searchQuerySchema = z.object({
 });
 
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
+
+// =====================
+// Category Page Types
+// =====================
+
+// Brand facet for filters
+export interface BrandFacet {
+  name: string;
+  count: number;
+}
+
+// Age range facet for filters
+export interface AgeRangeFacet {
+  value: string;
+  label: string;
+  labelBn: string;
+  count: number;
+}
+
+// Category page response
+export interface CategoryPageResponse {
+  category: {
+    id: string;
+    name: string;
+    nameBn: string | null;
+    slug: string;
+    parentId: string | null;
+    imageUrl: string | null;
+    parent: {
+      name: string;
+      nameBn: string | null;
+      slug: string;
+    } | null;
+  };
+  products: ProductCardDTO[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  facets: {
+    brands: BrandFacet[];
+    ageRanges: AgeRangeFacet[];
+    priceRange: {
+      min: number;
+      max: number;
+    };
+  };
+}
+
+// Category page query schema
+export const categoryPageQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(48).default(12),
+  sort: z.enum(["newest", "price_asc", "price_desc", "name_asc"]).default("newest"),
+  brand: z.string().optional(), // Comma-separated brand names
+  minPrice: z.coerce.number().int().min(0).optional(),
+  maxPrice: z.coerce.number().int().min(0).optional(),
+  ageRange: z.string().optional(), // Comma-separated age ranges
+});
+
+export type CategoryPageQuery = z.infer<typeof categoryPageQuerySchema>;

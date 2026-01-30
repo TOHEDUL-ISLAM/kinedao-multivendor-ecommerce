@@ -57,6 +57,42 @@ export const translations = {
     "home.popularBrands": "Popular Brands",
     "home.exploreMore": "Explore More",
 
+    // Shop by Age
+    "home.shopByAge": "Shop by Age",
+    "home.ageGroup.0-3months": "0-3 Months",
+    "home.ageGroup.3-6months": "3-6 Months",
+    "home.ageGroup.6-12months": "6-12 Months",
+    "home.ageGroup.1-2years": "1-2 Years",
+    "home.ageGroup.2-3years": "2-3 Years",
+    "home.ageGroup.newborn": "Newborn",
+    "home.ageGroup.infant": "Infant",
+    "home.ageGroup.baby": "Baby",
+    "home.ageGroup.toddler": "Toddler",
+
+    // Testimonials
+    "home.testimonials": "What Parents Say",
+    "home.testimonials.subtitle": "Trusted by thousands of happy families",
+
+    // Newsletter
+    "home.newsletter.title": "Stay Updated",
+    "home.newsletter.subtitle": "Get the latest deals and parenting tips delivered to your inbox",
+    "home.newsletter.placeholder": "Enter your email",
+    "home.newsletter.subscribe": "Subscribe",
+    "home.newsletter.subscribing": "Subscribing...",
+    "home.newsletter.success": "Thank you for subscribing!",
+    "home.newsletter.error": "Something went wrong. Please try again.",
+    "home.newsletter.invalidEmail": "Please enter a valid email",
+    "home.newsletter.alreadySubscribed": "You're already subscribed!",
+
+    // Instagram / Social
+    "home.instagram.title": "Follow Us on Instagram",
+    "home.instagram.handle": "@kinedao",
+
+    // Featured Collections
+    "home.featuredCollections": "Featured Collections",
+    "home.shopCollection": "Shop Collection",
+    "home.trendingBrands": "Trending Brands",
+
     // Trust Badges
     "trust.fastDelivery": "Fast Delivery",
     "trust.fastDeliveryDesc": "2-3 days nationwide",
@@ -87,6 +123,24 @@ export const translations = {
     "catalog.ratingUp": "& up",
     "catalog.categories": "Categories",
     "catalog.vendors": "Vendors",
+    "catalog.brands": "Brands",
+    "catalog.ageRange": "Age Range",
+    "catalog.sortNameAZ": "Name: A to Z",
+
+    // Category Page
+    "category.productsFound": "{count} products",
+    "category.noProducts": "No products in this category yet",
+    "category.noFiltersMatch": "No products match your filters",
+    "category.tryAdjusting": "Try adjusting your filters or search terms",
+
+    // Pagination
+    "pagination.label": "Pagination",
+    "pagination.previous": "Previous",
+    "pagination.next": "Next",
+    "pagination.page": "Page",
+
+    // Breadcrumb
+    "breadcrumb.home": "Home",
 
     // Quick View
     "quickView.title": "Quick View",
@@ -325,6 +379,42 @@ export const translations = {
     "home.popularBrands": "জনপ্রিয় ব্র্যান্ড",
     "home.exploreMore": "আরো দেখুন",
 
+    // Shop by Age
+    "home.shopByAge": "বয়স অনুযায়ী কিনুন",
+    "home.ageGroup.0-3months": "০-৩ মাস",
+    "home.ageGroup.3-6months": "৩-৬ মাস",
+    "home.ageGroup.6-12months": "৬-১২ মাস",
+    "home.ageGroup.1-2years": "১-২ বছর",
+    "home.ageGroup.2-3years": "২-৩ বছর",
+    "home.ageGroup.newborn": "নবজাতক",
+    "home.ageGroup.infant": "শিশু",
+    "home.ageGroup.baby": "বেবি",
+    "home.ageGroup.toddler": "টডলার",
+
+    // Testimonials
+    "home.testimonials": "অভিভাবকদের মতামত",
+    "home.testimonials.subtitle": "হাজার হাজার সুখী পরিবারের বিশ্বাস",
+
+    // Newsletter
+    "home.newsletter.title": "আপডেট থাকুন",
+    "home.newsletter.subtitle": "সেরা অফার এবং প্যারেন্টিং টিপস সরাসরি আপনার ইনবক্সে পান",
+    "home.newsletter.placeholder": "আপনার ইমেল দিন",
+    "home.newsletter.subscribe": "সাবস্ক্রাইব",
+    "home.newsletter.subscribing": "সাবস্ক্রাইব হচ্ছে...",
+    "home.newsletter.success": "সাবস্ক্রাইব করার জন্য ধন্যবাদ!",
+    "home.newsletter.error": "কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
+    "home.newsletter.invalidEmail": "সঠিক ইমেল দিন",
+    "home.newsletter.alreadySubscribed": "আপনি ইতিমধ্যে সাবস্ক্রাইব করেছেন!",
+
+    // Instagram / Social
+    "home.instagram.title": "ইনস্টাগ্রামে ফলো করুন",
+    "home.instagram.handle": "@kinedao",
+
+    // Featured Collections
+    "home.featuredCollections": "ফিচার্ড কালেকশন",
+    "home.shopCollection": "কালেকশন দেখুন",
+    "home.trendingBrands": "ট্রেন্ডিং ব্র্যান্ড",
+
     // Trust Badges
     "trust.fastDelivery": "দ্রুত ডেলিভারি",
     "trust.fastDeliveryDesc": "সারাদেশে ২-৩ দিনে",
@@ -355,6 +445,24 @@ export const translations = {
     "catalog.ratingUp": "ও তার বেশি",
     "catalog.categories": "ক্যাটাগরি",
     "catalog.vendors": "বিক্রেতা",
+    "catalog.brands": "ব্র্যান্ড",
+    "catalog.ageRange": "বয়স পরিসীমা",
+    "catalog.sortNameAZ": "নাম: ক থেকে ল",
+
+    // Category Page
+    "category.productsFound": "{count}টি পণ্য",
+    "category.noProducts": "এই ক্যাটাগরিতে এখনো কোনো পণ্য নেই",
+    "category.noFiltersMatch": "আপনার ফিল্টারের সাথে কোনো পণ্য মেলেনি",
+    "category.tryAdjusting": "আপনার ফিল্টার বা সার্চ পরিবর্তন করুন",
+
+    // Pagination
+    "pagination.label": "পৃষ্ঠা নেভিগেশন",
+    "pagination.previous": "পূর্ববর্তী",
+    "pagination.next": "পরবর্তী",
+    "pagination.page": "পৃষ্ঠা",
+
+    // Breadcrumb
+    "breadcrumb.home": "হোম",
 
     // Quick View
     "quickView.title": "দ্রুত দেখুন",
