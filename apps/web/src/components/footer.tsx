@@ -12,19 +12,19 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand Section */}
-          <div className="space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
-            <Link to="/" className="flex items-center gap-2">
-              <Baby className="h-8 w-8 text-pink-500" />
-              <span className="font-bold text-2xl bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent">
+          <div className="space-y-6 flex flex-col items-start text-left">
+            <Link to="/" className="flex items-center gap-2 group">
+              <Baby className="h-8 w-8 text-pink-500 transition-transform group-hover:scale-110" />
+              <span className="font-bold text-2xl bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent pb-1">
                 কিনেদাও
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto md:mx-0">
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               {t("footer.description")}
             </p>
 
             {/* Social Media */}
-            <div className="flex items-center gap-4 justify-center md:justify-start w-full">
+            <div className="flex items-center gap-4 justify-start w-full">
               <a
                 href="https://facebook.com/kinedao"
                 target="_blank"
@@ -56,7 +56,7 @@ export default function Footer() {
           </div>
 
           {/* Links Grid for Mobile (Quick Links + Customer Service) */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:contents gap-8">
+          <div className="grid grid-cols-2 gap-8">
             {/* Quick Links */}
             <div className="text-left">
               <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.quickLinks")}</h3>
@@ -155,19 +155,19 @@ export default function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-6 md:space-y-0">
-            <h3 className="font-semibold text-lg mb-4 text-foreground w-full">{t("footer.contactUs")}</h3>
-            <ul className="space-y-4 w-full flex flex-col items-center md:items-start">
-              <li className="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-3 w-full md:w-auto">
+          <div className="flex flex-col items-start text-left space-y-6">
+            <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.contactUs")}</h3>
+            <ul className="space-y-4 w-full">
+              <li className="flex flex-row items-start gap-3">
                 <div className="p-2 rounded-full bg-pink-100 dark:bg-pink-950/30 text-pink-500 shrink-0">
                   <Phone className="h-4 w-4" />
                 </div>
-                <div className="flex flex-col items-center md:items-start">
+                <div className="flex flex-col items-start">
                   <p className="text-sm font-bold">16234</p>
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{t("footer.openHours")}</p>
                 </div>
               </li>
-              <li className="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-3 w-full md:w-auto">
+              <li className="flex flex-row items-start gap-3">
                 <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-500 shrink-0">
                   <Mail className="h-4 w-4" />
                 </div>
@@ -178,7 +178,7 @@ export default function Footer() {
                   support@kinedao.com
                 </a>
               </li>
-              <li className="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-3 w-full md:w-auto">
+              <li className="flex flex-row items-start gap-3">
                 <div className="p-2 rounded-full bg-green-100 dark:bg-green-950/30 text-green-500 shrink-0">
                   <MapPin className="h-4 w-4" />
                 </div>

@@ -179,7 +179,6 @@ export default function Header() {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80">
                   <div className="flex flex-col gap-6 mt-6">
-                    <SearchBar className="w-full" />
                     <nav className="flex flex-col gap-2">
                       {categoriesLoading ? (
                         [...Array(6)].map((_, i) => (
@@ -229,6 +228,11 @@ export default function Header() {
           </div>
         </div>
 
+        {/* Mobile Search Bar */}
+        <div className="md:hidden container mx-auto px-4 pb-3">
+          <SearchBar className="w-full" />
+        </div>
+
         {/* Category nav */}
         <nav className="border-t border-border bg-background/50 backdrop-blur-sm hidden md:block">
           <div className="container mx-auto px-4">
@@ -275,25 +279,33 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-yellow/20 hover:text-orange-600 transition-colors">
-                <Zap className="w-4 h-4 text-yellow-500" />
-                Flash Deals
-              </Button>
+              <Link to="/catalog" search={{ sort: "price_asc" }}>
+                <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-yellow/20 hover:text-orange-600 transition-colors">
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  Flash Deals
+                </Button>
+              </Link>
 
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-pink/20 hover:text-pink-600 transition-colors">
-                <Sparkles className="w-4 h-4 text-pink-500" />
-                New Arrivals
-              </Button>
+              <Link to="/catalog" search={{ sort: "newest" }}>
+                <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-pink/20 hover:text-pink-600 transition-colors">
+                  <Sparkles className="w-4 h-4 text-pink-500" />
+                  New Arrivals
+                </Button>
+              </Link>
 
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-mint/20 hover:text-green-600 transition-colors">
-                <TrendingUp className="w-4 h-4 text-green-500" />
-                Trending
-              </Button>
+              <Link to="/catalog" search={{ sort: "bestseller" }}>
+                <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-mint/20 hover:text-green-600 transition-colors">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  Trending
+                </Button>
+              </Link>
 
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0">
-                <Store className="w-4 h-4" />
-                Top Vendors
-              </Button>
+              <Link to="/catalog">
+                <Button variant="ghost" className="gap-2 rounded-full shrink-0">
+                  <Store className="w-4 h-4" />
+                  Top Vendors
+                </Button>
+              </Link>
 
               <div className="flex-1" />
 
