@@ -11,6 +11,8 @@
     "seed": "bun run src/seed.ts"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.4.1",
+    "@kineDao.com/api-types": "workspace:*",
     "@kineDao.com/auth": "workspace:*",
     "@kineDao.com/db": "workspace:*",
     "@kineDao.com/env": "workspace:*",

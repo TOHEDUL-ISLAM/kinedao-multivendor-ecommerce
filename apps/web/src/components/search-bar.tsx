@@ -8,31 +8,9 @@ import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion, useIsMobile } from "@/hooks/use-media-query";
 import { useNavigate } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/format";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 import { softSpring } from "@/components/ui/motion-wrappers";
-
-interface SearchSuggestion {
-  products: {
-    id: string;
-    title: string;
-    titleBn: string | null;
-    slug: string;
-    imageUrl: string | null;
-    priceAmount: number;
-    currency: string;
-  }[];
-  categories: {
-    id: string;
-    name: string;
-    nameBn: string | null;
-    slug: string;
-  }[];
-  vendors: {
-    id: string;
-    name: string;
-    slug: string;
-  }[];
-}
+import type { SearchSuggestResponse } from "@kineDao.com/api-types/catalog";
 
 interface SearchBarProps {
   className?: string;
@@ -47,7 +25,7 @@ export function SearchBar({ className, onClose }: SearchBarProps) {
 
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<SearchSuggestion | null>(null);
+  const [suggestions, setSuggestions] = useState<SearchSuggestResponse | null>(null);
   // const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -76,9 +54,9 @@ export function SearchBar({ className, onClose }: SearchBarProps) {
 
     // setIsLoading(true);
     try {
-      const response = await fetch(
-        `${env.VITE_SERVER_URL}/api/search/suggest?q=${encodeURIComponent(searchQuery)}&limit=5`
-      );
+      const response = await api.search.suggest.$get({
+        query: { q: searchQuery, limit: "5" },
+      });
       if (response.ok) {
         const data = await response.json();
         setSuggestions(data);

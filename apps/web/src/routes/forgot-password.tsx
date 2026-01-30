@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,26 +27,21 @@ function ForgotPasswordComponent() {
       setServerError(null);
       try {
         console.log("[FORGOT-PASSWORD] Attempting to send reset email to:", value.email);
-        const response = await fetch(`${env.VITE_SERVER_URL}/api/auth/forgot-password`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
+        const response = await api.auth["forgot-password"].$post({
+          json: {
             email: value.email,
             redirectTo: `${window.location.origin}/reset-password`,
-          }),
+          },
         });
 
         if (!response.ok) {
-          const data = await response.json().catch(() => null);
+          const data = await response.json().catch(() => ({}));
           console.error("[FORGOT-PASSWORD] Error:", data);
           setServerError("Failed to send reset email. Please try again.");
           return;
         }
 
-        const data = await response.json().catch(() => null);
+        const data = await response.json().catch(() => ({}));
         console.log("[FORGOT-PASSWORD] Success!", data);
         setIsSubmitted(true);
         toast.success("Password reset email sent!");

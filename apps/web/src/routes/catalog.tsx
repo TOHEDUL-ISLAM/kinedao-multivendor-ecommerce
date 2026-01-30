@@ -2,8 +2,9 @@ import { useState, useCallback } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 import { useTranslation } from "@/hooks/use-translation";
+import type { CatalogFacetsResponse, CatalogProductsResponse } from "@kineDao.com/api-types/catalog";
 
 // Components
 import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-sidebar";
@@ -29,41 +30,29 @@ export const Route = createFileRoute("/catalog")({
   component: CatalogPage,
 });
 
-interface FacetsData {
-  categories: any[];
-  vendors: any[];
-  priceRange: { min: number; max: number };
-}
-
-interface ProductsResponse {
-  items: any[];
-  nextCursor: string | null;
-  total: number;
-}
-
-async function fetchFacets(): Promise<FacetsData> {
-  const response = await fetch(`${env.VITE_SERVER_URL}/api/catalog/facets`);
+async function fetchFacets(): Promise<CatalogFacetsResponse> {
+  const response = await api.catalog.facets.$get();
   if (!response.ok) throw new Error("Failed to fetch facets");
-  return response.json();
+  return await response.json();
 }
 
-async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promise<ProductsResponse> {
-  const searchParams = new URLSearchParams();
-
-  if (params.q) searchParams.set("q", params.q);
-  if (params.category) searchParams.set("category", params.category);
-  if (params.vendor) searchParams.set("vendor", params.vendor);
-  if (params.brand) searchParams.set("brand", params.brand);
-  if (params.min !== undefined) searchParams.set("min", params.min.toString());
-  if (params.max !== undefined) searchParams.set("max", params.max.toString());
-  if (params.rating !== undefined) searchParams.set("rating", params.rating.toString());
-  if (params.sort) searchParams.set("sort", params.sort);
-  if (params.cursor) searchParams.set("cursor", params.cursor);
-  searchParams.set("limit", "20");
-
-  const response = await fetch(`${env.VITE_SERVER_URL}/api/catalog/products?${searchParams}`);
+async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promise<CatalogProductsResponse> {
+  const response = await api.catalog.products.$get({
+    query: {
+      q: params.q,
+      category: params.category,
+      vendor: params.vendor,
+      brand: params.brand,
+      min: params.min?.toString(),
+      max: params.max?.toString(),
+      rating: params.rating?.toString(),
+      sort: params.sort,
+      cursor: params.cursor,
+      limit: "20",
+    },
+  });
   if (!response.ok) throw new Error("Failed to fetch products");
-  return response.json();
+  return await response.json();
 }
 
 function CatalogPage() {

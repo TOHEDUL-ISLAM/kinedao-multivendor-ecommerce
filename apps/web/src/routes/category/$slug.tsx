@@ -6,10 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { PackageSearch, SlidersHorizontal, ChevronDown, Check, X } from "lucide-react";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import type { CategoryPageResponse } from "@kineDao.com/api-types/catalog";
 
 // Components
 import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-sidebar";
@@ -35,52 +36,22 @@ export const Route = createFileRoute("/category/$slug")({
   component: CategoryPage,
 });
 
-// Types matching backend response
-interface CategoryPageResponse {
-  category: {
-    id: string;
-    name: string;
-    nameBn: string | null;
-    slug: string;
-    parentId: string | null;
-    imageUrl: string | null;
-    parent: {
-      name: string;
-      nameBn: string | null;
-      slug: string;
-    } | null;
-  };
-  products: ProductCardData[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  facets: {
-    brands: { name: string; count: number }[];
-    ageRanges: { value: string; label: string; labelBn: string; count: number }[];
-    priceRange: { min: number; max: number };
-  };
-}
-
 async function fetchCategoryPage(
   slug: string,
   params: CategorySearch
 ): Promise<CategoryPageResponse> {
-  const searchParams = new URLSearchParams();
-
-  searchParams.set("page", params.page.toString());
-  searchParams.set("limit", "12");
-  searchParams.set("sort", params.sort);
-  if (params.brand) searchParams.set("brand", params.brand);
-  if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString());
-  if (params.maxPrice !== undefined) searchParams.set("maxPrice", params.maxPrice.toString());
-  if (params.ageRange) searchParams.set("ageRange", params.ageRange);
-
-  const response = await fetch(
-    `${env.VITE_SERVER_URL}/api/category/${slug}?${searchParams}`
-  );
+  const response = await api.category[":slug"].$get({
+    param: { slug },
+    query: {
+      page: params.page.toString(),
+      limit: "12",
+      sort: params.sort,
+      brand: params.brand,
+      minPrice: params.minPrice?.toString(),
+      maxPrice: params.maxPrice?.toString(),
+      ageRange: params.ageRange,
+    },
+  });
 
   if (response.status === 404) {
     throw notFound();
@@ -90,7 +61,7 @@ async function fetchCategoryPage(
     throw new Error("Failed to fetch category");
   }
 
-  return response.json();
+  return await response.json();
 }
 
 function CategoryPage() {

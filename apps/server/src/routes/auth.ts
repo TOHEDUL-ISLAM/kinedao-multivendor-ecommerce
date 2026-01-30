@@ -1,9 +1,8 @@
 import { Hono } from "hono";
-import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
 import { auth } from "@kineDao.com/auth";
 import { env } from "@kineDao.com/env/server";
-
-const authRouter = new Hono();
+import { signUpSchema, forgotPasswordSchema } from "@kineDao.com/api-types/auth";
 
 const frontendBaseUrl = env.FRONTEND_URL.replace(/\/+$/, "");
 const frontendOrigin = new URL(frontendBaseUrl).origin;
@@ -24,69 +23,49 @@ const buildAuthRequest = (path: string, body: unknown, original: Request) => {
   headers.set("content-type", "application/json");
   headers.delete("content-length");
 
-  return new Request(new URL(path, env.BETTER_AUTH_URL), {
+  return new Request(new URL(path, env.BETTER_AUTH_URL).toString(), {
     method: "POST",
     headers,
     body: JSON.stringify(body),
   });
 };
 
-const signUpSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  callbackURL: z.string().optional(),
-  rememberMe: z.boolean().optional(),
-});
+// POST /api/auth/sign-up - Custom sign-up handler
+// POST /api/auth/forgot-password - Custom forgot password handler
+const authRouter = new Hono()
+  .post("/sign-up", zValidator("json", signUpSchema), async (c) => {
+    const data = c.req.valid("json");
+    const callbackURL = resolveFrontendUrl(data.callbackURL, "/login");
 
-authRouter.post("/sign-up", async (c) => {
-  const payload = await c.req.json().catch(() => null);
-  const parsed = signUpSchema.safeParse(payload);
-  if (!parsed.success) {
-    return c.json({ message: "Invalid sign up payload" }, 400);
-  }
+    const request = buildAuthRequest(
+      "/api/auth/sign-up/email",
+      {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        callbackURL,
+        rememberMe: data.rememberMe,
+      },
+      c.req.raw
+    );
 
-  const callbackURL = resolveFrontendUrl(parsed.data.callbackURL, "/login");
+    return auth.handler(request);
+  })
+  .post("/forgot-password", zValidator("json", forgotPasswordSchema), async (c) => {
+    const data = c.req.valid("json");
+    const redirectTo = resolveFrontendUrl(data.redirectTo, "/reset-password");
 
-  const request = buildAuthRequest(
-    "/api/auth/sign-up/email",
-    {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      password: parsed.data.password,
-      callbackURL,
-      rememberMe: parsed.data.rememberMe,
-    },
-    c.req.raw
-  );
+    const request = buildAuthRequest(
+      "/api/auth/request-password-reset",
+      {
+        email: data.email,
+        redirectTo,
+      },
+      c.req.raw
+    );
 
-  return auth.handler(request);
-});
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email(),
-  redirectTo: z.string().optional(),
-});
-
-authRouter.post("/forgot-password", async (c) => {
-  const payload = await c.req.json().catch(() => null);
-  const parsed = forgotPasswordSchema.safeParse(payload);
-  if (!parsed.success) {
-    return c.json({ message: "Invalid forgot password payload" }, 400);
-  }
-
-  const redirectTo = resolveFrontendUrl(parsed.data.redirectTo, "/reset-password");
-
-  const request = buildAuthRequest(
-    "/api/auth/request-password-reset",
-    {
-      email: parsed.data.email,
-      redirectTo,
-    },
-    c.req.raw
-  );
-
-  return auth.handler(request);
-});
+    return auth.handler(request);
+  });
 
 export { authRouter };
+export type AuthRouterType = typeof authRouter;

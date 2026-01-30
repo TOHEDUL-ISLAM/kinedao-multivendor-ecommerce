@@ -21,6 +21,8 @@
       "name": "server",
       "dependencies": {
         "@faker-js/faker": "^9.3.0",
+        "@hono/zod-validator": "^0.4.1",
+        "@kineDao.com/api-types": "workspace:*",
         "@kineDao.com/auth": "workspace:*",
         "@kineDao.com/db": "workspace:*",
         "@kineDao.com/env": "workspace:*",
@@ -41,6 +43,7 @@
       "name": "web",
       "dependencies": {
         "@base-ui/react": "^1.0.0",
+        "@kineDao.com/api-types": "workspace:*",
         "@kineDao.com/auth": "workspace:*",
         "@kineDao.com/env": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.15",
@@ -60,6 +63,7 @@
         "clsx": "^2.1.1",
         "dotenv": "catalog:",
         "framer-motion": "^12.29.2",
+        "hono": "^4.8.2",
         "lucide-react": "^0.525.0",
         "next-themes": "^0.4.6",
         "react": "19.2.3",
@@ -85,6 +89,17 @@
         "typescript": "catalog:",
         "vite": "^7.0.2",
         "web-vitals": "^5.0.3",
+      },
+    },
+    "packages/api-types": {
+      "name": "@kineDao.com/api-types",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@kineDao.com/config": "workspace:*",
+        "typescript": "catalog:",
       },
     },
     "packages/auth": {
@@ -314,6 +329,8 @@
 
     "@hono/node-server": ["@hono/node-server@1.19.9", "", { "peerDependencies": { "hono": "^4" } }, "sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw=="],
 
+    "@hono/zod-validator": ["@hono/zod-validator@0.4.3", "", { "peerDependencies": { "hono": ">=3.9.0", "zod": "^3.19.1" } }, "sha512-xIgMYXDyJ4Hj6ekm9T9Y27s080Nl9NXHcJkOvkXPhubOLj8hZkOL8pDnnXfvCf5xEE8Q4oMFenQUZZREUY2gqQ=="],
+
     "@inquirer/ansi": ["@inquirer/ansi@1.0.2", "", {}, "sha512-S8qNSZiYzFd0wAcyG5AXCvUHC5Sr7xpZ9wZ2py9XR88jUz8wooStVx5M6dRzczbBWjic9NP7+rY0Xi7qqK/aMQ=="],
 
     "@inquirer/confirm": ["@inquirer/confirm@5.1.21", "", { "dependencies": { "@inquirer/core": "^10.3.2", "@inquirer/type": "^3.0.10" }, "peerDependencies": { "@types/node": ">=18" }, "optionalPeers": ["@types/node"] }, "sha512-KR8edRkIsUayMXV+o3Gv+q4jlhENF9nMYUZs9PA2HzrXeHI8M5uDag70U7RJn9yyiMZSbtF5/UexBtAVtZGSbQ=="],
@@ -337,6 +354,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@kineDao.com/api-types": ["@kineDao.com/api-types@workspace:packages/api-types"],
 
     "@kineDao.com/auth": ["@kineDao.com/auth@workspace:packages/auth"],
 

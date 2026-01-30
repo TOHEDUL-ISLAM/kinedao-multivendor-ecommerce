@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 import { useTranslation } from "@/hooks/use-translation";
+import type { HomePageResponse } from "@kineDao.com/api-types/catalog";
 
 // Components
 import { HeroSection } from "@/components/home/hero-section";
@@ -19,20 +20,7 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-interface HomePageData {
-  heroCarouselCampaigns: any[];
-  dealWallCampaigns: any[];
-  flashDeals: any[];
-  bestSellers: any[];
-  newArrivals: any[];
-  topCategories: any[];
-  popularBrands: any[];
-  testimonials: any[];
-  featuredCollections: any[];
-  instagramPosts: any[];
-}
-
-const EMPTY_HOME_DATA: HomePageData = {
+const EMPTY_HOME_DATA: HomePageResponse = {
   heroCarouselCampaigns: [],
   dealWallCampaigns: [],
   flashDeals: [],
@@ -45,14 +33,14 @@ const EMPTY_HOME_DATA: HomePageData = {
   instagramPosts: [],
 };
 
-async function fetchHomeData(): Promise<HomePageData> {
+async function fetchHomeData(): Promise<HomePageResponse> {
   try {
-    const response = await fetch(`${env.VITE_SERVER_URL}/api/home`);
+    const response = await api.home.$get();
     if (!response.ok) {
       console.error("[HOME] Failed to fetch home data:", response.status, response.statusText);
       return EMPTY_HOME_DATA;
     }
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error("[HOME] Failed to fetch home data:", error);
     return EMPTY_HOME_DATA;

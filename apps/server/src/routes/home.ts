@@ -19,9 +19,7 @@ import type {
   TestimonialDTO,
   FeaturedCollectionDTO,
   InstagramPostDTO,
-} from "../types/catalog";
-
-const homeRouter = new Hono();
+} from "@kineDao.com/api-types/catalog";
 
 // Helper to format product card from relational data
 function formatProductFromRelation(
@@ -74,7 +72,7 @@ function formatProductFromRelation(
 }
 
 // GET /api/home - Homepage data
-homeRouter.get("/", async (c) => {
+const homeRouter = new Hono().get("/", async (c) => {
   try {
     const now = new Date();
 
@@ -271,7 +269,7 @@ homeRouter.get("/", async (c) => {
       instagramPosts: instagramPostsDTO,
     };
 
-    return c.json(response);
+    return c.json(response, 200);
   } catch (error) {
     console.error("Error in /api/home:", error);
     return c.json(
@@ -286,3 +284,4 @@ homeRouter.get("/", async (c) => {
 });
 
 export { homeRouter };
+export type HomeRouterType = typeof homeRouter;

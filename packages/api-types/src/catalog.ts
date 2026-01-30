@@ -164,7 +164,6 @@ export interface HomePageResponse {
   newArrivals: ProductCardDTO[];
   topCategories: CategoryDTO[];
   popularBrands: BrandDTO[];
-  // New homepage content
   testimonials: TestimonialDTO[];
   featuredCollections: FeaturedCollectionDTO[];
   instagramPosts: InstagramPostDTO[];
@@ -189,6 +188,10 @@ export interface SearchSuggestResponse {
   products: Pick<ProductCardDTO, "id" | "title" | "titleBn" | "slug" | "imageUrl" | "priceAmount" | "currency">[];
   categories: Pick<CategoryDTO, "id" | "name" | "nameBn" | "slug">[];
   vendors: Pick<VendorDTO, "id" | "name" | "slug">[];
+}
+
+export interface CategoriesResponse {
+  categories: CategoryDTO[];
 }
 
 // =====================
@@ -216,6 +219,12 @@ export const searchQuerySchema = z.object({
 });
 
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
+
+export const categoriesQuerySchema = z.object({
+  scope: z.enum(["parents"]).optional(),
+});
+
+export type CategoriesQuery = z.infer<typeof categoriesQuerySchema>;
 
 // =====================
 // Category Page Types

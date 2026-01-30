@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@kineDao.com/api-types": "workspace:*",
     "@kineDao.com/auth": "workspace:*",
     "@kineDao.com/env": "workspace:*",
+    "hono": "^4.8.2",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",

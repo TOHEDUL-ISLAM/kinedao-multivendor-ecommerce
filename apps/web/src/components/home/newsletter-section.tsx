@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/hooks/use-translation";
 import { FadeInView } from "@/components/ui/motion-wrappers";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 
 type SubscriptionStatus = "idle" | "loading" | "success" | "error";
 
@@ -29,13 +29,9 @@ export const NewsletterSection = () => {
     setStatus("loading");
 
     try {
-      const response = await fetch(`${env.VITE_SERVER_URL}/api/newsletter/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+      const response = await api.newsletter.subscribe.$post({
+        json: { email: email.trim() },
       });
-
-      const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 409) {
@@ -43,7 +39,8 @@ export const NewsletterSection = () => {
           setStatus("idle");
           return;
         }
-        throw new Error(data.error || "Subscription failed");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as any).error || "Subscription failed");
       }
 
       setStatus("success");

@@ -9,12 +9,11 @@ import {
   categories,
 } from "@kineDao.com/db/schema";
 import { eq, asc } from "drizzle-orm";
-import type { ProductQuickViewDTO } from "../types/catalog";
-
-const productsRouter = new Hono();
+import type { ProductQuickViewDTO } from "@kineDao.com/api-types/catalog";
 
 // GET /api/products/:id/quick-view - Product quick view modal data
-productsRouter.get("/:id/quick-view", async (c) => {
+// GET /api/products/by-slug/:slug - Product quick view by slug
+const productsRouter = new Hono().get("/:id/quick-view", async (c) => {
   const { id } = c.req.param();
 
   // Fetch product with vendor and category
@@ -121,11 +120,9 @@ productsRouter.get("/:id/quick-view", async (c) => {
     })),
   };
 
-  return c.json(response);
-});
-
-// GET /api/products/:slug - Get product by slug (for product page)
-productsRouter.get("/by-slug/:slug", async (c) => {
+  return c.json(response, 200);
+})
+.get("/by-slug/:slug", async (c) => {
   const { slug } = c.req.param();
 
   const [productRow] = await db
@@ -228,7 +225,8 @@ productsRouter.get("/by-slug/:slug", async (c) => {
     })),
   };
 
-  return c.json(response);
+  return c.json(response, 200);
 });
 
 export { productsRouter };
+export type ProductsRouterType = typeof productsRouter;

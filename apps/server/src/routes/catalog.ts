@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -15,9 +16,7 @@ import {
   type ProductCardDTO,
   type CategoryDTO,
   type VendorDTO,
-} from "../types/catalog";
-
-const catalogRouter = new Hono();
+} from "@kineDao.com/api-types/catalog";
 
 // Helper to format product card
 async function formatProductCard(
@@ -84,15 +83,9 @@ async function formatProductCard(
 }
 
 // GET /api/catalog/products - Paginated product listing with filters
-catalogRouter.get("/products", async (c) => {
-  const query = c.req.query();
-  const parsed = catalogQuerySchema.safeParse(query);
-
-  if (!parsed.success) {
-    return c.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, 400);
-  }
-
-  const { q, category, vendor, brand, min, max, rating, sort, cursor, limit } = parsed.data;
+// GET /api/catalog/facets - Category and vendor facets with price range
+const catalogRouter = new Hono().get("/products", zValidator("query", catalogQuerySchema), async (c) => {
+  const { q, category, vendor, brand, min, max, rating, sort, cursor, limit } = c.req.valid("query");
 
   // Build conditions
   const conditions = [eq(products.isActive, true)];
@@ -272,11 +265,9 @@ catalogRouter.get("/products", async (c) => {
     total: countResult?.count || 0,
   };
 
-  return c.json(response);
-});
-
-// GET /api/catalog/facets - Filter options
-catalogRouter.get("/facets", async (c) => {
+  return c.json(response, 200);
+})
+.get("/facets", async (c) => {
   // Categories with product counts
   const categoriesData = await db
     .select({
@@ -349,7 +340,8 @@ catalogRouter.get("/facets", async (c) => {
     },
   };
 
-  return c.json(response);
+  return c.json(response, 200);
 });
 
 export { catalogRouter };
+export type CatalogRouterType = typeof catalogRouter;

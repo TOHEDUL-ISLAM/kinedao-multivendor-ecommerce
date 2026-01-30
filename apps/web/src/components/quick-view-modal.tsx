@@ -12,53 +12,10 @@ import { formatPrice, formatRating } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Overlay, softSpring } from "@/components/ui/motion-wrappers";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
+import type { ProductQuickViewDTO } from "@kineDao.com/api-types/catalog";
 
-interface ProductQuickViewData {
-  id: string;
-  title: string;
-  titleBn: string | null;
-  slug: string;
-  brand: string | null;
-  ageRange: string | null;
-  ratingAvg: number | null;
-  ratingCount: number | null;
-  shortDescription: string | null;
-  shortDescriptionBn: string | null;
-  priceAmount: number;
-  compareAtAmount: number | null;
-  currency: string;
-  isAvailable: boolean;
-  vendor: {
-    id: string;
-    name: string;
-    slug: string;
-    isVerified: boolean | null;
-  };
-  images: {
-    id: string;
-    url: string;
-    alt: string | null;
-    sortOrder: number | null;
-  }[];
-  options: {
-    id: string;
-    name: string;
-    nameBn: string | null;
-    values: string[] | null;
-    valuesBn: string[] | null;
-  }[];
-  skus: {
-    id: string;
-    sku: string;
-    optionValues: Record<string, string> | null;
-    priceAmount: number;
-    compareAtAmount: number | null;
-    currency: string;
-    stockQty: number;
-    isAvailable: boolean | null;
-  }[];
-}
+type ProductQuickViewData = ProductQuickViewDTO;
 
 export function QuickViewModal() {
   const { t, language } = useTranslation();
@@ -89,14 +46,16 @@ export function QuickViewModal() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${env.VITE_SERVER_URL}/api/products/${productId}/quick-view`);
+        const response = await api.products[":id"]["quick-view"].$get({
+          param: { id: productId },
+        });
         if (!response.ok) throw new Error("Failed to fetch product");
         const data = await response.json();
         setProduct(data);
 
         // Set default options
         const defaults: Record<string, string> = {};
-        data.options.forEach((opt: any) => {
+        data.options.forEach((opt) => {
           if (opt.values && opt.values.length > 0) {
             defaults[opt.name] = opt.values[0];
           }

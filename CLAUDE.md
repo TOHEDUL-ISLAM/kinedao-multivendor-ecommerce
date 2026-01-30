@@ -12,11 +12,12 @@ For detailed product requirements and user stories, see [initial-prd.md](initial
 
 - **Runtime**: Bun (package manager and runtime environment)
 - **Frontend**: React 19 + TanStack Start (SSR) + TanStack Router
-- **Backend**: Hono (lightweight server framework)
+- **Backend**: Hono (lightweight server framework) with Hono RPC for type-safe APIs
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Better-Auth (email + Google/Facebook OAuth)
 - **UI**: TailwindCSS 4 + shadcn/ui components
 - **Database Setup**: Supabase (local development)
+- **Type Safety**: End-to-end type safety via Hono RPC + Zod validation
 
 ## Monorepo Structure
 
@@ -29,6 +30,7 @@ kineDao.com/
 │   └── server/       # Backend API (Hono)
 ├── packages/
 │   ├── api/          # API layer / business logic
+│   ├── api-types/    # Shared API types & Zod schemas (for Hono RPC)
 │   ├── auth/         # Authentication configuration (Better-Auth)
 │   ├── db/           # Database schema & Drizzle ORM
 │   ├── config/       # Shared TypeScript config
@@ -41,8 +43,9 @@ kineDao.com/
 - `@kineDao.com/auth` - Better-Auth configuration shared between web and server
 - `@kineDao.com/env` - Environment variable schema and validation (using Zod)
 - `@kineDao.com/config` - Shared TypeScript configuration
+- `@kineDao.com/api-types` - Shared API DTOs and Zod validation schemas for type-safe RPC
 
-The web app and server both depend on `@kineDao.com/auth` for authentication. The auth package depends on `@kineDao.com/db` for database access.
+The web app and server both depend on `@kineDao.com/auth` for authentication. The auth package depends on `@kineDao.com/db` for database access. Both web and server depend on `@kineDao.com/api-types` for end-to-end type safety.
 
 ## Development Commands
 
@@ -125,11 +128,122 @@ bun run build
 
 ### Backend API
 
-- **Framework**: Hono (minimal, performant)
+- **Framework**: Hono (minimal, performant) with **Hono RPC** for end-to-end type safety
 - Entry point: [apps/server/src/index.ts](apps/server/src/index.ts)
 - CORS configured for frontend origin
 - Auth routes delegated to Better-Auth handler
-- API routes should be added to the Hono app instance
+- All API routes use **method chaining pattern** for RPC type inference
+
+#### Hono RPC Architecture
+
+This project uses **Hono RPC** to achieve full end-to-end type safety between the frontend and backend. Key components:
+
+1. **Shared Types Package** (`@kineDao.com/api-types`):
+   - Contains all API DTOs (Data Transfer Objects)
+   - Contains Zod validation schemas for requests/responses
+   - Single source of truth for API contracts
+   - Location: [packages/api-types/src/](packages/api-types/src/)
+
+2. **Server Route Pattern**:
+   - All routes use **method chaining** (`.get()`, `.post()`, etc.)
+   - All routes use `zValidator` for request validation
+   - All routes return responses with **explicit status codes**
+   - All routes export their type for RPC client
+
+3. **AppType Export**:
+   - Main server file exports `AppType` for RPC client type inference
+   - Location: [apps/server/src/index.ts](apps/server/src/index.ts)
+
+4. **RPC Client**:
+   - Type-safe client created using `hc<AppType>()` from `hono/client`
+   - Provides full autocomplete and type checking for all API calls
+   - Location: [apps/web/src/lib/api-client.ts](apps/web/src/lib/api-client.ts)
+
+#### Creating New API Endpoints
+
+When adding new API endpoints, follow this pattern:
+
+**1. Define types in `@kineDao.com/api-types`:**
+
+```typescript
+// packages/api-types/src/your-feature.ts
+import { z } from "zod";
+
+// Zod schema for request validation
+export const yourRequestSchema = z.object({
+  field: z.string(),
+  count: z.coerce.number().min(1).max(100),
+});
+
+// TypeScript types
+export interface YourResponseDTO {
+  id: string;
+  data: string[];
+}
+```
+
+**2. Create route using method chaining:**
+
+```typescript
+// apps/server/src/routes/your-feature.ts
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { yourRequestSchema, type YourResponseDTO } from "@kineDao.com/api-types/your-feature";
+
+const yourRouter = new Hono()
+  .get("/endpoint", zValidator("query", yourRequestSchema), async (c) => {
+    const validated = c.req.valid("query"); // Fully typed!
+    // ... your logic here
+    const response: YourResponseDTO = { id: "123", data: [] };
+    return c.json(response, 200); // Always explicit status codes
+  })
+  .post("/endpoint", zValidator("json", yourRequestSchema), async (c) => {
+    const validated = c.req.valid("json");
+    // ... your logic here
+    return c.json(response, 201);
+  });
+
+export { yourRouter };
+export type YourRouterType = typeof yourRouter;
+```
+
+**3. Mount route in main app:**
+
+```typescript
+// apps/server/src/index.ts
+import { yourRouter } from "./routes/your-feature";
+
+const app = new Hono()
+  // ... existing routes
+  .route("/api/your-feature", yourRouter);
+
+export type AppType = typeof app;
+```
+
+**4. Use in frontend with RPC client:**
+
+```typescript
+// apps/web/src/your-component.tsx
+import { api } from "@/lib/api-client";
+import type { YourResponseDTO } from "@kineDao.com/api-types/your-feature";
+
+const response = await api["your-feature"].endpoint.$get({
+  query: { field: "value", count: "10" }, // Type-safe!
+});
+
+if (response.ok) {
+  const data: YourResponseDTO = await response.json(); // Fully typed!
+}
+```
+
+**Important RPC Guidelines:**
+- ✅ Always use method chaining (`.get()`, `.post()`) on routes
+- ✅ Always use `zValidator` for request validation
+- ✅ Always return explicit status codes: `c.json(data, 200)`
+- ✅ Always export router type: `export type XxxRouterType = typeof xxxRouter`
+- ✅ Share types via `@kineDao.com/api-types` package
+- ❌ Never use `c.notFound()` - use `c.json({ error: "Not found" }, 404)` instead
+- ❌ Never use native `fetch()` on frontend - always use RPC client (`api.*`)
 
 ### Environment Variables
 
@@ -170,7 +284,18 @@ The MVP requires **Bangla/English toggle** for all user-facing text. Implement i
 
 5. **Middleware**: TanStack Start middleware can be added in [apps/web/src/middleware/](apps/web/src/middleware/) for route protection, logging, etc.
 
-6. **API Integration**: The web app should call the Hono backend API at `http://localhost:3000` during development. Use TanStack Query for data fetching.
+6. **API Integration**: The web app uses the **Hono RPC client** for all API calls. Never use native `fetch()` - always use the typed `api` client from [apps/web/src/lib/api-client.ts](apps/web/src/lib/api-client.ts). Use TanStack Query for data fetching with the RPC client.
+
+   ```typescript
+   // ❌ DON'T: Use native fetch
+   const response = await fetch(`${env.VITE_SERVER_URL}/api/products`);
+
+   // ✅ DO: Use RPC client
+   import { api } from "@/lib/api-client";
+   const response = await api.products.$get(); // Fully typed!
+   ```
+
+7. **Hono RPC Benefits**: The RPC setup provides end-to-end type safety, IDE autocomplete for all API routes, compile-time errors when endpoints change, and runtime validation with Zod schemas. This ensures the frontend and backend always stay in sync.
 
 ## Project Context
 

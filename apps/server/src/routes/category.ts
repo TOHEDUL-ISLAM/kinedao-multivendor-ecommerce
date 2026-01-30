@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -14,9 +15,7 @@ import {
   type ProductCardDTO,
   type BrandFacet,
   type AgeRangeFacet,
-} from "../types/catalog";
-
-const categoryRouter = new Hono();
+} from "@kineDao.com/api-types/catalog";
 
 // Standard age range options for filtering
 const AGE_RANGE_OPTIONS = [
@@ -93,16 +92,9 @@ async function formatProductCard(
 }
 
 // GET /api/category/:slug - Category page with products, pagination, and facets
-categoryRouter.get("/:slug", async (c) => {
+const categoryRouter = new Hono().get("/:slug", zValidator("query", categoryPageQuerySchema), async (c) => {
   const { slug } = c.req.param();
-  const query = c.req.query();
-  const parsed = categoryPageQuerySchema.safeParse(query);
-
-  if (!parsed.success) {
-    return c.json({ error: "Invalid query parameters", details: parsed.error.flatten() }, 400);
-  }
-
-  const { page, limit, sort, brand, minPrice, maxPrice, ageRange } = parsed.data;
+  const { page, limit, sort, brand, minPrice, maxPrice, ageRange } = c.req.valid("query");
 
   // Fetch the category
   const [categoryRow] = await db
@@ -283,7 +275,8 @@ categoryRouter.get("/:slug", async (c) => {
     },
   };
 
-  return c.json(response);
+  return c.json(response, 200);
 });
 
 export { categoryRouter };
+export type CategoryRouterType = typeof categoryRouter;

@@ -1,21 +1,13 @@
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
 import { db } from "@kineDao.com/db";
 import { products, productImages, productSkus, vendors, categories } from "@kineDao.com/db/schema";
 import { eq, or, ilike, and, asc } from "drizzle-orm";
-import { searchQuerySchema, type SearchSuggestResponse } from "../types/catalog";
-
-const searchRouter = new Hono();
+import { searchQuerySchema, type SearchSuggestResponse } from "@kineDao.com/api-types/catalog";
 
 // GET /api/search/suggest - Typeahead search suggestions
-searchRouter.get("/suggest", async (c) => {
-  const query = c.req.query();
-  const parsed = searchQuerySchema.safeParse(query);
-
-  if (!parsed.success) {
-    return c.json({ error: "Invalid query", details: parsed.error.flatten() }, 400);
-  }
-
-  const { q, limit } = parsed.data;
+const searchRouter = new Hono().get("/suggest", zValidator("query", searchQuerySchema), async (c) => {
+  const { q, limit } = c.req.valid("query");
   const searchPattern = `%${q}%`;
 
   // Search products
@@ -99,7 +91,8 @@ searchRouter.get("/suggest", async (c) => {
     vendors: vendorResults,
   };
 
-  return c.json(response);
+  return c.json(response, 200);
 });
 
 export { searchRouter };
+export type SearchRouterType = typeof searchRouter;

@@ -14,35 +14,33 @@ import { authRouter } from "./routes/auth";
 import { newsletterRouter } from "./routes/newsletter";
 import { categoryRouter } from "./routes/category";
 
-const app = new Hono();
+// Create main app with method chaining for RPC
+const app = new Hono()
+  .use(logger())
+  .use(
+    "/*",
+    cors({
+      origin: env.CORS_ORIGIN,
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    })
+  )
+  // Mount API routes
+  .route("/api/auth", authRouter)
+  .route("/api/home", homeRouter)
+  .route("/api/catalog", catalogRouter)
+  .route("/api/categories", categoriesRouter)
+  .route("/api/products", productsRouter)
+  .route("/api/search", searchRouter)
+  .route("/api/newsletter", newsletterRouter)
+  .route("/api/category", categoryRouter)
+  // Health check
+  .get("/", (c) => c.text("OK"));
 
-app.use(logger());
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-
-// Auth routes (custom controllers first)
-app.route("/api/auth", authRouter);
+// Better-Auth handler (handled separately, not part of RPC)
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-// API routes
-app.route("/api/home", homeRouter);
-app.route("/api/catalog", catalogRouter);
-app.route("/api/categories", categoriesRouter);
-app.route("/api/products", productsRouter);
-app.route("/api/search", searchRouter);
-app.route("/api/newsletter", newsletterRouter);
-app.route("/api/category", categoryRouter);
-
-// Health check
-app.get("/", (c) => {
-  return c.text("OK");
-});
-
+// Export app type for RPC client
+export type AppType = typeof app;
 export default app;

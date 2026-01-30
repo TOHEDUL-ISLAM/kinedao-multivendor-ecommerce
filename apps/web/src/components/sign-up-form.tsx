@@ -5,7 +5,7 @@ import { useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
-import { env } from "@/lib/env";
+import { api } from "@/lib/api-client";
 
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
@@ -40,23 +40,18 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        const response = await fetch(`${env.VITE_SERVER_URL}/api/auth/sign-up`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
+        const response = await api.auth["sign-up"].$post({
+          json: {
             email: value.email,
             password: value.password,
             name: value.name,
             callbackURL: `${window.location.origin}/login`,
-          }),
+          },
         });
 
         if (!response.ok) {
-          const data = await response.json().catch(() => null);
-          setServerError(data?.message || "Registration failed. Please try again.");
+          const data = await response.json().catch(() => ({}));
+          setServerError((data as any)?.message || "Registration failed. Please try again.");
           return;
         }
 
