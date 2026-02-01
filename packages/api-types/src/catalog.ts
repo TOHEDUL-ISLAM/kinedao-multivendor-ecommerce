@@ -288,3 +288,86 @@ export const categoryPageQuerySchema = z.object({
 });
 
 export type CategoryPageQuery = z.infer<typeof categoryPageQuerySchema>;
+
+// =====================
+// Mega Menu & Category Tree Types
+// =====================
+
+// Product card for mega menu featured products
+export interface MegaMenuProductDTO {
+  id: string;
+  title: string;
+  titleBn: string | null;
+  slug: string;
+  imageUrl: string | null;
+  priceAmount: number;
+  currency: string;
+  isNew: boolean | null;
+}
+
+// Nested tree node for mega menu
+export interface CategoryTreeNodeDTO {
+  id: string;
+  name: string;
+  nameBn: string | null;
+  slug: string;
+  iconKey: string | null;
+  imageUrl: string | null;
+  depth: number;
+  productCount: number;
+  children: CategoryTreeNodeDTO[];
+  featuredProducts?: MegaMenuProductDTO[];
+}
+
+// Category tree response
+export interface CategoryTreeResponse {
+  tree: CategoryTreeNodeDTO[];
+  lastUpdated: string;
+}
+
+// Category with metrics for recommendations
+export interface CategoryWithMetricsDTO extends CategoryDTO {
+  trendingScore?: number;
+  popularityScore?: number;
+  momChoiceWeight?: number;
+  editorPickWeight?: number;
+}
+
+// Recommendation response
+export interface CategoryRecommendationsResponse {
+  popularCategories: CategoryDTO[];
+  momsChoice: CategoryDTO[];
+  trendingCategories: CategoryDTO[];
+  editorPicks: CategoryDTO[];
+}
+
+// Featured products for a category (mega menu panel)
+export interface CategoryFeaturedProductsResponse {
+  categoryId: string;
+  products: MegaMenuProductDTO[];
+}
+
+// =====================
+// Mega Menu Query Schemas
+// =====================
+
+export const categoryTreeQuerySchema = z.object({
+  maxDepth: z.coerce.number().int().min(1).max(4).default(3),
+  includeProductCount: z.enum(["true", "false"]).default("true"),
+  includeFeaturedProducts: z.enum(["true", "false"]).default("false"),
+});
+
+export type CategoryTreeQuery = z.infer<typeof categoryTreeQuerySchema>;
+
+export const recommendationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(20).default(8),
+  season: z.string().optional(),
+});
+
+export type RecommendationsQuery = z.infer<typeof recommendationsQuerySchema>;
+
+export const featuredProductsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(10).default(4),
+});
+
+export type FeaturedProductsQuery = z.infer<typeof featuredProductsQuerySchema>;

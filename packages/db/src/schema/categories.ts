@@ -7,6 +7,7 @@ import {
   uuid,
   varchar,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 // Categories table - hierarchical product categories
@@ -23,11 +24,21 @@ export const categories = pgTable(
     iconKey: varchar("icon_key", { length: 50 }), // lucide icon name
     imageUrl: text("image_url"),
     sortOrder: integer("sort_order").default(0),
+    // Hierarchical navigation fields
+    depth: integer("depth").default(0), // 0=root, 1=child, 2=grandchild
+    path: text("path"), // Materialized path: "/uuid1/uuid2"
+    // Mega menu display flags
+    isPopular: boolean("is_popular").default(false),
+    isFeatured: boolean("is_featured").default(false),
+    displayInMegaMenu: boolean("display_in_mega_menu").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("categories_slug_idx").on(table.slug),
     index("categories_parent_idx").on(table.parentId),
+    index("categories_depth_idx").on(table.depth),
+    index("categories_path_idx").on(table.path),
+    index("categories_parent_sort_idx").on(table.parentId, table.sortOrder),
   ]
 );
 

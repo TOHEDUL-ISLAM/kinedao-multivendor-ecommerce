@@ -51,6 +51,20 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        soft: "0 2px 8px rgba(0, 0, 0, 0.08)",
+        dropdown: "0 4px 20px rgba(0, 0, 0, 0.12)",
+        card: "0 2px 12px rgba(0, 0, 0, 0.1)",
+      },
+      keyframes: {
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "slide-down": "slide-down 0.2s ease-out",
+      },
     },
   },
   plugins: [],

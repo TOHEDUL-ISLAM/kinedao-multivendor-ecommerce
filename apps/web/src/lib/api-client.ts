@@ -15,4 +15,5 @@ export const api = {
   newsletter: apiClient.api.newsletter,
   category: apiClient.api.category,
   auth: apiClient.api.auth,
+  recommendations: apiClient.api.recommendations,
 };

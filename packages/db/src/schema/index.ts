@@ -7,5 +7,9 @@ export * from "./categories";
 export * from "./products";
 export * from "./campaigns";
 
+// Category recommendation & mega menu schemas
+export * from "./category-metrics";
+export * from "./mega-menu";
+
 // Homepage content schemas
 export * from "./home";

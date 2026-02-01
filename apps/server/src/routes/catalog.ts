@@ -9,7 +9,7 @@ import {
   vendors,
   categories,
 } from "@kineDao.com/db/schema";
-import { eq, and, gte, sql, asc, desc, or, ilike } from "drizzle-orm";
+import { eq, and, gte, sql, asc, desc, or, ilike, inArray } from "drizzle-orm";
 import {
   catalogQuerySchema,
   type CatalogProductsResponse,
@@ -128,36 +128,54 @@ const catalogRouter = new Hono().get(
     );
   }
 
-  // Category filter (by slug)
+  // Category filter (by comma-separated slugs, supports multiple selections)
   if (category) {
-    const categoryRow = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.slug, category))
-      .limit(1);
+    const categorySlugs = category.split(",").filter(Boolean);
 
-    if (categoryRow[0]) {
-      // Get category and all child categories
-      const childCategories = await db
+    if (categorySlugs.length > 0) {
+      const categoryRows = await db
         .select()
         .from(categories)
-        .where(eq(categories.parentId, categoryRow[0].id));
+        .where(inArray(categories.slug, categorySlugs));
 
-      const categoryIds = [categoryRow[0].id, ...childCategories.map((c) => c.id)];
-      conditions.push(sql`${products.categoryId} IN ${categoryIds}`);
+      if (categoryRows.length > 0) {
+        // Get all category IDs and their child categories
+        const allCategoryIds = new Set<string>();
+
+        for (const cat of categoryRows) {
+          allCategoryIds.add(cat.id);
+
+          // Get child categories
+          const childCategories = await db
+            .select()
+            .from(categories)
+            .where(eq(categories.parentId, cat.id));
+
+          childCategories.forEach((c) => allCategoryIds.add(c.id));
+        }
+
+        if (allCategoryIds.size > 0) {
+          const categoryIdArray = Array.from(allCategoryIds);
+          conditions.push(inArray(products.categoryId, categoryIdArray));
+        }
+      }
     }
   }
 
-  // Vendor filter (by slug)
+  // Vendor filter (by comma-separated slugs, supports multiple selections)
   if (vendor) {
-    const vendorRow = await db
-      .select()
-      .from(vendors)
-      .where(eq(vendors.slug, vendor))
-      .limit(1);
+    const vendorSlugs = vendor.split(",").filter(Boolean);
 
-    if (vendorRow[0]) {
-      conditions.push(eq(products.vendorId, vendorRow[0].id));
+    if (vendorSlugs.length > 0) {
+      const vendorRows = await db
+        .select()
+        .from(vendors)
+        .where(inArray(vendors.slug, vendorSlugs));
+
+      if (vendorRows.length > 0) {
+        const vendorIds = vendorRows.map((v) => v.id);
+        conditions.push(inArray(products.vendorId, vendorIds));
+      }
     }
   }
 

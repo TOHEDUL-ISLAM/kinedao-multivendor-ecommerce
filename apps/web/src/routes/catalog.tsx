@@ -14,8 +14,8 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 // Search params schema
 const catalogSearchSchema = z.object({
   q: z.string().optional(),
-  category: z.string().optional(),
-  vendor: z.string().optional(),
+  category: z.string().optional(), // Comma-separated list of category slugs
+  vendor: z.string().optional(), // Comma-separated list of vendor slugs
   brand: z.string().optional(),
   min: z.coerce.number().optional(),
   max: z.coerce.number().optional(),
@@ -40,8 +40,8 @@ async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promi
   const response = await api.catalog.products.$get({
     query: {
       q: params.q,
-      category: params.category,
-      vendor: params.vendor,
+      category: params.category, // API expects comma-separated categories
+      vendor: params.vendor, // API expects comma-separated vendors
       brand: params.brand,
       min: params.min?.toString(),
       max: params.max?.toString(),
@@ -111,11 +111,11 @@ function CatalogPage() {
 
   // Filter handlers
   const handleCategoryChange = (slugs: string[]) => {
-    updateSearch({ category: slugs[0] || undefined });
+    updateSearch({ category: slugs.length > 0 ? slugs.join(",") : undefined });
   };
 
   const handleVendorChange = (slugs: string[]) => {
-    updateSearch({ vendor: slugs[0] || undefined });
+    updateSearch({ vendor: slugs.length > 0 ? slugs.join(",") : undefined });
   };
 
   const handlePriceChange = (min?: number, max?: number) => {
@@ -146,8 +146,8 @@ function CatalogPage() {
     search.rating !== undefined;
 
   // Selected values for sidebar
-  const selectedCategories = search.category ? [search.category] : [];
-  const selectedVendors = search.vendor ? [search.vendor] : [];
+  const selectedCategories = search.category?.split(",").filter(Boolean) ?? [];
+  const selectedVendors = search.vendor?.split(",").filter(Boolean) ?? [];
 
   return (
     <div className="min-h-screen">

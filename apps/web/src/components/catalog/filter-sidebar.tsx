@@ -192,8 +192,16 @@ export function FilterSidebar({
   };
 
   const handlePriceSubmit = () => {
-    const min = minPriceInput ? parseInt(minPriceInput) * 100 : undefined;
-    const max = maxPriceInput ? parseInt(maxPriceInput) * 100 : undefined;
+    const minNum = minPriceInput ? parseFloat(minPriceInput) : null;
+    const maxNum = maxPriceInput ? parseFloat(maxPriceInput) : null;
+
+    // Validate price inputs
+    if (minNum !== null && minNum < 0) return;
+    if (maxNum !== null && maxNum < 0) return;
+    if (minNum !== null && maxNum !== null && minNum > maxNum) return;
+
+    const min = minNum ? Math.round(minNum * 100) : undefined;
+    const max = maxNum ? Math.round(maxNum * 100) : undefined;
     onPriceChange(min, max);
   };
 
@@ -230,51 +238,59 @@ export function FilterSidebar({
             {parentCategories.map((category) => {
               const displayName =
                 language === "bn" && category.nameBn ? category.nameBn : category.name;
+              const isSelected = selectedCategories.includes(category.slug);
               const children = [...(childCategoriesMap[category.id] || [])].sort(
                 (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
               );
 
               return (
                 <div key={category.id}>
-                  <label className="flex items-center gap-2 cursor-pointer group">
+                  <button
+                    onClick={() => handleCategoryToggle(category.slug)}
+                    className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
+                  >
                     <Checkbox
-                      checked={selectedCategories.includes(category.slug)}
+                      checked={isSelected}
                       onCheckedChange={() => handleCategoryToggle(category.slug)}
+                      className="pointer-events-none"
                     />
-                    <span className="text-sm group-hover:text-primary transition-colors">
+                    <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
                       {displayName}
                     </span>
                     {category.productCount !== undefined && (
-                      <span className="text-xs text-muted-foreground ml-auto">
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">
                         ({category.productCount})
                       </span>
                     )}
-                  </label>
+                  </button>
 
                   {/* Child categories */}
                   {children.length > 0 && (
-                    <div className="ml-6 mt-1 space-y-1">
+                    <div className="ml-6 mt-1.5 space-y-1">
                       {children.map((child) => {
                         const childName =
                           language === "bn" && child.nameBn ? child.nameBn : child.name;
+                        const isChildSelected = selectedCategories.includes(child.slug);
                         return (
-                          <label
+                          <button
                             key={child.id}
-                            className="flex items-center gap-2 cursor-pointer group"
+                            onClick={() => handleCategoryToggle(child.slug)}
+                            className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
                           >
                             <Checkbox
-                              checked={selectedCategories.includes(child.slug)}
+                              checked={isChildSelected}
                               onCheckedChange={() => handleCategoryToggle(child.slug)}
+                              className="pointer-events-none"
                             />
-                            <span className="text-sm group-hover:text-primary transition-colors">
+                            <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
                               {childName}
                             </span>
                             {child.productCount !== undefined && (
-                              <span className="text-xs text-muted-foreground ml-auto">
+                              <span className="text-xs text-muted-foreground ml-auto shrink-0">
                                 ({child.productCount})
                               </span>
                             )}
-                          </label>
+                          </button>
                         );
                       })}
                     </div>
@@ -289,23 +305,25 @@ export function FilterSidebar({
       {/* Brands */}
       {brands.length > 0 && (
         <AccordionSection title={t("catalog.brands")}>
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+          <div className="space-y-1 max-h-48 overflow-y-auto pr-2">
             {brands.map((brand) => (
-              <label
+              <button
                 key={brand.name}
-                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => handleBrandToggle(brand.name)}
+                className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
               >
                 <Checkbox
                   checked={selectedBrands.includes(brand.name)}
                   onCheckedChange={() => handleBrandToggle(brand.name)}
+                  className="pointer-events-none"
                 />
-                <span className="text-sm group-hover:text-primary transition-colors truncate">
+                <span className="text-sm group-hover:text-primary transition-colors truncate flex-1 text-left">
                   {brand.name}
                 </span>
-                <span className="text-xs text-muted-foreground ml-auto">
+                <span className="text-xs text-muted-foreground ml-auto shrink-0">
                   ({brand.count})
                 </span>
-              </label>
+              </button>
             ))}
           </div>
         </AccordionSection>
@@ -314,25 +332,28 @@ export function FilterSidebar({
       {/* Age Range */}
       {ageRanges.length > 0 && (
         <AccordionSection title={t("catalog.ageRange")}>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {ageRanges.map((option) => {
               const displayLabel = language === "bn" ? option.labelBn : option.label;
+              const isSelected = selectedAgeRanges.includes(option.value);
               return (
-                <label
+                <button
                   key={option.value}
-                  className="flex items-center gap-2 cursor-pointer group"
+                  onClick={() => handleAgeRangeToggle(option.value)}
+                  className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
                 >
                   <Checkbox
-                    checked={selectedAgeRanges.includes(option.value)}
+                    checked={isSelected}
                     onCheckedChange={() => handleAgeRangeToggle(option.value)}
+                    className="pointer-events-none"
                   />
-                  <span className="text-sm group-hover:text-primary transition-colors">
+                  <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
                     {displayLabel}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-auto">
+                  <span className="text-xs text-muted-foreground ml-auto shrink-0">
                     ({option.count})
                   </span>
-                </label>
+                </button>
               );
             })}
           </div>
@@ -342,26 +363,33 @@ export function FilterSidebar({
       {/* Price Range */}
       <AccordionSection title={t("catalog.priceRange")}>
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <input
-                type="number"
-                placeholder={t("common.from")}
-                value={minPriceInput}
-                onChange={(e) => setMinPriceInput(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <span className="text-muted-foreground">-</span>
-            <div className="flex-1">
-              <input
-                type="number"
-                placeholder={t("common.to")}
-                value={maxPriceInput}
-                onChange={(e) => setMaxPriceInput(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("common.from")}
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              value={minPriceInput}
+              onChange={(e) => setMinPriceInput(e.target.value)}
+              min="0"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("common.to")}
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              value={maxPriceInput}
+              onChange={(e) => setMaxPriceInput(e.target.value)}
+              min="0"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
           <Button size="sm" onClick={handlePriceSubmit} className="w-full">
             Apply
@@ -375,18 +403,22 @@ export function FilterSidebar({
 
       {/* Rating */}
       {showRating && onRatingChange && (
-        <AccordionSection title={t("catalog.rating")}>
-          <div className="space-y-2">
+        <AccordionSection title={t("catalog.rating")} defaultOpen={false}>
+          <div className="space-y-3">
             {ratingOptions.map((rating) => (
-              <label
+              <button
                 key={rating}
-                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() =>
+                  onRatingChange(selectedRating === rating ? undefined : rating)
+                }
+                className="w-full flex items-center gap-3 cursor-pointer group hover:opacity-80 transition-opacity"
               >
                 <Checkbox
                   checked={selectedRating === rating}
                   onCheckedChange={() =>
                     onRatingChange(selectedRating === rating ? undefined : rating)
                   }
+                  className="pointer-events-none"
                 />
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
@@ -402,9 +434,9 @@ export function FilterSidebar({
                   ))}
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {t("catalog.ratingUp")}
+                  {rating} {t("catalog.ratingUp")}
                 </span>
-              </label>
+              </button>
             ))}
           </div>
         </AccordionSection>
@@ -413,25 +445,27 @@ export function FilterSidebar({
       {/* Vendors */}
       {showVendors && vendors.length > 0 && (
         <AccordionSection title={t("catalog.vendors")} defaultOpen={false}>
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+          <div className="space-y-1 max-h-48 overflow-y-auto pr-2">
             {vendors.slice(0, 15).map((vendor) => (
-              <label
+              <button
                 key={vendor.id}
-                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => handleVendorToggle(vendor.slug)}
+                className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
               >
                 <Checkbox
                   checked={selectedVendors.includes(vendor.slug)}
                   onCheckedChange={() => handleVendorToggle(vendor.slug)}
+                  className="pointer-events-none"
                 />
-                <span className="text-sm group-hover:text-primary transition-colors truncate">
+                <span className="text-sm group-hover:text-primary transition-colors truncate flex-1 text-left">
                   {vendor.name}
                 </span>
                 {vendor.productCount !== undefined && (
-                  <span className="text-xs text-muted-foreground ml-auto">
+                  <span className="text-xs text-muted-foreground ml-auto shrink-0">
                     ({vendor.productCount})
                   </span>
                 )}
-              </label>
+              </button>
             ))}
           </div>
         </AccordionSection>

@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
-import { 
-  ShoppingCart, 
-  Heart, 
-  User, 
-  Menu, 
-  Sun, 
-  Moon, 
-  Baby, // Added Baby icon import
-  ChevronDown,
+import {
+  ShoppingCart,
+  Heart,
+  User,
+  Menu,
+  Sun,
+  Moon,
+  Baby,
   MapPin,
   Phone,
   Zap,
@@ -19,22 +17,11 @@ import {
   TrendingUp,
   Store,
 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { MegaMenu, MegaMenuMobile } from "@/components/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
-import { useCategories } from "@/hooks/use-categories";
 import { useCartStore } from "@/stores/cart-store";
 import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
@@ -42,21 +29,15 @@ import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
 import { authClient } from "@/lib/auth-client";
 import { SearchBar } from "./search-bar";
-import { CATEGORY_ICON_MAP } from "@/lib/category-icons";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const cartCount = useCartStore((state) => state.getItemCount());
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-    isError: categoriesError,
-  } = useCategories("parents");
-  
+
   const { data: session, isPending } = authClient.useSession();
   const isLoggedIn = !!session;
 
@@ -171,59 +152,13 @@ export default function Header() {
               )}
 
               {/* Mobile menu */}
-              <Sheet>
-                <SheetTrigger asChild>
+              <MegaMenuMobile
+                trigger={
                   <Button variant="ghost" size="icon" className="md:hidden rounded-full">
                     <Menu className="w-5 h-5" />
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80">
-                  <div className="flex flex-col gap-6 mt-6">
-                    <nav className="flex flex-col gap-2">
-                      {categoriesLoading ? (
-                        [...Array(6)].map((_, i) => (
-                          <Skeleton key={i} className="h-12 w-full rounded-full" />
-                        ))
-                      ) : categoriesError ? (
-                        <div className="text-sm text-muted-foreground px-3 py-2">
-                          {t("common.error")}
-                        </div>
-                      ) : (
-                        categories.map((category) => {
-                          const displayName =
-                            language === "bn" && category.nameBn
-                              ? category.nameBn
-                              : category.name;
-                          const Icon =
-                            CATEGORY_ICON_MAP[category.iconKey || "default"] ||
-                            CATEGORY_ICON_MAP.default;
-                          return (
-                            <Button
-                              key={category.id}
-                              variant="ghost"
-                              className="justify-start gap-2 h-12 text-base"
-                              asChild
-                            >
-                              <Link to="/catalog" search={{ category: category.slug }}>
-                                <Icon className="h-4 w-4 text-primary" />
-                                {displayName}
-                              </Link>
-                            </Button>
-                          );
-                        })
-                      )}
-                      {!isLoggedIn && !isPending && (
-                        <Button 
-                          className="mt-4 rounded-full" 
-                          onClick={() => setIsAuthModalOpen(true)}
-                        >
-                          Sign In / Sign Up
-                        </Button>
-                      )}
-                    </nav>
-                  </div>
-                </SheetContent>
-              </Sheet>
+                }
+              />
             </div>
           </div>
         </div>
@@ -235,50 +170,10 @@ export default function Header() {
 
         {/* Category nav */}
         <nav className="border-t border-border bg-background/50 backdrop-blur-sm hidden md:block">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className={cn(
-                    buttonVariants({ variant: "secondary" }),
-                    "gap-2 rounded-full font-semibold shrink-0"
-                  )}
-                >
-                    <Menu className="w-4 h-4" />
-                    {t("common.all")} {t("catalog.categories")}
-                    <ChevronDown className="w-4 h-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  {categoriesLoading ? (
-                    <DropdownMenuItem disabled>{t("common.loading")}</DropdownMenuItem>
-                  ) : categoriesError ? (
-                    <DropdownMenuItem disabled>{t("common.error")}</DropdownMenuItem>
-                  ) : (
-                    categories.map((category) => {
-                      const displayName =
-                        language === "bn" && category.nameBn
-                          ? category.nameBn
-                          : category.name;
-                      const Icon =
-                        CATEGORY_ICON_MAP[category.iconKey || "default"] ||
-                        CATEGORY_ICON_MAP.default;
-                      return (
-                        <DropdownMenuItem
-                          key={category.id}
-                          className="gap-2 cursor-pointer"
-                          asChild
-                        >
-                          <Link to="/catalog" search={{ category: category.slug }}>
-                            <Icon className="h-4 w-4 text-primary" />
-                            {displayName}
-                          </Link>
-                        </DropdownMenuItem>
-                      );
-                    })
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="container mx-auto px-4 flex items-center gap-1 py-2">
+            <MegaMenu />
 
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1">
               <Link to="/catalog" search={{ sort: "price_asc" }}>
                 <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-yellow/20 hover:text-orange-600 transition-colors">
                   <Zap className="w-4 h-4 text-yellow-500" />

@@ -126,6 +126,14 @@ export const translations = {
     "catalog.brands": "Brands",
     "catalog.ageRange": "Age Range",
     "catalog.sortNameAZ": "Name: A to Z",
+    "catalog.hoverCategory": "Hover over a category to see subcategories",
+    "catalog.noSubcategories": "No subcategories available",
+    "catalog.featuredProducts": "Featured Products",
+    "catalog.noFeaturedProducts": "No featured products",
+    "catalog.recommended": "Recommended",
+
+    // Common
+    "common.viewAll": "View All",
 
     // Category Page
     "category.productsFound": "{count} products",
@@ -448,6 +456,14 @@ export const translations = {
     "catalog.brands": "ব্র্যান্ড",
     "catalog.ageRange": "বয়স পরিসীমা",
     "catalog.sortNameAZ": "নাম: ক থেকে ল",
+    "catalog.hoverCategory": "সাবক্যাটাগরি দেখতে ক্যাটাগরির উপর হোভার করুন",
+    "catalog.noSubcategories": "কোনো সাবক্যাটাগরি নেই",
+    "catalog.featuredProducts": "ফিচার্ড পণ্য",
+    "catalog.noFeaturedProducts": "কোনো ফিচার্ড পণ্য নেই",
+    "catalog.recommended": "প্রস্তাবিত",
+
+    // Common
+    "common.viewAll": "সব দেখুন",
 
     // Category Page
     "category.productsFound": "{count}টি পণ্য",

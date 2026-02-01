@@ -14,6 +14,7 @@ import { searchRouter } from "./routes/search";
 import { authRouter } from "./routes/auth";
 import { newsletterRouter } from "./routes/newsletter";
 import { categoryRouter } from "./routes/category";
+import { recommendationsRouter } from "./routes/recommendations";
 import { openAPIRouteHandler } from 'hono-openapi';
 // Create main app with method chaining for RPC
 const app = new Hono()
@@ -37,6 +38,7 @@ const app = new Hono()
   .route("/api/search", searchRouter)
   .route("/api/newsletter", newsletterRouter)
   .route("/api/category", categoryRouter)
+  .route("/api/recommendations", recommendationsRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
