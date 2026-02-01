@@ -1,14 +1,63 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import { newsletterSubscribers } from "@kineDao.com/db/schema";
 import { eq } from "drizzle-orm";
 import { newsletterSubscribeSchema, newsletterUnsubscribeSchema } from "@kineDao.com/api-types/newsletter";
+import { z } from "zod";
 
 // POST /api/newsletter/subscribe - Subscribe to newsletter
 // POST /api/newsletter/unsubscribe - Unsubscribe from newsletter
 const newsletterRouter = new Hono()
-  .post("/subscribe", zValidator("json", newsletterSubscribeSchema), async (c) => {
+  .post(
+    "/subscribe",
+    describeRoute({
+      tags: ["Newsletter"],
+      summary: "Subscribe to newsletter",
+      description: "Subscribe an email address to the newsletter. Reactivates subscription if previously unsubscribed.",
+      responses: {
+        200: {
+          description: "Successfully subscribed or reactivated",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  success: z.boolean(),
+                  message: z.string(),
+                })
+              ),
+            },
+          },
+        },
+        409: {
+          description: "Already subscribed",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  error: z.string(),
+                })
+              ),
+            },
+          },
+        },
+        500: {
+          description: "Server error",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  error: z.string(),
+                })
+              ),
+            },
+          },
+        },
+      },
+    }),
+    zValidator("json", newsletterSubscribeSchema),
+    async (c) => {
     try {
       const { email } = c.req.valid("json");
       const normalizedEmail = email.toLowerCase().trim();
@@ -46,7 +95,54 @@ const newsletterRouter = new Hono()
       return c.json({ error: "Failed to subscribe" }, 500);
     }
   })
-  .post("/unsubscribe", zValidator("json", newsletterUnsubscribeSchema), async (c) => {
+  .post(
+    "/unsubscribe",
+    describeRoute({
+      tags: ["Newsletter"],
+      summary: "Unsubscribe from newsletter",
+      description: "Unsubscribe an email address from the newsletter.",
+      responses: {
+        200: {
+          description: "Successfully unsubscribed",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  success: z.boolean(),
+                  message: z.string(),
+                })
+              ),
+            },
+          },
+        },
+        404: {
+          description: "Email not found",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  error: z.string(),
+                })
+              ),
+            },
+          },
+        },
+        500: {
+          description: "Server error",
+          content: {
+            "application/json": {
+              schema: resolver(
+                z.object({
+                  error: z.string(),
+                })
+              ),
+            },
+          },
+        },
+      },
+    }),
+    zValidator("json", newsletterUnsubscribeSchema),
+    async (c) => {
     try {
       const { email } = c.req.valid("json");
       const normalizedEmail = email.toLowerCase().trim();

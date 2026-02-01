@@ -11,12 +11,15 @@
     "seed": "bun run src/seed.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.3.0",
+    "@hono/standard-validator": "^0.2.2",
+    "@hono/zod-openapi": "^1.2.0",
     "@hono/zod-validator": "^0.4.1",
     "@kineDao.com/api-types": "workspace:*",
     "@kineDao.com/auth": "workspace:*",
     "@kineDao.com/db": "workspace:*",
     "@kineDao.com/env": "workspace:*",
-    "@faker-js/faker": "^9.3.0",
+    "@scalar/hono-api-reference": "^0.9.39",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",

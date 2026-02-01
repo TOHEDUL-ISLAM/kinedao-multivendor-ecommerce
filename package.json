@@ -30,8 +30,10 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@hono/standard-validator": "^0.2.2",
     "@kineDao.com/env": "workspace:*",
     "dotenv": "catalog:",
+    "hono-openapi": "^1.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {

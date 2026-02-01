@@ -3,7 +3,8 @@ import { env } from "@kineDao.com/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-
+import { secureHeaders } from 'hono/secure-headers'
+import { Scalar } from '@scalar/hono-api-reference'
 // Import route modules
 import { homeRouter } from "./routes/home";
 import { catalogRouter } from "./routes/catalog";
@@ -13,10 +14,11 @@ import { searchRouter } from "./routes/search";
 import { authRouter } from "./routes/auth";
 import { newsletterRouter } from "./routes/newsletter";
 import { categoryRouter } from "./routes/category";
-
+import { openAPIRouteHandler } from 'hono-openapi';
 // Create main app with method chaining for RPC
 const app = new Hono()
   .use(logger())
+  .use(secureHeaders())
   .use(
     "/*",
     cors({
@@ -36,10 +38,33 @@ const app = new Hono()
   .route("/api/newsletter", newsletterRouter)
   .route("/api/category", categoryRouter)
   // Health check
-  .get("/", (c) => c.text("OK"));
+  .get("/", (c) => c.text("OK"))
+  .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 
-// Better-Auth handler (handled separately, not part of RPC)
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+app.get(
+  '/openapi',
+  openAPIRouteHandler(app, {
+    documentation: {
+      info: {
+        title: 'KineDao API',
+        version: '1.0.0',
+        description: 'কিনেদাও (KineDao.com) - Multivendor baby products marketplace API with bilingual support (Bangla/English)',
+      },
+      servers: [
+        { url: 'http://localhost:3000', description: 'Local Development Server' },
+      ],
+    },
+  })
+);
+
+// Scalar API Documentation UI
+app.get(
+  '/docs',
+  Scalar({
+    url: '/openapi',
+    theme: 'purple',
+  })
+);
 
 // Export app type for RPC client
 export type AppType = typeof app;

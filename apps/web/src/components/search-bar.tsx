@@ -5,7 +5,7 @@ import { Search, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
-import { usePrefersReducedMotion, useIsMobile } from "@/hooks/use-media-query";
+import { usePrefersReducedMotion } from "@/hooks/use-media-query";
 import { useNavigate } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/format";
 import { api } from "@/lib/api-client";
@@ -20,7 +20,6 @@ interface SearchBarProps {
 export function SearchBar({ className, onClose }: SearchBarProps) {
   const { t, language } = useTranslation();
   const prefersReducedMotion = usePrefersReducedMotion();
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
@@ -218,13 +217,11 @@ export function SearchBar({ className, onClose }: SearchBarProps) {
             exit={prefersReducedMotion ? {} : { opacity: 0, y: -10 }}
             transition={softSpring}
             className={cn(
-              "absolute top-full left-0 right-0 mt-2 z-50",
-              "bg-card border border-border rounded-xl shadow-lg overflow-hidden",
-              // Mobile: full screen overlay style
-              isMobile && "fixed inset-x-4 top-auto mt-2"
+              "absolute top-full left-0 right-0 mt-2 z-[60]",
+              "bg-card border border-border rounded-xl shadow-lg overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[60dvh]"
             )}
           >
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div className="overflow-y-auto flex-1">
               {/* Products */}
               {suggestions.products.length > 0 && (
                 <div className="p-2">
@@ -325,20 +322,20 @@ export function SearchBar({ className, onClose }: SearchBarProps) {
                   })}
                 </div>
               )}
-
-              {/* Search All */}
-              {query.trim() && (
-                <div className="p-2 border-t border-border">
-                  <button
-                    onClick={handleSearch}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    <Search className="h-4 w-4" />
-                    Search for "{query}"
-                  </button>
-                </div>
-              )}
             </div>
+
+            {/* Search All */}
+            {query.trim() && (
+              <div className="p-2 border-t border-border shrink-0 bg-card">
+                <button
+                  onClick={handleSearch}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  Search for "{query}"
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

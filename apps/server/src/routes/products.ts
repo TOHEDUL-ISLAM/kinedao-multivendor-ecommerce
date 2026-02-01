@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -10,10 +11,40 @@ import {
 } from "@kineDao.com/db/schema";
 import { eq, asc } from "drizzle-orm";
 import type { ProductQuickViewDTO } from "@kineDao.com/api-types/catalog";
+import { z } from "zod";
 
 // GET /api/products/:id/quick-view - Product quick view modal data
 // GET /api/products/by-slug/:slug - Product quick view by slug
-const productsRouter = new Hono().get("/:id/quick-view", async (c) => {
+const productsRouter = new Hono().get(
+  "/:id/quick-view",
+  describeRoute({
+    tags: ["Products"],
+    summary: "Get product quick view",
+    description: "Fetch detailed product data for quick view modal including images, options, SKUs, and pricing.",
+    responses: {
+      200: {
+        description: "Successful response with product details",
+        content: {
+          "application/json": {
+            schema: resolver(z.any()),
+          },
+        },
+      },
+      404: {
+        description: "Product not found",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                error: z.string(),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
   const { id } = c.req.param();
 
   // Fetch product with vendor and category
@@ -122,7 +153,36 @@ const productsRouter = new Hono().get("/:id/quick-view", async (c) => {
 
   return c.json(response, 200);
 })
-.get("/by-slug/:slug", async (c) => {
+.get(
+  "/by-slug/:slug",
+  describeRoute({
+    tags: ["Products"],
+    summary: "Get product by slug",
+    description: "Fetch product details by slug for quick view modal.",
+    responses: {
+      200: {
+        description: "Successful response with product details",
+        content: {
+          "application/json": {
+            schema: resolver(z.any()),
+          },
+        },
+      },
+      404: {
+        description: "Product not found",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                error: z.string(),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
   const { slug } = c.req.param();
 
   const [productRow] = await db

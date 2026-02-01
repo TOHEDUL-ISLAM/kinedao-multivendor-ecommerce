@@ -143,45 +143,55 @@ export const HeroSection = () => {
         </div>
 
         {/* Side promo cards */}
-        <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+        <div className="flex flex-col lg:flex-col gap-4">
           {promoCards.map((card, index) => (
             <div
               key={index}
-              className={`relative flex-shrink-0 w-[180px] sm:w-[220px] lg:w-auto lg:flex-1 rounded-3xl lg:rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all group ${card.color}`}
+              className={`relative w-full lg:w-auto lg:flex-1 rounded-2xl lg:rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all group ${card.color}`}
             >
-              {/* Mobile: Image Top, Text Bottom layout. Desktop: Overlay layout */}
-              <div className="flex flex-col h-full lg:block">
-                {/* Image Container: Mobile height fixed, Desktop full absolute */}
-                <div className="h-28 sm:h-32 w-full lg:absolute lg:inset-0 lg:h-full relative overflow-hidden">
+              {/* Mobile: Overlay Layout (h-24 fixed height) */}
+              <div className="relative h-24 sm:h-28 w-full lg:hidden">
+                <div className="absolute inset-0 overflow-hidden">
                    <img
                     src={card.image}
                     alt={card.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 lg:opacity-70"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60"
                   />
-                  {/* Discount Badge */}
-                  <div className="absolute top-2 left-2 lg:top-3 lg:left-3 bg-white/90 lg:bg-destructive lg:text-white backdrop-blur-sm lg:backdrop-blur-none text-foreground text-[10px] font-bold px-2 py-1 lg:py-0.5 rounded-full lg:rounded-md shadow-sm">
+                </div>
+                <div className="relative h-full p-4 flex flex-col justify-center z-10">
+                  <div className="bg-destructive text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm w-fit mb-1.5">
+                    {card.discount}
+                  </div>
+                  <h3 className="text-base font-heading font-bold text-foreground leading-tight">
+                    {card.title}
+                  </h3>
+                  <div className="mt-1">
+                    <Button variant="link" className="p-0 h-auto text-primary hover:text-pink-600 font-semibold text-xs justify-start">
+                      Shop Now →
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop: Original Overlay Layout (auto height / flex-1) */}
+              <div className="hidden lg:block h-full">
+                <div className="absolute inset-0 overflow-hidden">
+                   <img
+                    src={card.image}
+                    alt={card.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70"
+                  />
+                  {/* Desktop Badge */}
+                  <div className="absolute top-3 left-3 bg-destructive text-white backdrop-blur-none text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
                     {card.discount}
                   </div>
                 </div>
 
-                {/* Content Container: Mobile solid bg, Desktop transparent overlay */}
-                <div className="p-4 flex flex-col justify-center flex-1 lg:absolute lg:inset-0 lg:p-6 lg:justify-center">
-                  <h3 className="text-sm sm:text-base font-heading font-bold text-foreground/90 lg:text-foreground lg:text-lg mb-1 lg:mt-2 leading-tight">
+                <div className="absolute inset-0 p-6 flex flex-col justify-center">
+                  <h3 className="text-lg font-heading font-bold text-foreground mb-1 mt-2 leading-tight">
                     {card.title}
                   </h3>
-                  
-                  {/* Mobile-only View Details */}
-                  <div className="flex items-center justify-between lg:hidden">
-                    <span className="text-xs font-medium text-foreground/70">
-                       Shop Now
-                    </span>
-                    <div className="h-6 w-6 rounded-full bg-white/50 flex items-center justify-center">
-                       <ChevronRight className="w-3 h-3 text-foreground/70" />
-                    </div>
-                  </div>
-                  
-                  {/* Desktop-only Link */}
-                  <div className="hidden lg:block">
+                  <div>
                     <Button variant="link" className="p-0 h-auto text-primary hover:text-pink-600 font-semibold text-xs justify-start">
                       Shop Now →
                     </Button>

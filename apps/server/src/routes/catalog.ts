@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -17,6 +18,7 @@ import {
   type CategoryDTO,
   type VendorDTO,
 } from "@kineDao.com/api-types/catalog";
+import { z } from "zod";
 
 // Helper to format product card
 async function formatProductCard(
@@ -84,7 +86,31 @@ async function formatProductCard(
 
 // GET /api/catalog/products - Paginated product listing with filters
 // GET /api/catalog/facets - Category and vendor facets with price range
-const catalogRouter = new Hono().get("/products", zValidator("query", catalogQuerySchema), async (c) => {
+const catalogRouter = new Hono().get(
+  "/products",
+  describeRoute({
+    tags: ["Catalog"],
+    summary: "Get paginated product catalog",
+    description: "Fetch products with filters (category, vendor, price, rating) and sorting options. Supports cursor-based pagination.",
+    responses: {
+      200: {
+        description: "Successful response with product list",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                items: z.array(z.any()),
+                nextCursor: z.string().nullable(),
+                total: z.number(),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  zValidator("query", catalogQuerySchema),
+  async (c) => {
   const { q, category, vendor, brand, min, max, rating, sort, cursor, limit } = c.req.valid("query");
 
   // Build conditions
@@ -267,7 +293,33 @@ const catalogRouter = new Hono().get("/products", zValidator("query", catalogQue
 
   return c.json(response, 200);
 })
-.get("/facets", async (c) => {
+.get(
+  "/facets",
+  describeRoute({
+    tags: ["Catalog"],
+    summary: "Get catalog facets",
+    description: "Fetch available filters including categories, vendors, and price ranges for the catalog.",
+    responses: {
+      200: {
+        description: "Successful response with facets data",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                categories: z.array(z.any()),
+                vendors: z.array(z.any()),
+                priceRange: z.object({
+                  min: z.number(),
+                  max: z.number(),
+                }),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
   // Categories with product counts
   const categoriesData = await db
     .select({

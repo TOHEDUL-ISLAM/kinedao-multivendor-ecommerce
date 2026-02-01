@@ -1,12 +1,38 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import { products, productImages, productSkus, vendors, categories } from "@kineDao.com/db/schema";
 import { eq, or, ilike, and, asc } from "drizzle-orm";
 import { searchQuerySchema, type SearchSuggestResponse } from "@kineDao.com/api-types/catalog";
+import { z } from "zod";
 
 // GET /api/search/suggest - Typeahead search suggestions
-const searchRouter = new Hono().get("/suggest", zValidator("query", searchQuerySchema), async (c) => {
+const searchRouter = new Hono().get(
+  "/suggest",
+  describeRoute({
+    tags: ["Search"],
+    summary: "Get search suggestions",
+    description: "Typeahead search suggestions for products, categories, and vendors based on query string.",
+    responses: {
+      200: {
+        description: "Successful response with search suggestions",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                products: z.array(z.any()),
+                categories: z.array(z.any()),
+                vendors: z.array(z.any()),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  zValidator("query", searchQuerySchema),
+  async (c) => {
   const { q, limit } = c.req.valid("query");
   const searchPattern = `%${q}%`;
 

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -20,6 +21,7 @@ import type {
   FeaturedCollectionDTO,
   InstagramPostDTO,
 } from "@kineDao.com/api-types/catalog";
+import { z } from "zod";
 
 // Helper to format product card from relational data
 function formatProductFromRelation(
@@ -72,7 +74,51 @@ function formatProductFromRelation(
 }
 
 // GET /api/home - Homepage data
-const homeRouter = new Hono().get("/", async (c) => {
+const homeRouter = new Hono().get(
+  "/",
+  describeRoute({
+    tags: ["Home"],
+    summary: "Get homepage data",
+    description: "Fetch all homepage data including hero carousel campaigns, deal wall, flash deals, best sellers, new arrivals, categories, brands, testimonials, featured collections, and Instagram posts.",
+    responses: {
+      200: {
+        description: "Successful response with complete homepage data",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                heroCarouselCampaigns: z.array(z.any()),
+                dealWallCampaigns: z.array(z.any()),
+                flashDeals: z.array(z.any()),
+                bestSellers: z.array(z.any()),
+                newArrivals: z.array(z.any()),
+                topCategories: z.array(z.any()),
+                popularBrands: z.array(z.any()),
+                testimonials: z.array(z.any()),
+                featuredCollections: z.array(z.any()),
+                instagramPosts: z.array(z.any()),
+              })
+            ),
+          },
+        },
+      },
+      500: {
+        description: "Server error",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                message: z.string(),
+                error: z.string().optional(),
+                stack: z.string().optional(),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
   try {
     const now = new Date();
 

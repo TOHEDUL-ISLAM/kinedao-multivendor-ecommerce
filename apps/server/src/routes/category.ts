@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { describeRoute, resolver } from "hono-openapi";
 import { db } from "@kineDao.com/db";
 import {
   products,
@@ -16,6 +17,7 @@ import {
   type BrandFacet,
   type AgeRangeFacet,
 } from "@kineDao.com/api-types/catalog";
+import { z } from "zod";
 
 // Standard age range options for filtering
 const AGE_RANGE_OPTIONS = [
@@ -92,7 +94,56 @@ async function formatProductCard(
 }
 
 // GET /api/category/:slug - Category page with products, pagination, and facets
-const categoryRouter = new Hono().get("/:slug", zValidator("query", categoryPageQuerySchema), async (c) => {
+const categoryRouter = new Hono().get(
+  "/:slug",
+  describeRoute({
+    tags: ["Category"],
+    summary: "Get category page data",
+    description: "Fetch category details, products with pagination, and available facets (brands, age ranges, price range) for filtering.",
+    responses: {
+      200: {
+        description: "Successful response with category page data",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                category: z.any(),
+                products: z.array(z.any()),
+                pagination: z.object({
+                  page: z.number(),
+                  limit: z.number(),
+                  total: z.number(),
+                  totalPages: z.number(),
+                }),
+                facets: z.object({
+                  brands: z.array(z.any()),
+                  ageRanges: z.array(z.any()),
+                  priceRange: z.object({
+                    min: z.number(),
+                    max: z.number(),
+                  }),
+                }),
+              })
+            ),
+          },
+        },
+      },
+      404: {
+        description: "Category not found",
+        content: {
+          "application/json": {
+            schema: resolver(
+              z.object({
+                error: z.string(),
+              })
+            ),
+          },
+        },
+      },
+    },
+  }),
+  zValidator("query", categoryPageQuerySchema),
+  async (c) => {
   const { slug } = c.req.param();
   const { page, limit, sort, brand, minPrice, maxPrice, ageRange } = c.req.valid("query");
 

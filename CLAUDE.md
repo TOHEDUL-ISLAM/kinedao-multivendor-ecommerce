@@ -64,6 +64,10 @@ bun run dev
 # Run individual apps
 bun run dev:web      # Frontend only (http://localhost:3001)
 bun run dev:server   # Backend only (http://localhost:3000)
+
+# API Documentation (when server is running)
+# Interactive docs: http://localhost:3000/docs
+# OpenAPI spec:     http://localhost:3000/openapi
 ```
 
 ### Database Commands
@@ -182,26 +186,66 @@ export interface YourResponseDTO {
 }
 ```
 
-**2. Create route using method chaining:**
+**2. Create route using method chaining with OpenAPI documentation:**
 
 ```typescript
 // apps/server/src/routes/your-feature.ts
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { describeRoute, resolver } from "hono-openapi";
 import { yourRequestSchema, type YourResponseDTO } from "@kineDao.com/api-types/your-feature";
+import { z } from "zod";
 
 const yourRouter = new Hono()
-  .get("/endpoint", zValidator("query", yourRequestSchema), async (c) => {
-    const validated = c.req.valid("query"); // Fully typed!
-    // ... your logic here
-    const response: YourResponseDTO = { id: "123", data: [] };
-    return c.json(response, 200); // Always explicit status codes
-  })
-  .post("/endpoint", zValidator("json", yourRequestSchema), async (c) => {
-    const validated = c.req.valid("json");
-    // ... your logic here
-    return c.json(response, 201);
-  });
+  .get(
+    "/endpoint",
+    describeRoute({
+      tags: ["Your Feature"],
+      summary: "Get your data",
+      description: "Detailed description of what this endpoint does",
+      responses: {
+        200: {
+          description: "Successful response",
+          content: {
+            "application/json": {
+              schema: resolver(z.object({ id: z.string(), data: z.array(z.string()) }))
+            }
+          }
+        }
+      }
+    }),
+    zValidator("query", yourRequestSchema),
+    async (c) => {
+      const validated = c.req.valid("query"); // Fully typed!
+      // ... your logic here
+      const response: YourResponseDTO = { id: "123", data: [] };
+      return c.json(response, 200); // Always explicit status codes
+    }
+  )
+  .post(
+    "/endpoint",
+    describeRoute({
+      tags: ["Your Feature"],
+      summary: "Create your data",
+      description: "Detailed description of what this endpoint does",
+      responses: {
+        201: {
+          description: "Created successfully",
+          content: {
+            "application/json": {
+              schema: resolver(z.object({ id: z.string(), data: z.array(z.string()) }))
+            }
+          }
+        }
+      }
+    }),
+    zValidator("json", yourRequestSchema),
+    async (c) => {
+      const validated = c.req.valid("json");
+      // ... your logic here
+      return c.json(response, 201);
+    }
+  );
 
 export { yourRouter };
 export type YourRouterType = typeof yourRouter;
@@ -242,8 +286,59 @@ if (response.ok) {
 - ✅ Always return explicit status codes: `c.json(data, 200)`
 - ✅ Always export router type: `export type XxxRouterType = typeof xxxRouter`
 - ✅ Share types via `@kineDao.com/api-types` package
+- ✅ Document routes with `describeRoute()` from `hono-openapi` for API documentation
 - ❌ Never use `c.notFound()` - use `c.json({ error: "Not found" }, 404)` instead
 - ❌ Never use native `fetch()` on frontend - always use RPC client (`api.*`)
+
+#### API Documentation with Scalar
+
+The API is fully documented using **Scalar** (interactive API documentation UI) powered by **hono-openapi**:
+
+- **Documentation UI**: http://localhost:3000/docs (when server is running)
+- **OpenAPI Spec**: http://localhost:3000/openapi (raw JSON)
+- **Features**: Interactive API explorer, test requests, code examples, response schemas
+
+**To document a new route**, wrap it with `describeRoute()`:
+
+```typescript
+import { describeRoute, resolver } from "hono-openapi";
+import { z } from "zod";
+
+const router = new Hono()
+  .get(
+    "/your-path",
+    describeRoute({
+      tags: ["Tag Name"],           // Groups routes in sidebar
+      summary: "Short title",        // Endpoint title
+      description: "Full details",   // Detailed explanation
+      responses: {
+        200: {
+          description: "Success message",
+          content: {
+            "application/json": {
+              schema: resolver(yourZodSchema)  // Response schema
+            }
+          }
+        },
+        404: {
+          description: "Not found",
+          content: {
+            "application/json": {
+              schema: resolver(z.object({ error: z.string() }))
+            }
+          }
+        }
+      }
+    }),
+    zValidator("query", yourSchema),  // Existing validator
+    async (c) => { ... }               // Existing handler
+  );
+```
+
+**Scalar Configuration** is in [apps/server/src/index.ts](apps/server/src/index.ts):
+- Theme: Purple (customizable)
+- All routes are automatically documented when wrapped with `describeRoute()`
+- Supports testing endpoints directly from the browser
 
 ### Environment Variables
 
