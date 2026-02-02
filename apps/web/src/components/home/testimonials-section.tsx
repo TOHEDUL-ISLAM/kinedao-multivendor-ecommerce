@@ -164,20 +164,11 @@ const TestimonialCard = ({ testimonial, language }: TestimonialCardProps) => {
 
         {/* Customer Info */}
         <div className="flex items-center gap-4">
-          {/* Avatar */}
+          {/* Avatar - Show initials only */}
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-muted flex-shrink-0">
-            {testimonial.avatarUrl ? (
-              <img
-                src={testimonial.avatarUrl}
-                alt={testimonial.customerName}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-lg font-semibold">
-                {testimonial.customerName.charAt(0)}
-              </div>
-            )}
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-lg font-semibold">
+              {testimonial.customerName.charAt(0)}
+            </div>
           </div>
 
           {/* Name & Location */}

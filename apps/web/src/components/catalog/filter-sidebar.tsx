@@ -121,13 +121,13 @@ export function FilterSidebar({
   categories = [],
   vendors = [],
   brands = [],
-  ageRanges = [],
+  ageRanges: _ageRanges = [],
   safetyFacets,
   priceRange,
   selectedCategories = [],
   selectedVendors = [],
   selectedBrands = [],
-  selectedAgeRanges = [],
+  selectedAgeRanges: _selectedAgeRanges = [],
   selectedIsBpaFree = false,
   selectedIsOrganic = false,
   selectedIsHypoallergenic = false,
@@ -137,7 +137,7 @@ export function FilterSidebar({
   onCategoryChange,
   onVendorChange,
   onBrandChange,
-  onAgeRangeChange,
+  onAgeRangeChange: _onAgeRangeChange,
   onSafetyChange,
   onPriceChange,
   onRatingChange,
@@ -198,15 +198,6 @@ export function FilterSidebar({
     }
   };
 
-  const handleAgeRangeToggle = (value: string) => {
-    if (!onAgeRangeChange) return;
-    if (selectedAgeRanges.includes(value)) {
-      onAgeRangeChange(selectedAgeRanges.filter((a) => a !== value));
-    } else {
-      onAgeRangeChange([...selectedAgeRanges, value]);
-    }
-  };
-
   const handlePriceSubmit = () => {
     const minNum = minPriceInput ? parseFloat(minPriceInput) : null;
     const maxNum = maxPriceInput ? parseFloat(maxPriceInput) : null;
@@ -225,7 +216,6 @@ export function FilterSidebar({
     selectedCategories.length > 0 ||
     selectedVendors.length > 0 ||
     selectedBrands.length > 0 ||
-    selectedAgeRanges.length > 0 ||
     selectedIsBpaFree ||
     selectedIsOrganic ||
     selectedIsHypoallergenic ||
@@ -348,36 +338,46 @@ export function FilterSidebar({
         </AccordionSection>
       )}
 
-      {/* Age Range */}
-      {ageRanges.length > 0 && (
-        <AccordionSection title={t("catalog.ageRange")}>
-          <div className="space-y-1">
-            {ageRanges.map((option) => {
-              const displayLabel = language === "bn" ? option.labelBn : option.label;
-              const isSelected = selectedAgeRanges.includes(option.value);
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => handleAgeRangeToggle(option.value)}
-                  className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => handleAgeRangeToggle(option.value)}
-                    className="pointer-events-none"
-                  />
-                  <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
-                    {displayLabel}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">
-                    ({option.count})
-                  </span>
-                </button>
-              );
-            })}
+      {/* Price Range */}
+      <AccordionSection title={t("catalog.priceRange")}>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("common.from")}
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              value={minPriceInput}
+              onChange={(e) => setMinPriceInput(e.target.value)}
+              min="0"
+              className="w-full px-3 py-2 text-sm border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary transition-colors"
+            />
           </div>
-        </AccordionSection>
-      )}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("common.to")}
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              value={maxPriceInput}
+              onChange={(e) => setMaxPriceInput(e.target.value)}
+              min="0"
+              className="w-full px-3 py-2 text-sm border-2 border-border rounded-lg bg-background focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
+          <Button size="sm" onClick={handlePriceSubmit} className="w-full">
+            Apply
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            {formatPrice(priceRange.min, "BDT", language)} -{" "}
+            {formatPrice(priceRange.max, "BDT", language)}
+          </p>
+        </div>
+      </AccordionSection>
 
       {/* Safety Filters */}
       {safetyFacets && (safetyFacets.isBpaFree > 0 || safetyFacets.isOrganic > 0 || safetyFacets.isHypoallergenic > 0) && (
@@ -416,47 +416,6 @@ export function FilterSidebar({
           </div>
         </AccordionSection>
       )}
-
-      {/* Price Range */}
-      <AccordionSection title={t("catalog.priceRange")}>
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              {t("common.from")}
-            </label>
-            <input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
-              value={minPriceInput}
-              onChange={(e) => setMinPriceInput(e.target.value)}
-              min="0"
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              {t("common.to")}
-            </label>
-            <input
-              type="number"
-              inputMode="decimal"
-              placeholder="0"
-              value={maxPriceInput}
-              onChange={(e) => setMaxPriceInput(e.target.value)}
-              min="0"
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <Button size="sm" onClick={handlePriceSubmit} className="w-full">
-            Apply
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            {formatPrice(priceRange.min, "BDT", language)} -{" "}
-            {formatPrice(priceRange.max, "BDT", language)}
-          </p>
-        </div>
-      </AccordionSection>
 
       {/* Rating */}
       {showRating && onRatingChange && (

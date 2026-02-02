@@ -318,26 +318,28 @@ export function ProductReviewsSection({ className }: ProductReviewsSectionProps)
         {/* Right Side - Review Lists */}
         <div>
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0 h-auto">
-              <TabsTrigger
-                value="all"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
-              >
-                {t("reviews.allReviews")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="media"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
-              >
-                {t("reviews.withMedia")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="description"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
-              >
-                {t("reviews.withDescription")}
-              </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="w-max min-w-full justify-start border-b rounded-none bg-transparent p-0 h-auto">
+                <TabsTrigger
+                  value="all"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2 text-sm whitespace-nowrap"
+                >
+                  {t("reviews.allReviews")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="media"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2 text-sm whitespace-nowrap"
+                >
+                  {t("reviews.withMedia")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="description"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-2 text-sm whitespace-nowrap"
+                >
+                  {t("reviews.withDescription")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="all" className="pt-4">
               <ReviewList

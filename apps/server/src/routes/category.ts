@@ -5,6 +5,7 @@ import { db } from "@kineDao.com/db";
 import {
   products,
   productImages,
+  productOptions,
   productSkus,
   vendors,
   categories,
@@ -62,6 +63,12 @@ async function formatProductCard(
           .orderBy(asc(productSkus.priceAmount))
           .limit(1);
 
+  const [option] = await db
+    .select({ id: productOptions.id })
+    .from(productOptions)
+    .where(eq(productOptions.productId, product.id))
+    .limit(1);
+
   return {
     id: product.id,
     title: product.title,
@@ -84,6 +91,7 @@ async function formatProductCard(
     compareAtAmount: anySku?.compareAtAmount || null,
     currency: anySku?.currency || "BDT",
     isAvailable: sku !== undefined,
+    hasVariants: option !== undefined,
     vendor: {
       id: product.vendor.id,
       name: product.vendor.name,

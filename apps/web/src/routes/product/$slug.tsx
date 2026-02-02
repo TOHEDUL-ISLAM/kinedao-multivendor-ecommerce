@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PackageX, Truck, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -17,7 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { ProductDetailInfo } from "@/components/product/product-detail-info";
 import { RelatedProducts } from "@/components/product/related-products";
-import { MobileStickyCartBar } from "@/components/product/mobile-sticky-cart-bar";
 import { BabySafetySection } from "@/components/product/baby-safety-section";
 import { ProductReviewsSection } from "@/components/product/product-reviews-section";
 
@@ -44,11 +43,11 @@ async function fetchProductDetail(slug: string): Promise<ProductDetailDTO> {
 function ProductDetailPage() {
   const { t, language } = useTranslation();
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const addToCart = useCartStore((state) => state.addItem);
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
-  const [showStickyBar, setShowStickyBar] = useState(false);
 
   // Fetch product data
   const { data: product, isLoading, isError, error, refetch } = useQuery({
@@ -70,20 +69,6 @@ function ProductDetailPage() {
     }
   }, [product]);
 
-  // Scroll listener for sticky bar
-  useEffect(() => {
-    const handleScroll = () => {
-      const productTitle = document.getElementById("product-title");
-      if (productTitle) {
-        const rect = productTitle.getBoundingClientRect();
-        setShowStickyBar(rect.bottom < 0);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   // Find matching SKU based on selected options
   const selectedSku = product?.skus.find((sku) => {
     if (!sku.optionValues) return product.skus.length === 1;
@@ -92,8 +77,6 @@ function ProductDetailPage() {
     );
   });
 
-  const displayPrice = selectedSku?.priceAmount ?? product?.priceAmount ?? 0;
-  const displayCompareAt = selectedSku?.compareAtAmount ?? product?.compareAtAmount;
   const isInStock = selectedSku?.isAvailable !== false && (selectedSku?.stockQty ?? 0) > 0;
 
   const handleOptionChange = (optionName: string, value: string) => {
@@ -101,7 +84,7 @@ function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (!product || !selectedSku || !isInStock) return;
+    if (!product || !selectedSku || !isInStock) return false;
 
     addToCart(
       {
@@ -117,6 +100,13 @@ function ProductDetailPage() {
     );
 
     toast.success(t("cart.itemAdded"));
+    return true;
+  };
+
+  const handleCheckout = () => {
+    if (handleAddToCart()) {
+      navigate({ to: "/cart" });
+    }
   };
 
   // Build breadcrumb items
@@ -220,32 +210,35 @@ function ProductDetailPage() {
             quantity={quantity}
             onQuantityChange={setQuantity}
             onAddToCart={handleAddToCart}
+            onCheckout={handleCheckout}
           />
         </div>
 
         {/* Tabs Section */}
         <div className="mt-12">
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
-              <TabsTrigger
-                value="description"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-              >
-                {t("product.description")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="safety"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-              >
-                {t("product.safety")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="shipping"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-              >
-                {t("product.shipping")}
-              </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <TabsList className="w-max min-w-full justify-start border-b rounded-none bg-transparent p-0">
+                <TabsTrigger
+                  value="description"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-6 py-3 text-sm sm:text-base whitespace-nowrap"
+                >
+                  {t("product.description")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="safety"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-6 py-3 text-sm sm:text-base whitespace-nowrap"
+                >
+                  {t("product.safety")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="shipping"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-6 py-3 text-sm sm:text-base whitespace-nowrap"
+                >
+                  {t("product.shipping")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="description" className="pt-6">
               {displayDescription ? (
@@ -308,16 +301,6 @@ function ProductDetailPage() {
         {/* Related Products */}
         <RelatedProducts products={product.relatedProducts} className="mt-12 border-t border-border pt-8" />
       </div>
-
-      {/* Mobile Sticky Cart Bar */}
-      <MobileStickyCartBar
-        price={displayPrice}
-        compareAtPrice={displayCompareAt ?? null}
-        currency={product.currency}
-        isAvailable={isInStock}
-        onAddToCart={handleAddToCart}
-        isVisible={showStickyBar}
-      />
     </div>
   );
 }

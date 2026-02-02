@@ -17,6 +17,7 @@ interface ProductDetailInfoProps {
   quantity: number;
   onQuantityChange: (qty: number) => void;
   onAddToCart: () => void;
+  onCheckout: () => void;
   className?: string;
 }
 
@@ -27,6 +28,7 @@ export function ProductDetailInfo({
   quantity,
   onQuantityChange,
   onAddToCart,
+  onCheckout,
   className,
 }: ProductDetailInfoProps) {
   const { t, language } = useTranslation();
@@ -191,8 +193,8 @@ export function ProductDetailInfo({
         </div>
       )}
 
-      {/* Quantity and Add to Cart */}
-      <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
+      {/* Quantity and Actions */}
+      <div className="flex flex-col gap-4 pt-4 border-t border-border">
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium">{t("quickView.quantity")}</span>
           <QuantitySelector
@@ -203,14 +205,23 @@ export function ProductDetailInfo({
             disabled={!isInStock}
           />
         </div>
-        <Button
-          onClick={onAddToCart}
-          disabled={!isInStock}
-          className="flex-1 sm:max-w-xs"
-          size="lg"
-        >
-          {isInStock ? t("product.addToCart") : t("product.outOfStock")}
-        </Button>
+        <div className="flex flex-row gap-2 sm:gap-3">
+          <Button
+            onClick={onAddToCart}
+            disabled={!isInStock}
+            variant="secondary"
+            className="flex-1 min-w-0"
+          >
+            {isInStock ? t("product.addToCart") : t("product.outOfStock")}
+          </Button>
+          <Button
+            onClick={onCheckout}
+            disabled={!isInStock}
+            className="flex-1 min-w-0"
+          >
+            {isInStock ? t("product.buyNow") : t("product.outOfStock")}
+          </Button>
+        </div>
       </div>
 
       {/* Baby Safety Section */}

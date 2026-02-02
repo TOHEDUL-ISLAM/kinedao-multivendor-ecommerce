@@ -1,7 +1,8 @@
 "use client";
 
-import { Heart, Star, ShoppingCart, Check, Eye } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Heart, Star, ShoppingCart, Check, Eye, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { useQuickViewStore } from "@/stores/quick-view-store";
+import { api } from "@/lib/api-client";
 import { formatPrice, calculateDiscountPercent, formatRating } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -29,6 +31,7 @@ export interface ProductCardData {
   compareAtAmount: number | null;
   currency: string;
   isAvailable: boolean;
+  hasVariants: boolean;
   vendor: {
     id: string;
     name: string;
@@ -53,6 +56,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const addToCart = useCartStore((state) => state.addItem);
   const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
   const openQuickView = useQuickViewStore((state) => state.open);
+  const navigate = useNavigate();
+  const [isAdding, setIsAdding] = useState(false);
+  const addTimeoutRef = useRef<number | null>(null);
 
   const isFav = isFavorite(product.id);
   const discountPercent = product.compareAtAmount
@@ -60,22 +66,124 @@ export function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   const displayTitle = language === "bn" && product.titleBn ? product.titleBn : product.title;
+  const isOutOfStock = !product.isAvailable;
+  const isVariantProduct = product.hasVariants;
+  const actionLabel = isOutOfStock
+    ? t("product.outOfStock")
+    : isVariantProduct
+      ? t("product.viewOptions")
+      : t("product.buyNow");
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  useEffect(() => {
+    return () => {
+      if (addTimeoutRef.current) {
+        window.clearTimeout(addTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const addOneToCart = async (): Promise<boolean> => {
+    if (isAdding || isOutOfStock) return false;
+
+    setIsAdding(true);
+    const startedAt = Date.now();
+
+    try {
+      const response = await api.products[":id"]["quick-view"].$get({
+        param: { id: product.id },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasVariants) {
+          openQuickView(data.id);
+          return false;
+        }
+        const availableSku = data.skus.find(
+          (sku) => (sku.isAvailable ?? true) && sku.stockQty > 0
+        );
+
+        if (!availableSku) {
+          toast.error(t("cart.justSoldOut"));
+          return false;
+        }
+
+        addToCart({
+          productId: data.id,
+          skuId: availableSku.id,
+          title: data.title,
+          imageUrl: data.images[0]?.url || product.imageUrl,
+          priceAmount: availableSku.priceAmount,
+          currency: availableSku.currency,
+          optionValues: availableSku.optionValues ?? null,
+        });
+        toast.success(t("cart.itemAdded"));
+        return true;
+      }
+
+      addToCart({
+        productId: product.id,
+        skuId: product.id,
+        title: product.title,
+        imageUrl: product.imageUrl,
+        priceAmount: product.priceAmount,
+        currency: product.currency,
+        optionValues: null,
+      });
+      toast.success(t("cart.itemAdded"));
+      return true;
+    } catch {
+      addToCart({
+        productId: product.id,
+        skuId: product.id,
+        title: product.title,
+        imageUrl: product.imageUrl,
+        priceAmount: product.priceAmount,
+        currency: product.currency,
+        optionValues: null,
+      });
+      toast.success(t("cart.itemAdded"));
+      return true;
+    } finally {
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, 500 - elapsed);
+      if (addTimeoutRef.current) {
+        window.clearTimeout(addTimeoutRef.current);
+      }
+      addTimeoutRef.current = window.setTimeout(() => {
+        setIsAdding(false);
+      }, remaining);
+    }
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (!product.isAvailable) return;
+    if (isVariantProduct) {
+      handleViewOptions(e);
+      return;
+    }
+    await addOneToCart();
+  };
 
-    addToCart({
-      productId: product.id,
-      skuId: product.id,
-      title: product.title,
-      imageUrl: product.imageUrl,
-      priceAmount: product.priceAmount,
-      currency: product.currency,
-      optionValues: null,
-    });
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isVariantProduct) {
+      handleViewOptions(e);
+      return;
+    }
+    const added = await addOneToCart();
+    if (added) {
+      navigate({ to: "/cart" });
+    }
+  };
 
-    toast.success(t("cart.itemAdded"));
+  const handleViewOptions = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    openQuickView(product.id);
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
@@ -88,7 +196,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link
       to="/product/$slug"
       params={{ slug: product.slug }}
-      className="group bg-card rounded-2xl overflow-hidden product-card shadow-sm border border-border/50 hover:shadow-lg transition-all duration-300 block"
+      className="group bg-card rounded-2xl overflow-hidden product-card shadow-sm border border-border/50 hover:shadow-lg transition-all duration-300 flex flex-col h-full"
     >
       {/* Image container */}
       <div className="relative aspect-square bg-secondary/30 overflow-hidden">
@@ -105,7 +213,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
           {product.isNew && (
             <Badge className="bg-baby-blue text-blue-900 hover:bg-baby-blue/90 rounded-full px-2">
-              NEW
+              {t("product.new")}
             </Badge>
           )}
         </div>
@@ -126,6 +234,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <button
           className="absolute top-14 right-3 p-2 rounded-full bg-white/90 shadow-sm transition-all duration-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 delay-75 text-gray-500 hover:text-primary"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             openQuickView(product.id);
           }}
@@ -133,22 +242,10 @@ export function ProductCard({ product }: ProductCardProps) {
           <Eye className="w-4 h-4" />
         </button>
 
-        {/* Quick add overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center">
-           {/* Mobile usually needs always visible buttons, but following the design: */}
-           <Button 
-            className="w-full rounded-full gap-2 bg-white text-black hover:bg-gray-100"
-            onClick={handleAddToCart}
-            disabled={!product.isAvailable}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {product.isAvailable ? t("product.addToCart") : t("product.outOfStock")}
-          </Button>
-        </div>
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <p className="text-xs text-muted-foreground mb-1">{product.vendor.name}</p>
         <h3 className="font-semibold text-sm line-clamp-2 mb-2 min-h-[2.5rem]">
           {displayTitle}
@@ -189,33 +286,52 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {/* Stock status */}
-        {product.isAvailable && (
-          <div className="flex items-center gap-1 text-xs text-green-600 mb-3">
-            <Check className="w-3 h-3" />
-            In Stock
-          </div>
-        )}
+        {/* Stock status - always show placeholder for consistent height */}
+        <div className="h-5 mb-3">
+          {product.isAvailable && (
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <Check className="w-3 h-3" />
+              {t("product.inStock")}
+            </div>
+          )}
+        </div>
 
-        {/* Action buttons (Visible on mobile/tablet or duplicate of hover?) 
-            The design had them. I'll include them for better UX especially on touch devices.
-        */}
-        <div className="flex gap-2 mt-3 lg:hidden">
+        {/* Action buttons - pushed to bottom with mt-auto */}
+        <div className="flex gap-1.5 sm:gap-2 mt-auto">
           <Button
-            className="flex-1 rounded-full text-xs h-8"
-            onClick={handleAddToCart}
-            disabled={!product.isAvailable}
+            className="flex-1 rounded-full text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4 gap-1 sm:gap-2 min-w-0"
+            onClick={isVariantProduct ? handleViewOptions : handleBuyNow}
+            disabled={isOutOfStock || (!isVariantProduct && isAdding)}
+            aria-busy={!isVariantProduct && isAdding}
           >
-            Buy Now
+            {!isOutOfStock && isVariantProduct && <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />}
+            {!isOutOfStock && !isVariantProduct && (
+              <>
+                {isAdding ? (
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin shrink-0" />
+                ) : (
+                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                )}
+              </>
+            )}
+            <span className="truncate">{actionLabel}</span>
           </Button>
-          <Button
-            variant="outline"
-            className="rounded-full text-xs h-8 w-8 p-0"
-            onClick={handleAddToCart}
-            disabled={!product.isAvailable}
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </Button>
+          {!isVariantProduct && !isOutOfStock && (
+            <Button
+              variant="secondary"
+              className="rounded-full h-8 w-8 sm:h-10 sm:w-10 p-0 shrink-0"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isAdding}
+              aria-busy={isAdding}
+              aria-label={t("product.addToCart")}
+            >
+              {isAdding ? (
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </Link>

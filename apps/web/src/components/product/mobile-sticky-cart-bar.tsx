@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
@@ -12,7 +12,7 @@ interface MobileStickyCartBarProps {
   compareAtPrice: number | null;
   currency: string;
   isAvailable: boolean;
-  onAddToCart: () => void;
+  onCheckout: () => void;
   isVisible: boolean;
   className?: string;
 }
@@ -22,7 +22,7 @@ export function MobileStickyCartBar({
   compareAtPrice,
   currency,
   isAvailable,
-  onAddToCart,
+  onCheckout,
   isVisible,
   className,
 }: MobileStickyCartBarProps) {
@@ -39,7 +39,7 @@ export function MobileStickyCartBar({
           className={cn(
             "fixed bottom-0 inset-x-0 z-40 md:hidden",
             "bg-background/95 backdrop-blur-md border-t border-border",
-            "safe-area-pb",
+            "safe-bottom",
             className
           )}
         >
@@ -58,15 +58,15 @@ export function MobileStickyCartBar({
               </div>
             </div>
 
-            {/* Add to Cart button */}
+            {/* Checkout button */}
             <Button
-              onClick={onAddToCart}
+              onClick={onCheckout}
               disabled={!isAvailable}
               className="flex-1 max-w-[200px] gap-2"
               size="lg"
             >
-              <ShoppingCart className="h-4 w-4" />
-              {isAvailable ? t("product.addToCart") : t("product.outOfStock")}
+              <CreditCard className="h-4 w-4" />
+              {isAvailable ? t("cart.checkout") : t("product.outOfStock")}
             </Button>
           </div>
         </motion.div>

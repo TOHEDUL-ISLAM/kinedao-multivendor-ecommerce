@@ -29,7 +29,13 @@ function formatProductFromRelation(
     vendor: { id: string; name: string; slug: string; isVerified: boolean | null };
     category: { id: string; name: string; slug: string };
     images: { url: string; alt: string | null; sortOrder: number | null }[];
-    skus: { priceAmount: number; compareAtAmount: number | null; currency: string; isAvailable: boolean | null }[];
+    skus: {
+      priceAmount: number;
+      compareAtAmount: number | null;
+      currency: string;
+      isAvailable: boolean | null;
+      optionValues?: Record<string, string> | null;
+    }[];
   }
 ): ProductCardDTO {
   // Get first image
@@ -41,6 +47,11 @@ function formatProductFromRelation(
   const skusToCheck = availableSkus.length > 0 ? availableSkus : product.skus;
   
   const sku = skusToCheck.sort((a, b) => a.priceAmount - b.priceAmount)[0];
+  const hasVariants =
+    product.skus.length > 1 ||
+    product.skus.some(
+      (s) => s.optionValues && Object.keys(s.optionValues).length > 0
+    );
 
   return {
     id: product.id,
@@ -64,6 +75,7 @@ function formatProductFromRelation(
     compareAtAmount: sku?.compareAtAmount || null,
     currency: sku?.currency || "BDT",
     isAvailable: availableSkus.length > 0,
+    hasVariants,
     vendor: {
       id: product.vendor.id,
       name: product.vendor.name,

@@ -27,6 +27,7 @@ export interface ProductCardDTO {
   compareAtAmount: number | null; // Original price if discounted
   currency: string;
   isAvailable: boolean;
+  hasVariants: boolean;
   vendor: {
     id: string;
     name: string;
@@ -438,3 +439,14 @@ export const featuredProductsQuerySchema = z.object({
 });
 
 export type FeaturedProductsQuery = z.infer<typeof featuredProductsQuerySchema>;
+
+export const cartRecommendationsQuerySchema = z.object({
+  productIds: z.string().transform((val) => val.split(",").filter(Boolean)),
+  limit: z.coerce.number().int().min(1).max(12).default(8),
+});
+
+export type CartRecommendationsQuery = z.infer<typeof cartRecommendationsQuerySchema>;
+
+export interface CartRecommendationsResponse {
+  products: ProductCardDTO[];
+}

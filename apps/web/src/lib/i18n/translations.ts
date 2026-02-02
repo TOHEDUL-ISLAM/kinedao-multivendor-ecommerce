@@ -39,6 +39,8 @@ export const translations = {
 
     // Product Card
     "product.addToCart": "Add to Cart",
+    "product.buyNow": "Buy Now",
+    "product.viewOptions": "View Options",
     "product.quickView": "Quick View",
     "product.outOfStock": "Out of Stock",
     "product.inStock": "In Stock",
@@ -217,6 +219,7 @@ export const translations = {
     "cart.checkout": "Checkout",
     "cart.remove": "Remove",
     "cart.itemAdded": "Added to cart",
+    "cart.justSoldOut": "Sorry, item just sold out",
 
     // Favorites
     "favorites.added": "Added to favorites",
@@ -414,6 +417,8 @@ export const translations = {
 
     // Product Card
     "product.addToCart": "কার্টে যোগ করুন",
+    "product.buyNow": "এখনই কিনুন",
+    "product.viewOptions": "অপশন দেখুন",
     "product.quickView": "দ্রুত দেখুন",
     "product.outOfStock": "স্টক নেই",
     "product.inStock": "স্টকে আছে",
@@ -592,6 +597,7 @@ export const translations = {
     "cart.checkout": "চেকআউট",
     "cart.remove": "সরান",
     "cart.itemAdded": "কার্টে যোগ হয়েছে",
+    "cart.justSoldOut": "দুঃখিত, পণ্যটি এইমাত্র স্টক শেষ হয়েছে",
 
     // Favorites
     "favorites.added": "পছন্দে যোগ হয়েছে",

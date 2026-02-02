@@ -120,7 +120,7 @@ export default function Header() {
               </Link>
 
               {/* Cart */}
-              <Link to="/catalog"> 
+              <Link to="/cart"> 
                 <Button
                   variant="ghost"
                   size="icon"

@@ -99,6 +99,10 @@ const productsRouter = new Hono().get(
     (a, b) => a.priceAmount - b.priceAmount
   );
   const lowestSku = sortedSkus[0];
+  const hasVariants =
+    options.length > 0 ||
+    skus.length > 1 ||
+    skus.some((s) => s.optionValues && Object.keys(s.optionValues).length > 0);
 
   const response: ProductQuickViewDTO = {
     id: product.id,
@@ -132,6 +136,7 @@ const productsRouter = new Hono().get(
     compareAtAmount: lowestSku?.compareAtAmount || null,
     currency: lowestSku?.currency || "BDT",
     isAvailable: availableSkus.length > 0,
+    hasVariants,
     vendor: {
       id: vendor.id,
       name: vendor.name,
@@ -244,6 +249,10 @@ const productsRouter = new Hono().get(
     (a, b) => a.priceAmount - b.priceAmount
   );
   const lowestSku = sortedSkus[0];
+  const hasVariants =
+    options.length > 0 ||
+    skus.length > 1 ||
+    skus.some((s) => s.optionValues && Object.keys(s.optionValues).length > 0);
 
   const response: ProductQuickViewDTO = {
     id: product.id,
@@ -277,6 +286,7 @@ const productsRouter = new Hono().get(
     compareAtAmount: lowestSku?.compareAtAmount || null,
     currency: lowestSku?.currency || "BDT",
     isAvailable: availableSkus.length > 0,
+    hasVariants,
     vendor: {
       id: vendor.id,
       name: vendor.name,
@@ -445,6 +455,11 @@ const productsRouter = new Hono().get(
         (a, b) => a.priceAmount - b.priceAmount
       );
       const lowestSku = sortedSkus[0];
+      const hasVariants =
+        prodSkus.length > 1 ||
+        prodSkus.some(
+          (s) => s.optionValues && Object.keys(s.optionValues).length > 0
+        );
 
       return {
         id: row.product.id,
@@ -468,6 +483,7 @@ const productsRouter = new Hono().get(
         compareAtAmount: lowestSku?.compareAtAmount || null,
         currency: lowestSku?.currency || "BDT",
         isAvailable: availableSkus.length > 0,
+        hasVariants,
         vendor: {
           id: row.vendor.id,
           name: row.vendor.name,
@@ -488,6 +504,10 @@ const productsRouter = new Hono().get(
       (a, b) => a.priceAmount - b.priceAmount
     );
     const lowestSku = sortedSkus[0];
+    const hasVariants =
+      options.length > 0 ||
+      skus.length > 1 ||
+      skus.some((s) => s.optionValues && Object.keys(s.optionValues).length > 0);
 
     // Build vendor detail DTO
     const vendorDetail: VendorDetailDTO = {
@@ -560,6 +580,7 @@ const productsRouter = new Hono().get(
       compareAtAmount: lowestSku?.compareAtAmount || null,
       currency: lowestSku?.currency || "BDT",
       isAvailable: availableSkus.length > 0,
+      hasVariants,
       vendor: vendorDetail,
       category: categoryBreadcrumb,
       images: images.map((img) => ({
