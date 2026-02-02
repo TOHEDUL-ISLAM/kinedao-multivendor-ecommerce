@@ -12,6 +12,11 @@ export interface ProductCardDTO {
   slug: string;
   brand: string | null;
   ageRange: string | null;
+  ageRangeMin: number | null;
+  ageRangeMax: number | null;
+  isBpaFree: boolean;
+  isOrganic: boolean;
+  isHypoallergenic: boolean;
   ratingAvg: number | null;
   ratingCount: number | null;
   isNew: boolean | null;
@@ -41,6 +46,12 @@ export interface ProductQuickViewDTO extends ProductCardDTO {
   shortDescriptionBn: string | null;
   description: string | null;
   descriptionBn: string | null;
+  hasSmallParts: boolean;
+  safetyWarningEn: string | null;
+  safetyWarningBn: string | null;
+  weightLimitKg: number | null;
+  expiryDate: string | null;
+  safetyCertifications: string[];
   images: {
     id: string;
     url: string;
@@ -178,6 +189,9 @@ export interface CatalogProductsResponse {
 export interface CatalogFacetsResponse {
   categories: CategoryDTO[];
   vendors: VendorDTO[];
+  brands: BrandFacet[];
+  ageRanges: AgeRangeFacet[];
+  safety: SafetyFacet;
   priceRange: {
     min: number;
     max: number;
@@ -203,6 +217,10 @@ export const catalogQuerySchema = z.object({
   category: z.string().optional(),
   vendor: z.string().optional(),
   brand: z.string().optional(),
+  ageRange: z.string().optional(),
+  isBpaFree: z.enum(["true", "false"]).optional(),
+  isOrganic: z.enum(["true", "false"]).optional(),
+  isHypoallergenic: z.enum(["true", "false"]).optional(),
   min: z.coerce.number().int().min(0).optional(),
   max: z.coerce.number().int().min(0).optional(),
   rating: z.coerce.number().min(0).max(5).optional(),
@@ -242,6 +260,13 @@ export interface AgeRangeFacet {
   label: string;
   labelBn: string;
   count: number;
+}
+
+// Safety facet for filters
+export interface SafetyFacet {
+  isBpaFree: number;
+  isOrganic: number;
+  isHypoallergenic: number;
 }
 
 // Category page response
@@ -285,6 +310,7 @@ export const categoryPageQuerySchema = z.object({
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
   ageRange: z.string().optional(), // Comma-separated age ranges
+  rating: z.coerce.number().min(0).max(5).optional(),
 });
 
 export type CategoryPageQuery = z.infer<typeof categoryPageQuerySchema>;

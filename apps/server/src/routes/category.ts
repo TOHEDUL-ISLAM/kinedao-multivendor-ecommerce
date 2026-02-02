@@ -9,7 +9,7 @@ import {
   vendors,
   categories,
 } from "@kineDao.com/db/schema";
-import { eq, and, sql, asc, desc, ilike } from "drizzle-orm";
+import { eq, and, sql, asc, desc, ilike, gte, lte, or } from "drizzle-orm";
 import {
   categoryPageQuerySchema,
   type CategoryPageResponse,
@@ -21,12 +21,12 @@ import { z } from "zod";
 
 // Standard age range options for filtering
 const AGE_RANGE_OPTIONS = [
-  { value: "0-3", label: "0-3 months", labelBn: "০-৩ মাস", pattern: "0-3" },
-  { value: "3-6", label: "3-6 months", labelBn: "৩-৬ মাস", pattern: "3-6" },
-  { value: "6-12", label: "6-12 months", labelBn: "৬-১২ মাস", pattern: "6-12" },
-  { value: "1-2", label: "1-2 years", labelBn: "১-২ বছর", pattern: "1-2" },
-  { value: "2-3", label: "2-3 years", labelBn: "২-৩ বছর", pattern: "2-3" },
-  { value: "3+", label: "3+ years", labelBn: "৩+ বছর", pattern: "3+" },
+  { value: "0-3", label: "0-3 months", labelBn: "০-৩ মাস", min: 0, max: 3 },
+  { value: "3-6", label: "3-6 months", labelBn: "৩-৬ মাস", min: 3, max: 6 },
+  { value: "6-12", label: "6-12 months", labelBn: "৬-১২ মাস", min: 6, max: 12 },
+  { value: "1-2", label: "1-2 years", labelBn: "১-২ বছর", min: 12, max: 24 },
+  { value: "2-3", label: "2-3 years", labelBn: "২-৩ বছর", min: 24, max: 36 },
+  { value: "3+", label: "3+ years", labelBn: "৩+ বছর", min: 36, max: 120 },
 ];
 
 // Helper to format product card
@@ -69,6 +69,11 @@ async function formatProductCard(
     slug: product.slug,
     brand: product.brand,
     ageRange: product.ageRange,
+    ageRangeMin: product.ageRangeMin,
+    ageRangeMax: product.ageRangeMax,
+    isBpaFree: product.isBpaFree,
+    isOrganic: product.isOrganic,
+    isHypoallergenic: product.isHypoallergenic,
     ratingAvg: product.ratingAvg,
     ratingCount: product.ratingCount,
     isNew: product.isNew,
@@ -145,7 +150,7 @@ const categoryRouter = new Hono().get(
   zValidator("query", categoryPageQuerySchema),
   async (c) => {
   const { slug } = c.req.param();
-  const { page, limit, sort, brand, minPrice, maxPrice, ageRange } = c.req.valid("query");
+  const { page, limit, sort, brand, minPrice, maxPrice, ageRange, rating } = c.req.valid("query");
 
   // Fetch the category
   const [categoryRow] = await db
@@ -175,12 +180,26 @@ const categoryRouter = new Hono().get(
     }
   }
 
-  // Get category and all child categories for product query
-  const childCategories = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.parentId, categoryRow.id));
-  const categoryIds = [categoryRow.id, ...childCategories.map((c) => c.id)];
+  // Get category and all descendant categories recursively for product query
+  const categoryIds: string[] = [];
+
+  // Recursive function to get all descendants
+  async function addCategoryAndDescendants(categoryId: string) {
+    categoryIds.push(categoryId);
+
+    // Get all direct children
+    const children = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.parentId, categoryId));
+
+    // Recursively add each child and its descendants
+    for (const child of children) {
+      await addCategoryAndDescendants(child.id);
+    }
+  }
+
+  await addCategoryAndDescendants(categoryRow.id);
 
   // Build base conditions
   const conditions = [
@@ -195,13 +214,29 @@ const categoryRouter = new Hono().get(
     conditions.push(sql`(${sql.join(brandConditions, sql` OR `)})`);
   }
 
-  // Age range filter (comma-separated)
+  // Age range filter (comma-separated, numeric overlap)
   const ageRangeFilters = ageRange?.split(",").filter(Boolean) || [];
   if (ageRangeFilters.length > 0) {
-    const ageConditions = ageRangeFilters.map((ar) =>
-      ilike(products.ageRange, `%${ar}%`)
-    );
-    conditions.push(sql`(${sql.join(ageConditions, sql` OR `)})`);
+    const ageConditions = ageRangeFilters
+      .map((ar) => {
+        const option =
+          AGE_RANGE_OPTIONS.find((o) => o.value === ar) ||
+          AGE_RANGE_OPTIONS.find((o) => o.label === ar);
+        if (!option) return null;
+        return and(
+          lte(products.ageRangeMin, option.max),
+          gte(products.ageRangeMax, option.min)
+        );
+      })
+      .filter((condition): condition is NonNullable<typeof condition> => condition !== null);
+    if (ageConditions.length > 0) {
+      conditions.push(or(...ageConditions)!);
+    }
+  }
+
+  // Rating filter
+  if (rating !== undefined) {
+    conditions.push(gte(products.ratingAvg, rating));
   }
 
   // Query products with joins
@@ -275,12 +310,13 @@ const categoryRouter = new Hono().get(
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Calculate age range facets
+  // Calculate age range facets (numeric overlap)
   const ageRangeCounts: Record<string, number> = {};
   for (const p of formattedProducts) {
-    if (p.ageRange) {
+    if (p.ageRangeMin !== null && p.ageRangeMax !== null) {
       for (const option of AGE_RANGE_OPTIONS) {
-        if (p.ageRange.toLowerCase().includes(option.pattern.toLowerCase())) {
+        const overlaps = p.ageRangeMin <= option.max && p.ageRangeMax >= option.min;
+        if (overlaps) {
           ageRangeCounts[option.value] = (ageRangeCounts[option.value] || 0) + 1;
         }
       }

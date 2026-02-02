@@ -39,16 +39,26 @@ interface AgeRangeFilter {
   count: number;
 }
 
+interface SafetyFilter {
+  isBpaFree: number;
+  isOrganic: number;
+  isHypoallergenic: number;
+}
+
 interface FilterSidebarProps {
   categories?: CategoryFilter[];
   vendors?: VendorFilter[];
   brands?: BrandFilter[];
   ageRanges?: AgeRangeFilter[];
+  safetyFacets?: SafetyFilter;
   priceRange: { min: number; max: number };
   selectedCategories?: string[];
   selectedVendors?: string[];
   selectedBrands?: string[];
   selectedAgeRanges?: string[];
+  selectedIsBpaFree?: boolean;
+  selectedIsOrganic?: boolean;
+  selectedIsHypoallergenic?: boolean;
   selectedMinPrice?: number;
   selectedMaxPrice?: number;
   selectedRating?: number;
@@ -56,6 +66,7 @@ interface FilterSidebarProps {
   onVendorChange?: (slugs: string[]) => void;
   onBrandChange?: (brands: string[]) => void;
   onAgeRangeChange?: (ageRanges: string[]) => void;
+  onSafetyChange?: (safety: { isBpaFree?: boolean; isOrganic?: boolean; isHypoallergenic?: boolean }) => void;
   onPriceChange: (min?: number, max?: number) => void;
   onRatingChange?: (rating?: number) => void;
   onClearFilters: () => void;
@@ -111,11 +122,15 @@ export function FilterSidebar({
   vendors = [],
   brands = [],
   ageRanges = [],
+  safetyFacets,
   priceRange,
   selectedCategories = [],
   selectedVendors = [],
   selectedBrands = [],
   selectedAgeRanges = [],
+  selectedIsBpaFree = false,
+  selectedIsOrganic = false,
+  selectedIsHypoallergenic = false,
   selectedMinPrice,
   selectedMaxPrice,
   selectedRating,
@@ -123,6 +138,7 @@ export function FilterSidebar({
   onVendorChange,
   onBrandChange,
   onAgeRangeChange,
+  onSafetyChange,
   onPriceChange,
   onRatingChange,
   onClearFilters,
@@ -210,6 +226,9 @@ export function FilterSidebar({
     selectedVendors.length > 0 ||
     selectedBrands.length > 0 ||
     selectedAgeRanges.length > 0 ||
+    selectedIsBpaFree ||
+    selectedIsOrganic ||
+    selectedIsHypoallergenic ||
     selectedMinPrice !== undefined ||
     selectedMaxPrice !== undefined ||
     selectedRating !== undefined;
@@ -356,6 +375,44 @@ export function FilterSidebar({
                 </button>
               );
             })}
+          </div>
+        </AccordionSection>
+      )}
+
+      {/* Safety Filters */}
+      {safetyFacets && (safetyFacets.isBpaFree > 0 || safetyFacets.isOrganic > 0 || safetyFacets.isHypoallergenic > 0) && (
+        <AccordionSection title="Safety & Ingredients">
+          <div className="space-y-1">
+            {safetyFacets.isBpaFree > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <Checkbox
+                  checked={selectedIsBpaFree}
+                  onCheckedChange={() => onSafetyChange?.({ isBpaFree: !selectedIsBpaFree })}
+                />
+                <span className="text-sm flex-1">BPA-Free</span>
+                <span className="text-xs text-muted-foreground">({safetyFacets.isBpaFree})</span>
+              </label>
+            )}
+            {safetyFacets.isOrganic > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <Checkbox
+                  checked={selectedIsOrganic}
+                  onCheckedChange={() => onSafetyChange?.({ isOrganic: !selectedIsOrganic })}
+                />
+                <span className="text-sm flex-1">Organic</span>
+                <span className="text-xs text-muted-foreground">({safetyFacets.isOrganic})</span>
+              </label>
+            )}
+            {safetyFacets.isHypoallergenic > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <Checkbox
+                  checked={selectedIsHypoallergenic}
+                  onCheckedChange={() => onSafetyChange?.({ isHypoallergenic: !selectedIsHypoallergenic })}
+                />
+                <span className="text-sm flex-1">Hypoallergenic</span>
+                <span className="text-xs text-muted-foreground">({safetyFacets.isHypoallergenic})</span>
+              </label>
+            )}
           </div>
         </AccordionSection>
       )}

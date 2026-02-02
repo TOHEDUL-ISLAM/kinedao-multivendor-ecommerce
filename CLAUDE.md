@@ -86,9 +86,13 @@ bun run db:migrate
 
 # Open Drizzle Studio (database GUI)
 bun run db:studio
+
+# Seed database with sample data (run from apps/server)
+cd apps/server && bun run seed
+# Creates: 10 vendors, 221 categories, 3,400 products, 6 campaigns, homepage content
 ```
 
-**Important**: Schema files are in [packages/db/src/schema/](packages/db/src/schema/). Currently only `auth.ts` schema exists (user, session, account, verification tables for Better-Auth). New schemas for products, vendors, orders, etc. need to be added here and exported from [packages/db/src/schema/index.ts](packages/db/src/schema/index.ts).
+**Important**: Schema files are in [packages/db/src/schema/](packages/db/src/schema/). The project includes schemas for authentication (Better-Auth), e-commerce (products, SKUs, categories, vendors), marketing (campaigns), and content (homepage, testimonials). New schemas should be added to `packages/db/src/schema/` and exported from [packages/db/src/schema/index.ts](packages/db/src/schema/index.ts).
 
 ### Type Checking
 
@@ -118,10 +122,69 @@ bun run build
 
 - **ORM**: Drizzle ORM with PostgreSQL
 - Schema location: [packages/db/src/schema/](packages/db/src/schema/)
-- Current schemas: Better-Auth tables only (user, session, account, verification)
+- Current schemas:
+  - Authentication: Better-Auth tables (user, session, account, verification)
+  - E-commerce: products, productImages, productSkus, productOptions
+  - Catalog: categories, vendors
+  - Marketing: campaigns, campaignProducts
+  - Content: homepageFeaturedProducts, megaMenuFeaturedProducts, testimonials, featuredCollections, instagramPosts
 - Connection: PostgreSQL (configured via environment variables)
 
 **To add new tables**: Create schema file in `packages/db/src/schema/`, export from `index.ts`, then run `bun run db:push`.
+
+### Product Catalog & Filtering System
+
+The product catalog includes baby-specific metadata and advanced filtering capabilities:
+
+**Baby-Specific Product Fields**:
+- `ageRange` (string): Display value like "0-3 months", "1-2 years"
+- `ageRangeMin` / `ageRangeMax` (integer): Numeric age in months (0-36) for overlap filtering
+- `isBpaFree` / `isOrganic` / `isHypoallergenic` (boolean): Safety attributes
+- `hasSmallParts` (boolean): Indicates choking hazard
+- `safetyWarningEn` / `safetyWarningBn` (text): Safety warnings in both languages
+- `weightLimitKg` (real): For furniture and travel gear
+- `expiryDate` (timestamp): For consumables (formula, food, lotions)
+- `safetyCertifications` (text[]): Array of certifications (ASTM, FDA, CE, etc.)
+
+**Age Range Filtering**:
+- Uses **overlap logic** instead of exact matching
+- Formula: `product.ageRangeMin <= selected.max AND product.ageRangeMax >= selected.min`
+- Example: A product for "3-6 months" will appear when filtering for "0-3 months" because they overlap at 3 months
+- Multiple age ranges use OR logic (any match returns the product)
+
+**Safety Filters**:
+- BPA-Free: Filters products safe from BPA (primarily feeding products)
+- Organic: Natural/organic ingredients (skincare, feeding)
+- Hypoallergenic: Products designed to minimize allergic reactions
+- All safety filters use AND logic when combined
+
+**Facets Endpoint**:
+The `/api/catalog/facets` endpoint returns filter counts:
+```typescript
+{
+  categories: CategoryDTO[];
+  vendors: VendorDTO[];
+  brands: BrandFacet[];
+  ageRanges: AgeRangeFacet[];
+  safety: {
+    isBpaFree: number;    // Count of BPA-free products
+    isOrganic: number;     // Count of organic products
+    isHypoallergenic: number; // Count of hypoallergenic products
+  };
+  priceRange: { min: number; max: number };
+}
+```
+
+**Seed Data Statistics**:
+- Total products: 3,400 (144 leaf categories × 20 products + special categories)
+- BPA-Free: ~912 products (80% feeding items, 20% others)
+- Organic: ~537 products (60% skincare, 40% feeding, 10% others)
+- Hypoallergenic: ~639 products (70% skincare, 50% clothing, 10% others)
+- Safety certifications distributed by category (toys: ASTM/EN 71, feeding: FDA/BPA-Free, etc.)
+
+**Database Indexes**:
+- `products_age_range_idx` on (ageRangeMin, ageRangeMax) for fast overlap queries
+- `products_safety_idx` on (isBpaFree, isOrganic) for filter performance
 
 ### Frontend Routing
 
@@ -289,6 +352,56 @@ if (response.ok) {
 - ✅ Document routes with `describeRoute()` from `hono-openapi` for API documentation
 - ❌ Never use `c.notFound()` - use `c.json({ error: "Not found" }, 404)` instead
 - ❌ Never use native `fetch()` on frontend - always use RPC client (`api.*`)
+
+#### Catalog API Usage Examples
+
+The catalog API supports advanced filtering with full type safety:
+
+```typescript
+// Basic product listing
+const response = await api.catalog.products.$get({
+  query: { limit: 20 }
+});
+
+// Age range filtering (supports multiple ranges with OR logic)
+const response = await api.catalog.products.$get({
+  query: {
+    ageRange: "0-3 months,3-6 months",  // Products overlapping either range
+    limit: 20
+  }
+});
+
+// Safety filters (AND logic when combined)
+const response = await api.catalog.products.$get({
+  query: {
+    isBpaFree: "true",
+    isOrganic: "true",  // Both conditions must match
+    limit: 20
+  }
+});
+
+// Combined filters
+const response = await api.catalog.products.$get({
+  query: {
+    category: "feeding-nursing",
+    ageRange: "0-3 months",
+    isBpaFree: "true",
+    min: "50000",  // Price in paisa (500 BDT)
+    max: "200000", // Price in paisa (2000 BDT)
+    sort: "price_asc",
+    limit: 20
+  }
+});
+
+// Get facets for filter UI
+const facets = await api.catalog.facets.$get();
+// Returns: { categories, vendors, brands, ageRanges, safety, priceRange }
+```
+
+**Filter URL Format** (for direct browser access or testing):
+- Age range: `?ageRange=0-3%20months` or `?ageRange=0-3%20months,1-2%20years` (multiple)
+- Safety: `?isBpaFree=true&isOrganic=true&isHypoallergenic=true`
+- Combined: `?category=toys-play&ageRange=1-2%20years&isBpaFree=true&min=50000&max=200000`
 
 #### API Documentation with Scalar
 

@@ -215,6 +215,25 @@ const features = [
 ];
 const ageRanges = ["0-3 months", "3-6 months", "6-12 months", "1-2 years", "2-3 years"];
 
+// Age range string to numeric mapping (months)
+const ageRangeMapping: Record<string, { min: number; max: number }> = {
+  "0-3 months": { min: 0, max: 3 },
+  "3-6 months": { min: 3, max: 6 },
+  "6-12 months": { min: 6, max: 12 },
+  "1-2 years": { min: 12, max: 24 },
+  "2-3 years": { min: 24, max: 36 },
+};
+
+// Safety certifications by category
+const safetyCertsByCategory: Record<string, string[]> = {
+  toys: ["ASTM F963", "EN 71", "CE"],
+  feeding: ["FDA Approved", "BPA-Free Certified"],
+  furniture: ["CPSC Compliant", "JPMA Certified"],
+  clothing: ["Oeko-Tex Standard 100"],
+  skincare: ["Dermatologist Tested", "Hypoallergenic"],
+  travel: ["FMVSS 213", "ECE R44/04"],
+};
+
 const categoryHierarchy = [
   {
     name: "Baby Clothing",
@@ -491,7 +510,7 @@ async function seed() {
         name: v.name,
         slug: slugify(v.name),
         logoUrl: `https://placehold.co/100x100/f0f0f0/333?text=${encodeURIComponent(v.name.charAt(0))}`,
-        ratingAvg: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        ratingAvg: faker.number.int({ min: 1, max: 5 }),
         ratingCount: faker.number.int({ min: 50, max: 500 }),
         locationCity: v.city,
         isVerified: v.verified,
@@ -632,6 +651,81 @@ async function seed() {
       const description = faker.commerce.productDescription();
       const shortDescription = `Quality ${meta.leafName.toLowerCase()} designed for everyday comfort.`;
 
+      // Parse age range to numeric
+      const ageRangeValue = faker.helpers.arrayElement(ageRanges);
+      const ageNumeric = ageRangeMapping[ageRangeValue] || { min: 0, max: 36 };
+
+      // Category-based safety logic
+      const categoryName = meta.parentName;
+      const isFeedingCat = categoryName === "Feeding & Nursing";
+      const isSkincareCat = meta.leafName.includes("Lotion") || meta.leafName.includes("Cream") || meta.leafName.includes("Oil") || meta.leafName.includes("Shampoo") || meta.leafName.includes("Wash");
+      const isToyCat = categoryName === "Toys & Play";
+      const isFurnitureCat = categoryName === "Nursery & Furniture";
+      const isTravelCat = categoryName === "Strollers & Travel";
+
+      // BPA-free: 80% for feeding, 20% others
+      const isBpaFree = isFeedingCat
+        ? faker.datatype.boolean({ probability: 0.8 })
+        : faker.datatype.boolean({ probability: 0.2 });
+
+      // Organic: 60% skincare, 40% feeding, 10% others
+      const isOrganic = isSkincareCat
+        ? faker.datatype.boolean({ probability: 0.6 })
+        : isFeedingCat
+        ? faker.datatype.boolean({ probability: 0.4 })
+        : faker.datatype.boolean({ probability: 0.1 });
+
+      // Hypoallergenic: 70% skincare, 50% clothing, 10% others
+      const isHypoallergenic = isSkincareCat
+        ? faker.datatype.boolean({ probability: 0.7 })
+        : categoryName === "Baby Clothing"
+        ? faker.datatype.boolean({ probability: 0.5 })
+        : faker.datatype.boolean({ probability: 0.1 });
+
+      // Small parts: 30% toys, 5% others
+      const hasSmallParts = isToyCat
+        ? faker.datatype.boolean({ probability: 0.3 })
+        : faker.datatype.boolean({ probability: 0.05 });
+
+      // Safety warnings
+      let safetyWarningEn = null;
+      let safetyWarningBn = null;
+      if (hasSmallParts) {
+        safetyWarningEn = "CHOKING HAZARD - Small parts. Not for children under 3 years.";
+        safetyWarningBn = "শ্বাসরোধের ঝুঁকি - ছোট অংশ। ৩ বছরের কম বয়সী শিশুদের জন্য নয়।";
+      }
+
+      // Weight limits (furniture, travel)
+      const weightLimitKg = (isFurnitureCat || isTravelCat)
+        ? faker.number.float({ min: 10, max: 30, fractionDigits: 1 })
+        : null;
+
+      // Expiry dates (consumables)
+      const isConsumable = meta.leafName.includes("Formula") ||
+                           meta.leafName.includes("Food") ||
+                           meta.leafName.includes("Lotion") ||
+                           meta.leafName.includes("Cream") ||
+                           meta.leafName.includes("Oil");
+      const expiryDate = isConsumable
+        ? new Date(Date.now() + faker.number.int({ min: 6, max: 24 }) * 30 * 24 * 60 * 60 * 1000)
+        : null;
+
+      // Certifications
+      let certifications: string[] = [];
+      if (isToyCat && safetyCertsByCategory.toys) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.toys, { min: 1, max: 2 });
+      } else if (isFeedingCat && safetyCertsByCategory.feeding) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.feeding, { min: 1, max: 2 });
+      } else if (isFurnitureCat && safetyCertsByCategory.furniture) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.furniture, { min: 1, max: 2 });
+      } else if (isClothing && safetyCertsByCategory.clothing) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.clothing, { min: 1, max: 1 });
+      } else if (isSkincareCat && safetyCertsByCategory.skincare) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.skincare, { min: 1, max: 2 });
+      } else if (isTravelCat && safetyCertsByCategory.travel) {
+        certifications = faker.helpers.arrayElements(safetyCertsByCategory.travel, { min: 1, max: 2 });
+      }
+
       productInserts.push({
         title,
         titleBn: toBn(title),
@@ -643,8 +737,19 @@ async function seed() {
         shortDescriptionBn: toBn(shortDescription),
         description,
         descriptionBn: toBn(description),
-        ageRange: faker.helpers.arrayElement(ageRanges),
-        ratingAvg: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        ageRange: ageRangeValue, // Keep string for backward compatibility
+        ageRangeMin: ageNumeric.min,
+        ageRangeMax: ageNumeric.max,
+        isBpaFree,
+        isOrganic,
+        isHypoallergenic,
+        hasSmallParts,
+        safetyWarningEn,
+        safetyWarningBn,
+        weightLimitKg,
+        expiryDate,
+        safetyCertifications: certifications,
+        ratingAvg: faker.number.int({ min: 1, max: 5 }),
         ratingCount: faker.number.int({ min: 5, max: 200 }),
         bestSellerScore: faker.number.int({ min: 0, max: 1000 }),
         isNew: faker.datatype.boolean({ probability: 0.3 }),

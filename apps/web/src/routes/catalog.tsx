@@ -16,7 +16,11 @@ const catalogSearchSchema = z.object({
   q: z.string().optional(),
   category: z.string().optional(), // Comma-separated list of category slugs
   vendor: z.string().optional(), // Comma-separated list of vendor slugs
-  brand: z.string().optional(),
+  brand: z.string().optional(), // Comma-separated list of brands
+  ageRange: z.string().optional(), // Comma-separated list of age ranges
+  isBpaFree: z.enum(["true", "false"]).optional(),
+  isOrganic: z.enum(["true", "false"]).optional(),
+  isHypoallergenic: z.enum(["true", "false"]).optional(),
   min: z.coerce.number().optional(),
   max: z.coerce.number().optional(),
   rating: z.coerce.number().optional(),
@@ -43,6 +47,7 @@ async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promi
       category: params.category, // API expects comma-separated categories
       vendor: params.vendor, // API expects comma-separated vendors
       brand: params.brand,
+      ageRange: params.ageRange,
       min: params.min?.toString(),
       max: params.max?.toString(),
       rating: params.rating?.toString(),
@@ -118,6 +123,26 @@ function CatalogPage() {
     updateSearch({ vendor: slugs.length > 0 ? slugs.join(",") : undefined });
   };
 
+  const handleBrandChange = (brands: string[]) => {
+    updateSearch({ brand: brands.length > 0 ? brands.join(",") : undefined });
+  };
+
+  const handleAgeRangeChange = (ageRanges: string[]) => {
+    updateSearch({ ageRange: ageRanges.length > 0 ? ageRanges.join(",") : undefined });
+  };
+
+  const handleSafetyChange = (safety: {
+    isBpaFree?: boolean;
+    isOrganic?: boolean;
+    isHypoallergenic?: boolean;
+  }) => {
+    updateSearch({
+      isBpaFree: safety.isBpaFree ? "true" : undefined,
+      isOrganic: safety.isOrganic ? "true" : undefined,
+      isHypoallergenic: safety.isHypoallergenic ? "true" : undefined,
+    });
+  };
+
   const handlePriceChange = (min?: number, max?: number) => {
     updateSearch({ min, max });
   };
@@ -141,6 +166,10 @@ function CatalogPage() {
     !!search.category ||
     !!search.vendor ||
     !!search.brand ||
+    !!search.ageRange ||
+    search.isBpaFree === "true" ||
+    search.isOrganic === "true" ||
+    search.isHypoallergenic === "true" ||
     search.min !== undefined ||
     search.max !== undefined ||
     search.rating !== undefined;
@@ -148,6 +177,8 @@ function CatalogPage() {
   // Selected values for sidebar
   const selectedCategories = search.category?.split(",").filter(Boolean) ?? [];
   const selectedVendors = search.vendor?.split(",").filter(Boolean) ?? [];
+  const selectedBrands = search.brand?.split(",").filter(Boolean) ?? [];
+  const selectedAgeRanges = search.ageRange?.split(",").filter(Boolean) ?? [];
 
   return (
     <div className="min-h-screen">
@@ -168,21 +199,32 @@ function CatalogPage() {
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 xl:w-72 flex-shrink-0">
-            <div className="sticky top-20">
+            <div className="sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar pr-1">
               {facetsLoading ? (
                 <FilterSidebarSkeleton />
               ) : facets ? (
                 <FilterSidebar
                   categories={facets.categories}
                   vendors={facets.vendors}
+                  brands={facets.brands}
+                  ageRanges={facets.ageRanges}
+                  safetyFacets={facets.safety}
                   priceRange={facets.priceRange}
                   selectedCategories={selectedCategories}
                   selectedVendors={selectedVendors}
+                  selectedBrands={selectedBrands}
+                  selectedAgeRanges={selectedAgeRanges}
+                  selectedIsBpaFree={search.isBpaFree === "true"}
+                  selectedIsOrganic={search.isOrganic === "true"}
+                  selectedIsHypoallergenic={search.isHypoallergenic === "true"}
                   selectedMinPrice={search.min}
                   selectedMaxPrice={search.max}
                   selectedRating={search.rating}
                   onCategoryChange={handleCategoryChange}
                   onVendorChange={handleVendorChange}
+                  onBrandChange={handleBrandChange}
+                  onAgeRangeChange={handleAgeRangeChange}
+                  onSafetyChange={handleSafetyChange}
                   onPriceChange={handlePriceChange}
                   onRatingChange={handleRatingChange}
                   onClearFilters={handleClearFilters}
@@ -222,14 +264,25 @@ function CatalogPage() {
           onClose={() => setIsMobileFilterOpen(false)}
           categories={facets.categories}
           vendors={facets.vendors}
+          brands={facets.brands}
+          ageRanges={facets.ageRanges}
+          safetyFacets={facets.safety}
           priceRange={facets.priceRange}
           selectedCategories={selectedCategories}
           selectedVendors={selectedVendors}
+          selectedBrands={selectedBrands}
+          selectedAgeRanges={selectedAgeRanges}
+          selectedIsBpaFree={search.isBpaFree === "true"}
+          selectedIsOrganic={search.isOrganic === "true"}
+          selectedIsHypoallergenic={search.isHypoallergenic === "true"}
           selectedMinPrice={search.min}
           selectedMaxPrice={search.max}
           selectedRating={search.rating}
           onCategoryChange={handleCategoryChange}
           onVendorChange={handleVendorChange}
+          onBrandChange={handleBrandChange}
+          onAgeRangeChange={handleAgeRangeChange}
+          onSafetyChange={handleSafetyChange}
           onPriceChange={handlePriceChange}
           onRatingChange={handleRatingChange}
           onClearFilters={handleClearFilters}

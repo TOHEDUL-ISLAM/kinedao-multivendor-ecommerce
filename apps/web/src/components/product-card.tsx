@@ -8,7 +8,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { useQuickViewStore } from "@/stores/quick-view-store";
-import { formatPrice, calculateDiscountPercent } from "@/lib/format";
+import { formatPrice, calculateDiscountPercent, formatRating } from "@/lib/format";
 import { toast } from "sonner";
 
 export interface ProductCardData {
@@ -164,6 +164,9 @@ export function ProductCard({ product }: ProductCardProps) {
               />
             ))}
           </div>
+          <span className="text-xs text-muted-foreground">
+            {formatRating(product.ratingAvg)}
+          </span>
           <span className="text-xs text-muted-foreground">
             ({product.ratingCount || 0})
           </span>

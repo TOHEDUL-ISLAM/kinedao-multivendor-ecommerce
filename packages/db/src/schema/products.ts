@@ -34,6 +34,20 @@ export const products = pgTable(
     description: text("description"),
     descriptionBn: text("description_bn"),
     ageRange: varchar("age_range", { length: 50 }), // e.g., "0-3 months", "1-2 years"
+
+    // Baby-specific metadata (numeric age ranges for overlap filtering)
+    ageRangeMin: integer("age_range_min"), // Age in months (0-36)
+    ageRangeMax: integer("age_range_max"), // Age in months (0-36)
+    isBpaFree: boolean("is_bpa_free").default(false).notNull(),
+    isOrganic: boolean("is_organic").default(false).notNull(),
+    isHypoallergenic: boolean("is_hypoallergenic").default(false).notNull(),
+    hasSmallParts: boolean("has_small_parts").default(false).notNull(),
+    safetyWarningEn: text("safety_warning_en"),
+    safetyWarningBn: text("safety_warning_bn"),
+    weightLimitKg: real("weight_limit_kg"), // For furniture, carriers
+    expiryDate: timestamp("expiry_date"), // For consumables
+    safetyCertifications: text("safety_certifications").array(), // ["ASTM", "CE"]
+
     ratingAvg: real("rating_avg").default(0),
     ratingCount: integer("rating_count").default(0),
     bestSellerScore: integer("best_seller_score").default(0),
@@ -52,6 +66,8 @@ export const products = pgTable(
     index("products_category_idx").on(table.categoryId),
     index("products_bestseller_idx").on(table.bestSellerScore),
     index("products_created_idx").on(table.createdAt),
+    index("products_age_range_idx").on(table.ageRangeMin, table.ageRangeMax),
+    index("products_safety_idx").on(table.isBpaFree, table.isOrganic),
   ]
 );
 

@@ -27,6 +27,7 @@ const categorySearchSchema = z.object({
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   ageRange: z.string().optional(),
+  rating: z.coerce.number().optional(),
 });
 
 type CategorySearch = z.infer<typeof categorySearchSchema>;
@@ -50,6 +51,7 @@ async function fetchCategoryPage(
       minPrice: params.minPrice?.toString(),
       maxPrice: params.maxPrice?.toString(),
       ageRange: params.ageRange,
+      rating: params.rating?.toString(),
     },
   });
 
@@ -117,6 +119,10 @@ function CategoryPage() {
     updateSearch({ minPrice: min, maxPrice: max });
   };
 
+  const handleRatingChange = (rating?: number) => {
+    updateSearch({ rating });
+  };
+
   const handleSortChange = (sort: CategorySearch["sort"]) => {
     updateSearch({ sort });
   };
@@ -141,7 +147,8 @@ function CategoryPage() {
     selectedBrands.length > 0 ||
     selectedAgeRanges.length > 0 ||
     search.minPrice !== undefined ||
-    search.maxPrice !== undefined;
+    search.maxPrice !== undefined ||
+    search.rating !== undefined;
 
   // Build breadcrumb items
   const breadcrumbItems: BreadcrumbItem[] = [
@@ -224,13 +231,14 @@ function CategoryPage() {
                   selectedAgeRanges={selectedAgeRanges}
                   selectedMinPrice={search.minPrice}
                   selectedMaxPrice={search.maxPrice}
+                  selectedRating={search.rating}
                   onBrandChange={handleBrandChange}
                   onAgeRangeChange={handleAgeRangeChange}
                   onPriceChange={handlePriceChange}
+                  onRatingChange={handleRatingChange}
                   onClearFilters={handleClearFilters}
                   showCategories={false}
                   showVendors={false}
-                  showRating={false}
                 />
               ) : null}
             </div>
@@ -256,6 +264,7 @@ function CategoryPage() {
                 ageRangeOptions={data?.facets.ageRanges || []}
                 minPrice={search.minPrice}
                 maxPrice={search.maxPrice}
+                selectedRating={search.rating}
                 onRemoveBrand={(brand) =>
                   handleBrandChange(selectedBrands.filter((b) => b !== brand))
                 }
@@ -263,6 +272,7 @@ function CategoryPage() {
                   handleAgeRangeChange(selectedAgeRanges.filter((a) => a !== ageRange))
                 }
                 onRemovePrice={() => handlePriceChange(undefined, undefined)}
+                onRemoveRating={() => handleRatingChange(undefined)}
                 onClearAll={handleClearFilters}
                 className="mb-4"
               />
@@ -311,13 +321,14 @@ function CategoryPage() {
           selectedAgeRanges={selectedAgeRanges}
           selectedMinPrice={search.minPrice}
           selectedMaxPrice={search.maxPrice}
+          selectedRating={search.rating}
           onBrandChange={handleBrandChange}
           onAgeRangeChange={handleAgeRangeChange}
           onPriceChange={handlePriceChange}
+          onRatingChange={handleRatingChange}
           onClearFilters={handleClearFilters}
           showCategories={false}
           showVendors={false}
-          showRating={false}
         />
       )}
     </div>
@@ -454,9 +465,11 @@ interface ActiveFiltersProps {
   ageRangeOptions: { value: string; label: string; labelBn: string }[];
   minPrice?: number;
   maxPrice?: number;
+  selectedRating?: number;
   onRemoveBrand: (brand: string) => void;
   onRemoveAgeRange: (ageRange: string) => void;
   onRemovePrice: () => void;
+  onRemoveRating: () => void;
   onClearAll: () => void;
   className?: string;
 }
@@ -467,9 +480,11 @@ function ActiveFilters({
   ageRangeOptions,
   minPrice,
   maxPrice,
+  selectedRating,
   onRemoveBrand,
   onRemoveAgeRange,
   onRemovePrice,
+  onRemoveRating,
   onClearAll,
   className,
 }: ActiveFiltersProps) {
@@ -482,6 +497,7 @@ function ActiveFilters({
   };
 
   const hasPrice = minPrice !== undefined || maxPrice !== undefined;
+  const hasRating = selectedRating !== undefined;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
@@ -501,6 +517,13 @@ function ActiveFilters({
         <FilterChip
           label={`৳${minPrice || 0} - ৳${maxPrice || "∞"}`}
           onRemove={onRemovePrice}
+        />
+      )}
+
+      {hasRating && (
+        <FilterChip
+          label={`${selectedRating}★ ${t("catalog.ratingUp")}`}
+          onRemove={onRemoveRating}
         />
       )}
 

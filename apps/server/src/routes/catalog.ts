@@ -9,7 +9,7 @@ import {
   vendors,
   categories,
 } from "@kineDao.com/db/schema";
-import { eq, and, gte, sql, asc, desc, or, ilike, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, sql, asc, desc, or, ilike, inArray } from "drizzle-orm";
 import {
   catalogQuerySchema,
   type CatalogProductsResponse,
@@ -60,6 +60,11 @@ async function formatProductCard(
     slug: product.slug,
     brand: product.brand,
     ageRange: product.ageRange,
+    ageRangeMin: product.ageRangeMin,
+    ageRangeMax: product.ageRangeMax,
+    isBpaFree: product.isBpaFree,
+    isOrganic: product.isOrganic,
+    isHypoallergenic: product.isHypoallergenic,
     ratingAvg: product.ratingAvg,
     ratingCount: product.ratingCount,
     isNew: product.isNew,
@@ -85,7 +90,7 @@ async function formatProductCard(
 }
 
 // GET /api/catalog/products - Paginated product listing with filters
-// GET /api/catalog/facets - Category and vendor facets with price range
+// GET /api/catalog/facets - Category, vendor, brand, and age range facets with price range
 const catalogRouter = new Hono().get(
   "/products",
   describeRoute({
@@ -111,10 +116,11 @@ const catalogRouter = new Hono().get(
   }),
   zValidator("query", catalogQuerySchema),
   async (c) => {
-  const { q, category, vendor, brand, min, max, rating, sort, cursor, limit } = c.req.valid("query");
+  const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit } = c.req.valid("query");
 
-  // Build conditions
+  // Build base conditions (exclude cursor for total count)
   const conditions = [eq(products.isActive, true)];
+  const cursorConditions: typeof conditions = [];
 
   // Text search
   if (q) {
@@ -139,19 +145,28 @@ const catalogRouter = new Hono().get(
         .where(inArray(categories.slug, categorySlugs));
 
       if (categoryRows.length > 0) {
-        // Get all category IDs and their child categories
+        // Get all category IDs and their descendants recursively
         const allCategoryIds = new Set<string>();
 
-        for (const cat of categoryRows) {
-          allCategoryIds.add(cat.id);
+        // Recursive function to get all descendants
+        async function addCategoryAndDescendants(categoryId: string) {
+          allCategoryIds.add(categoryId);
 
-          // Get child categories
-          const childCategories = await db
+          // Get all direct children
+          const children = await db
             .select()
             .from(categories)
-            .where(eq(categories.parentId, cat.id));
+            .where(eq(categories.parentId, categoryId));
 
-          childCategories.forEach((c) => allCategoryIds.add(c.id));
+          // Recursively add each child and its descendants
+          for (const child of children) {
+            await addCategoryAndDescendants(child.id);
+          }
+        }
+
+        // Process each selected category
+        for (const cat of categoryRows) {
+          await addCategoryAndDescendants(cat.id);
         }
 
         if (allCategoryIds.size > 0) {
@@ -181,12 +196,72 @@ const catalogRouter = new Hono().get(
 
   // Brand filter
   if (brand) {
-    conditions.push(ilike(products.brand, brand));
+    const brandNames = brand.split(",").filter(Boolean);
+    if (brandNames.length > 0) {
+      conditions.push(inArray(products.brand, brandNames));
+    }
+  }
+
+  // Age Range filter (numeric overlap logic)
+  if (ageRange) {
+    const ageRanges = ageRange.split(",").filter(Boolean);
+    if (ageRanges.length > 0) {
+      const ageRangeMapping: Record<string, { min: number; max: number }> = {
+        "0-3 months": { min: 0, max: 3 },
+        "3-6 months": { min: 3, max: 6 },
+        "6-12 months": { min: 6, max: 12 },
+        "1-2 years": { min: 12, max: 24 },
+        "2-3 years": { min: 24, max: 36 },
+      };
+
+      const ageConditions = ageRanges
+        .map((range) => {
+          const numeric = ageRangeMapping[range];
+          if (!numeric) return null;
+
+          // Overlap: product.ageRangeMin <= selected.max AND product.ageRangeMax >= selected.min
+          return and(
+            lte(products.ageRangeMin, numeric.max),
+            gte(products.ageRangeMax, numeric.min)
+          );
+        })
+        .filter((condition): condition is NonNullable<typeof condition> => condition !== null);
+
+      if (ageConditions.length > 0) {
+        conditions.push(or(...ageConditions)!);
+      }
+    }
+  }
+
+  // Safety Filters
+  if (isBpaFree === "true") {
+    conditions.push(eq(products.isBpaFree, true));
+  }
+  if (isOrganic === "true") {
+    conditions.push(eq(products.isOrganic, true));
+  }
+  if (isHypoallergenic === "true") {
+    conditions.push(eq(products.isHypoallergenic, true));
   }
 
   // Rating filter
   if (rating !== undefined) {
     conditions.push(gte(products.ratingAvg, rating));
+  }
+
+  // Price filter (moved to DB query)
+  if (min !== undefined || max !== undefined) {
+    const minPrice = min ?? 0;
+    const maxPrice = max ?? Number.MAX_SAFE_INTEGER;
+    
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${productSkus}
+        WHERE ${productSkus.productId} = ${products.id}
+        AND ${productSkus.priceAmount} >= ${minPrice}
+        AND ${productSkus.priceAmount} <= ${maxPrice}
+      )`
+    );
   }
 
   // Cursor-based pagination
@@ -198,21 +273,21 @@ const catalogRouter = new Hono().get(
       // Depending on sort, we need different cursor logic
       if (sort === "price_asc" || sort === "price_desc") {
         // Price sort uses SKU subquery, just use ID for now
-        conditions.push(sql`${products.id} > ${cursorId}`);
+        cursorConditions.push(sql`${products.id} > ${cursorId}`);
       } else if (sort === "newest" && cursorValue) {
-        conditions.push(
+        cursorConditions.push(
           sql`(${products.createdAt}, ${products.id}) < (${new Date(cursorValue)}, ${cursorId})`
         );
       } else if (sort === "bestseller" && cursorValue) {
-        conditions.push(
+        cursorConditions.push(
           sql`(${products.bestSellerScore}, ${products.id}) < (${parseInt(cursorValue, 10)}, ${cursorId})`
         );
       } else if (sort === "rating" && cursorValue) {
-        conditions.push(
+        cursorConditions.push(
           sql`(${products.ratingAvg}, ${products.id}) < (${parseFloat(cursorValue)}, ${cursorId})`
         );
       } else {
-        conditions.push(sql`${products.id} > ${cursorId}`);
+        cursorConditions.push(sql`${products.id} > ${cursorId}`);
       }
     } catch {
       // Invalid cursor, ignore
@@ -229,7 +304,7 @@ const catalogRouter = new Hono().get(
     .from(products)
     .innerJoin(vendors, eq(products.vendorId, vendors.id))
     .innerJoin(categories, eq(products.categoryId, categories.id))
-    .where(and(...conditions));
+    .where(and(...conditions, ...cursorConditions));
 
   // Apply sort
   switch (sort) {
@@ -260,16 +335,7 @@ const catalogRouter = new Hono().get(
     )
   );
 
-  // Apply price filter (post-query since price is in SKUs)
-  if (min !== undefined || max !== undefined) {
-    formattedProducts = formattedProducts.filter((p) => {
-      if (min !== undefined && p.priceAmount < min) return false;
-      if (max !== undefined && p.priceAmount > max) return false;
-      return true;
-    });
-  }
-
-  // Sort by price if needed (post-query)
+  // Sort by price if needed (post-query, or we could improve this later with a subquery sort)
   if (sort === "price_asc") {
     formattedProducts.sort((a, b) => a.priceAmount - b.priceAmount);
   } else if (sort === "price_desc") {
@@ -301,7 +367,7 @@ const catalogRouter = new Hono().get(
   const [countResult] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(products)
-    .where(and(...conditions.slice(0, -1))); // Remove cursor condition for total
+    .where(and(...conditions));
 
   const response: CatalogProductsResponse = {
     items: formattedProducts,
@@ -316,7 +382,7 @@ const catalogRouter = new Hono().get(
   describeRoute({
     tags: ["Catalog"],
     summary: "Get catalog facets",
-    description: "Fetch available filters including categories, vendors, and price ranges for the catalog.",
+    description: "Fetch available filters including categories, vendors, brands, age ranges, and price ranges for the catalog.",
     responses: {
       200: {
         description: "Successful response with facets data",
@@ -326,6 +392,8 @@ const catalogRouter = new Hono().get(
               z.object({
                 categories: z.array(z.any()),
                 vendors: z.array(z.any()),
+                brands: z.array(z.any()),
+                ageRanges: z.array(z.any()),
                 priceRange: z.object({
                   min: z.number(),
                   max: z.number(),
@@ -341,7 +409,14 @@ const catalogRouter = new Hono().get(
   // Categories with product counts
   const categoriesData = await db
     .select({
-      category: categories,
+      id: categories.id,
+      name: categories.name,
+      nameBn: categories.nameBn,
+      slug: categories.slug,
+      parentId: categories.parentId,
+      iconKey: categories.iconKey,
+      imageUrl: categories.imageUrl,
+      sortOrder: categories.sortOrder,
       productCount: sql<number>`count(${products.id})::int`,
     })
     .from(categories)
@@ -349,25 +424,71 @@ const catalogRouter = new Hono().get(
       products,
       and(eq(products.categoryId, categories.id), eq(products.isActive, true))
     )
-    .groupBy(categories.id)
+    .groupBy(
+      categories.id,
+      categories.name,
+      categories.nameBn,
+      categories.slug,
+      categories.parentId,
+      categories.iconKey,
+      categories.imageUrl,
+      categories.sortOrder
+    )
     .orderBy(asc(categories.sortOrder));
 
+  // Map to DTOs with direct product counts
   const categoryDTOs: CategoryDTO[] = categoriesData.map((row) => ({
-    id: row.category.id,
-    name: row.category.name,
-    nameBn: row.category.nameBn,
-    slug: row.category.slug,
-    parentId: row.category.parentId,
-    iconKey: row.category.iconKey,
-    imageUrl: row.category.imageUrl,
-    sortOrder: row.category.sortOrder,
+    id: row.id,
+    name: row.name,
+    nameBn: row.nameBn,
+    slug: row.slug,
+    parentId: row.parentId,
+    iconKey: row.iconKey,
+    imageUrl: row.imageUrl,
+    sortOrder: row.sortOrder,
     productCount: row.productCount,
   }));
+
+  // Recursively aggregate product counts from children to parents
+  const categoryMap = new Map(categoryDTOs.map(c => [c.id, c]));
+
+  // Function to get total count including all descendants
+  function getTotalCount(categoryId: string, visited = new Set<string>()): number {
+    if (visited.has(categoryId)) return 0; // Prevent infinite loops
+    visited.add(categoryId);
+
+    const category = categoryMap.get(categoryId);
+    if (!category) return 0;
+
+    // Start with direct product count
+    let total = category.productCount || 0;
+
+    // Add counts from all children
+    const children = categoryDTOs.filter(c => c.parentId === categoryId);
+    for (const child of children) {
+      total += getTotalCount(child.id, visited);
+    }
+
+    return total;
+  }
+
+  // Update all categories with total counts (including descendants)
+  categoryDTOs.forEach(category => {
+    category.productCount = getTotalCount(category.id);
+  });
 
   // Vendors with product counts
   const vendorsData = await db
     .select({
-      vendor: vendors,
+      id: vendors.id,
+      name: vendors.name,
+      slug: vendors.slug,
+      logoUrl: vendors.logoUrl,
+      ratingAvg: vendors.ratingAvg,
+      ratingCount: vendors.ratingCount,
+      locationCity: vendors.locationCity,
+      isVerified: vendors.isVerified,
+      badges: vendors.badges,
       productCount: sql<number>`count(${products.id})::int`,
     })
     .from(vendors)
@@ -375,21 +496,75 @@ const catalogRouter = new Hono().get(
       products,
       and(eq(products.vendorId, vendors.id), eq(products.isActive, true))
     )
-    .groupBy(vendors.id)
+    .groupBy(
+      vendors.id,
+      vendors.name,
+      vendors.slug,
+      vendors.logoUrl,
+      vendors.ratingAvg,
+      vendors.ratingCount,
+      vendors.locationCity,
+      vendors.isVerified,
+      vendors.badges
+    )
     .orderBy(desc(sql`count(${products.id})`));
 
   const vendorDTOs: VendorDTO[] = vendorsData.map((row) => ({
-    id: row.vendor.id,
-    name: row.vendor.name,
-    slug: row.vendor.slug,
-    logoUrl: row.vendor.logoUrl,
-    ratingAvg: row.vendor.ratingAvg,
-    ratingCount: row.vendor.ratingCount,
-    locationCity: row.vendor.locationCity,
-    isVerified: row.vendor.isVerified,
-    badges: row.vendor.badges,
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    logoUrl: row.logoUrl,
+    ratingAvg: row.ratingAvg,
+    ratingCount: row.ratingCount,
+    locationCity: row.locationCity,
+    isVerified: row.isVerified,
+    badges: row.badges,
     productCount: row.productCount,
   }));
+
+  // Brands with product counts
+  const brandsData = await db
+    .select({
+      name: products.brand,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(products)
+    .where(eq(products.isActive, true))
+    .groupBy(products.brand)
+    .orderBy(desc(sql`count(*)`));
+
+  const brandDTOs = brandsData.filter(b => b.name).map(b => ({
+    name: b.name!,
+    count: b.count,
+  }));
+
+  // Age Ranges with product counts
+  const ageRangesData = await db
+    .select({
+      ageRange: products.ageRange,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(products)
+    .where(eq(products.isActive, true))
+    .groupBy(products.ageRange)
+    .orderBy(desc(sql`count(*)`));
+
+  const ageRangeDTOs = ageRangesData.filter(a => a.ageRange).map(a => ({
+    value: a.ageRange!,
+    label: a.ageRange!,
+    labelBn: a.ageRange!, // TODO: Add BN mapping
+    count: a.count,
+  }));
+
+  // Safety facets
+  const [safetyFacets] = await db
+    .select({
+      isBpaFree: sql<number>`count(*) filter (where ${products.isBpaFree} = true)::int`,
+      isOrganic: sql<number>`count(*) filter (where ${products.isOrganic} = true)::int`,
+      isHypoallergenic: sql<number>`count(*) filter (where ${products.isHypoallergenic} = true)::int`,
+    })
+    .from(products)
+    .where(eq(products.isActive, true));
 
   // Price range from SKUs
   const [priceRange] = await db
@@ -404,6 +579,13 @@ const catalogRouter = new Hono().get(
   const response: CatalogFacetsResponse = {
     categories: categoryDTOs,
     vendors: vendorDTOs,
+    brands: brandDTOs,
+    ageRanges: ageRangeDTOs,
+    safety: {
+      isBpaFree: safetyFacets?.isBpaFree || 0,
+      isOrganic: safetyFacets?.isOrganic || 0,
+      isHypoallergenic: safetyFacets?.isHypoallergenic || 0,
+    },
     priceRange: {
       min: priceRange?.min || 0,
       max: priceRange?.max || 100000,
