@@ -164,6 +164,47 @@ export interface InstagramPostDTO {
 }
 
 // =====================
+// Product Detail Page Types
+// =====================
+
+// Vendor with enhanced details for product detail page
+export interface VendorDetailDTO extends VendorDTO {
+  totalSales: number;
+}
+
+// Category with breadcrumb hierarchy for product detail page
+export interface CategoryBreadcrumbDTO {
+  id: string;
+  name: string;
+  nameBn: string | null;
+  slug: string;
+  parent: {
+    id: string;
+    name: string;
+    nameBn: string | null;
+    slug: string;
+    parent: {
+      id: string;
+      name: string;
+      nameBn: string | null;
+      slug: string;
+    } | null;
+  } | null;
+}
+
+// Full product detail for product detail page
+export interface ProductDetailDTO extends Omit<ProductQuickViewDTO, "vendor" | "category"> {
+  vendor: VendorDetailDTO;
+  category: CategoryBreadcrumbDTO;
+  relatedProducts: ProductCardDTO[];
+}
+
+// Product detail response
+export interface ProductDetailResponse {
+  product: ProductDetailDTO;
+}
+
+// =====================
 // API Response Types
 // =====================
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart, Star, ShoppingCart, Check, Eye } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -84,7 +85,11 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group bg-card rounded-2xl overflow-hidden product-card shadow-sm border border-border/50 hover:shadow-lg transition-all duration-300">
+    <Link
+      to="/product/$slug"
+      params={{ slug: product.slug }}
+      className="group bg-card rounded-2xl overflow-hidden product-card shadow-sm border border-border/50 hover:shadow-lg transition-all duration-300 block"
+    >
       {/* Image container */}
       <div className="relative aspect-square bg-secondary/30 overflow-hidden">
         <img
@@ -196,15 +201,15 @@ export function ProductCard({ product }: ProductCardProps) {
             The design had them. I'll include them for better UX especially on touch devices.
         */}
         <div className="flex gap-2 mt-3 lg:hidden">
-          <Button 
+          <Button
             className="flex-1 rounded-full text-xs h-8"
             onClick={handleAddToCart}
             disabled={!product.isAvailable}
           >
             Buy Now
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="rounded-full text-xs h-8 w-8 p-0"
             onClick={handleAddToCart}
             disabled={!product.isAvailable}
@@ -213,7 +218,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
