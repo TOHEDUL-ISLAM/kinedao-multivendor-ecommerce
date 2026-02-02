@@ -14,6 +14,7 @@ import type { CategoryPageResponse } from "@kineDao.com/api-types/catalog";
 
 // Components
 import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-sidebar";
+import { StickyFilterContainer } from "@/components/catalog/sticky-filter-container";
 import { ProductCard, ProductCardSkeleton, type ProductCardData } from "@/components/product-card";
 import { Pagination, CompactPagination } from "@/components/catalog/pagination";
 import { Breadcrumb, type BreadcrumbItem } from "@/components/ui/breadcrumb";
@@ -219,7 +220,7 @@ function CategoryPage() {
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
-            <div className="sticky top-20">
+            <StickyFilterContainer>
               {isLoading ? (
                 <FilterSidebarSkeleton />
               ) : data ? (
@@ -241,7 +242,7 @@ function CategoryPage() {
                   showVendors={false}
                 />
               ) : null}
-            </div>
+            </StickyFilterContainer>
           </aside>
 
           {/* Main Content */}

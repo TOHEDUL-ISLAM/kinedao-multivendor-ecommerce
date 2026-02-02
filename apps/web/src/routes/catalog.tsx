@@ -8,6 +8,7 @@ import type { CatalogFacetsResponse, CatalogProductsResponse } from "@kineDao.co
 
 // Components
 import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-sidebar";
+import { StickyFilterContainer } from "@/components/catalog/sticky-filter-container";
 import { SortBar } from "@/components/catalog/sort-bar";
 import { ProductGrid } from "@/components/catalog/product-grid";
 
@@ -199,7 +200,7 @@ function CatalogPage() {
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 xl:w-72 flex-shrink-0">
-            <div className="sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar pr-1">
+            <StickyFilterContainer>
               {facetsLoading ? (
                 <FilterSidebarSkeleton />
               ) : facets ? (
@@ -230,7 +231,7 @@ function CatalogPage() {
                   onClearFilters={handleClearFilters}
                 />
               ) : null}
-            </div>
+            </StickyFilterContainer>
           </aside>
 
           {/* Main Content */}
