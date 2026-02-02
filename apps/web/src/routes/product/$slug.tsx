@@ -209,6 +209,7 @@ function ProductDetailPage() {
           <ImageGallery
             images={product.images}
             productTitle={displayTitle}
+            productId={product.id}
           />
 
           {/* Product Info */}
