@@ -15,17 +15,33 @@ import { authRouter } from "./routes/auth";
 import { newsletterRouter } from "./routes/newsletter";
 import { categoryRouter } from "./routes/category";
 import { recommendationsRouter } from "./routes/recommendations";
+import { cartRouter } from "./routes/cart";
 import { openAPIRouteHandler } from 'hono-openapi';
+
+export type AppEnv = {
+  Variables: {
+    user: typeof auth.$Infer.Session.user | null;
+  };
+};
 // Create main app with method chaining for RPC
-const app = new Hono()
+const app = new Hono<AppEnv>()
   .use(logger())
+  .use("*", async (c, next) => {
+    try {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      c.set("user", session?.user ?? null);
+    } catch {
+      c.set("user", null);
+    }
+    await next();
+  })
   .use(secureHeaders())
   .use(
     "/*",
     cors({
       origin: env.CORS_ORIGIN,
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization", "x-guest-id"],
       credentials: true,
     })
   )
@@ -39,6 +55,7 @@ const app = new Hono()
   .route("/api/newsletter", newsletterRouter)
   .route("/api/category", categoryRouter)
   .route("/api/recommendations", recommendationsRouter)
+  .route("/api/cart", cartRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))

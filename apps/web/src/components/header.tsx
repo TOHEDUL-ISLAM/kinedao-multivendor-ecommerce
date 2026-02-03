@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { ensureGuestId } from "@/lib/cart-session";
 import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -36,7 +37,9 @@ export default function Header() {
 
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const cartCount = useCartStore((state) => state.getItemCount());
+  const cartCount = useCartStore((state) => state.itemCount);
+  const fetchCart = useCartStore((state) => state.fetchCart);
+  const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
 
   const { data: session, isPending } = authClient.useSession();
   const isLoggedIn = !!session;
@@ -48,6 +51,17 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    ensureGuestId();
+    void fetchCart();
+  }, [fetchCart]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      void mergeGuestCart(session.user.id);
+    }
+  }, [mergeGuestCart, session?.user?.id]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -129,7 +143,7 @@ export default function Header() {
                   <ShoppingCart className="w-5 h-5" />
                   {cartCount > 0 && (
                     <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground rounded-full">
-                      {cartCount}
+                      {cartCount > 9 ? "9+" : cartCount}
                     </Badge>
                   )}
                 </Button>

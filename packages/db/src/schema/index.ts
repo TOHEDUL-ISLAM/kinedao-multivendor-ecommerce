@@ -13,3 +13,6 @@ export * from "./mega-menu";
 
 // Homepage content schemas
 export * from "./home";
+
+// Cart schemas
+export * from "./cart";

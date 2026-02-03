@@ -53,6 +53,10 @@ export const products = pgTable(
     bestSellerScore: integer("best_seller_score").default(0),
     isNew: boolean("is_new").default(true),
     isHot: boolean("is_hot").default(false),
+    status: varchar("status", { length: 20 })
+      .default("pending")
+      .$type<"pending" | "approved" | "rejected">()
+      .notNull(),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

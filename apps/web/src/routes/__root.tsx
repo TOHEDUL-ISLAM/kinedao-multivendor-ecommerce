@@ -109,7 +109,7 @@ function RootDocument() {
                 {/* Global Modals */}
                 <QuickViewModal />
 
-                <Toaster richColors position="bottom-right" />
+                <Toaster richColors position="bottom-right" expand={true} />
               </ReactLenis>
             </ClientOnly>
           </QueryClientProvider>

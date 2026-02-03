@@ -47,17 +47,17 @@ export function QuantitySelector({
 
   const sizeStyles = {
     sm: {
-      button: "p-1.5",
+      button: "inline-flex items-center justify-center p-1.5",
       icon: "h-3 w-3",
       value: "w-8 text-sm",
     },
     md: {
-      button: "p-2",
+      button: "inline-flex items-center justify-center p-2",
       icon: "h-4 w-4",
       value: "w-10 text-sm",
     },
     lg: {
-      button: "p-2.5",
+      button: "inline-flex items-center justify-center h-11 w-11",
       icon: "h-5 w-5",
       value: "w-12 text-base",
     },

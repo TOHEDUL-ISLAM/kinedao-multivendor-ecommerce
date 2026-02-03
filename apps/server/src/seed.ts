@@ -754,6 +754,7 @@ async function seed() {
         bestSellerScore: faker.number.int({ min: 0, max: 1000 }),
         isNew: faker.datatype.boolean({ probability: 0.3 }),
         isHot: faker.datatype.boolean({ probability: 0.2 }),
+        status: "approved",
         isActive: true,
       });
 

@@ -57,7 +57,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
   const openQuickView = useQuickViewStore((state) => state.open);
   const navigate = useNavigate();
-  const [isAdding, setIsAdding] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<"buyNow" | "addToCart" | null>(null);
   const addTimeoutRef = useRef<number | null>(null);
 
   const isFav = isFavorite(product.id);
@@ -82,10 +82,10 @@ export function ProductCard({ product }: ProductCardProps) {
     };
   }, []);
 
-  const addOneToCart = async (): Promise<boolean> => {
-    if (isAdding || isOutOfStock) return false;
+  const addOneToCart = async (action: "buyNow" | "addToCart"): Promise<boolean> => {
+    if (loadingAction || isOutOfStock) return false;
 
-    setIsAdding(true);
+    setLoadingAction(action);
     const startedAt = Date.now();
 
     try {
@@ -96,6 +96,8 @@ export function ProductCard({ product }: ProductCardProps) {
       if (response.ok) {
         const data = await response.json();
         if (data.hasVariants) {
+          // Reset loading immediately when opening quick view modal
+          setLoadingAction(null);
           openQuickView(data.id);
           return false;
         }
@@ -108,42 +110,33 @@ export function ProductCard({ product }: ProductCardProps) {
           return false;
         }
 
-        addToCart({
-          productId: data.id,
-          skuId: availableSku.id,
-          title: data.title,
-          imageUrl: data.images[0]?.url || product.imageUrl,
-          priceAmount: availableSku.priceAmount,
-          currency: availableSku.currency,
-          optionValues: availableSku.optionValues ?? null,
-        });
-        toast.success(t("cart.itemAdded"));
-        return true;
+        const added = await addToCart(
+          { productId: data.id, skuId: availableSku.id },
+          1
+        );
+        if (added) {
+          toast.success(t("cart.itemAdded"));
+        } else {
+          toast.error(t("cart.addFailed"));
+        }
+        return added;
       }
 
-      addToCart({
-        productId: product.id,
-        skuId: product.id,
-        title: product.title,
-        imageUrl: product.imageUrl,
-        priceAmount: product.priceAmount,
-        currency: product.currency,
-        optionValues: null,
-      });
-      toast.success(t("cart.itemAdded"));
-      return true;
+      const added = await addToCart({ productId: product.id }, 1);
+      if (added) {
+        toast.success(t("cart.itemAdded"));
+      } else {
+        toast.error(t("cart.addFailed"));
+      }
+      return added;
     } catch {
-      addToCart({
-        productId: product.id,
-        skuId: product.id,
-        title: product.title,
-        imageUrl: product.imageUrl,
-        priceAmount: product.priceAmount,
-        currency: product.currency,
-        optionValues: null,
-      });
-      toast.success(t("cart.itemAdded"));
-      return true;
+      const added = await addToCart({ productId: product.id }, 1);
+      if (added) {
+        toast.success(t("cart.itemAdded"));
+      } else {
+        toast.error(t("cart.addFailed"));
+      }
+      return added;
     } finally {
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, 500 - elapsed);
@@ -151,7 +144,7 @@ export function ProductCard({ product }: ProductCardProps) {
         window.clearTimeout(addTimeoutRef.current);
       }
       addTimeoutRef.current = window.setTimeout(() => {
-        setIsAdding(false);
+        setLoadingAction(null);
       }, remaining);
     }
   };
@@ -163,7 +156,7 @@ export function ProductCard({ product }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    await addOneToCart();
+    await addOneToCart("addToCart");
   };
 
   const handleBuyNow = async (e: React.MouseEvent) => {
@@ -173,7 +166,7 @@ export function ProductCard({ product }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    const added = await addOneToCart();
+    const added = await addOneToCart("buyNow");
     if (added) {
       navigate({ to: "/cart" });
     }
@@ -301,13 +294,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <Button
             className="flex-1 rounded-full text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4 gap-1 sm:gap-2 min-w-0"
             onClick={isVariantProduct ? handleViewOptions : handleBuyNow}
-            disabled={isOutOfStock || (!isVariantProduct && isAdding)}
-            aria-busy={!isVariantProduct && isAdding}
+            disabled={isOutOfStock || (!isVariantProduct && loadingAction !== null)}
+            aria-busy={!isVariantProduct && loadingAction === "buyNow"}
           >
             {!isOutOfStock && isVariantProduct && <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />}
             {!isOutOfStock && !isVariantProduct && (
               <>
-                {isAdding ? (
+                {loadingAction === "buyNow" ? (
                   <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin shrink-0" />
                 ) : (
                   <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -321,11 +314,11 @@ export function ProductCard({ product }: ProductCardProps) {
               variant="secondary"
               className="rounded-full h-8 w-8 sm:h-10 sm:w-10 p-0 shrink-0"
               onClick={handleAddToCart}
-              disabled={isOutOfStock || isAdding}
-              aria-busy={isAdding}
+              disabled={isOutOfStock || loadingAction !== null}
+              aria-busy={loadingAction === "addToCart"}
               aria-label={t("product.addToCart")}
             >
-              {isAdding ? (
+              {loadingAction === "addToCart" ? (
                 <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
               ) : (
                 <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

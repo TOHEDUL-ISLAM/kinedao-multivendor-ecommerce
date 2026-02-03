@@ -16,4 +16,5 @@ export const api = {
   category: apiClient.api.category,
   auth: apiClient.api.auth,
   recommendations: apiClient.api.recommendations,
+  cart: apiClient.api.cart,
 };

@@ -107,21 +107,19 @@ export function QuickViewModal() {
     };
   }, [isOpen]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product || !selectedSku || !isInStock) return;
 
-    addToCart({
-      productId: product.id,
-      skuId: selectedSku.id,
-      title: product.title,
-      imageUrl: product.images[0]?.url || null,
-      priceAmount: selectedSku.priceAmount,
-      currency: selectedSku.currency,
-      optionValues: selectedSku.optionValues,
-    }, quantity);
-
-    toast.success(t("cart.itemAdded"));
-    close();
+    const added = await addToCart(
+      { productId: product.id, skuId: selectedSku.id },
+      quantity
+    );
+    if (added) {
+      toast.success(t("cart.itemAdded"));
+      close();
+    } else {
+      toast.error(t("cart.addFailed"));
+    }
   };
 
   const handleOptionChange = (optionName: string, value: string) => {

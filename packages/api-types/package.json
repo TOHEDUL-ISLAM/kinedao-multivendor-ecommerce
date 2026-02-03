@@ -6,7 +6,8 @@
     ".": "./src/index.ts",
     "./catalog": "./src/catalog.ts",
     "./auth": "./src/auth.ts",
-    "./newsletter": "./src/newsletter.ts"
+    "./newsletter": "./src/newsletter.ts",
+    "./cart": "./src/cart.ts"
   },
   "dependencies": {
     "zod": "catalog:"
