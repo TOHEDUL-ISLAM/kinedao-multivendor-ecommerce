@@ -9,3 +9,6 @@ export * from "./newsletter";
 
 // Re-export all types from cart
 export * from "./cart";
+
+// Re-export all types from vendor
+export * from "./vendor";

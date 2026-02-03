@@ -17,4 +17,6 @@ export const api = {
   auth: apiClient.api.auth,
   recommendations: apiClient.api.recommendations,
   cart: apiClient.api.cart,
+  vendor: apiClient.api.vendor,
+  upload: apiClient.api.upload,
 };

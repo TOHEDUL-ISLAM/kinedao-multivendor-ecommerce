@@ -139,7 +139,8 @@ function HomePage() {
       )}
 
       {/* Popular Brands + Featured Collections */}
-      {(isLoading || (data?.popularBrands && data.popularBrands.length > 0)) && (
+      {/* Popular Brands - Hidden */}
+      {/* {(isLoading || (data?.popularBrands && data.popularBrands.length > 0)) && (
         <section className="bg-secondary/30 py-8 sm:py-10 lg:py-12">
           <div className="container mx-auto px-4">
             {isLoading ? (
@@ -155,7 +156,7 @@ function HomePage() {
             )}
           </div>
         </section>
-      )}
+      )} */}
 
       {/* Testimonials */}
       {(isLoading || (data?.testimonials && data.testimonials.length > 0)) && (

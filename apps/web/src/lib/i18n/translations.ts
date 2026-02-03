@@ -398,6 +398,15 @@ export const translations = {
 
     // Auth - Resend cooldown
     "auth.resendCooldown": "Please wait {seconds}s before resending",
+
+    // Vendor Application
+    "vendor.apply.title": "Become a Vendor",
+    "vendor.apply.subtitle": "Join KineDao marketplace and start selling baby products",
+    "vendor.step.businessInfo": "Business Info",
+    "vendor.step.address": "Address",
+    "vendor.step.documents": "Documents",
+    "vendor.step.payment": "Payment",
+    "vendor.step.review": "Review",
   },
   bn: {
     // Header
@@ -798,6 +807,15 @@ export const translations = {
 
     // Auth - Resend cooldown
     "auth.resendCooldown": "পুনরায় পাঠানোর আগে {seconds} সেকেন্ড অপেক্ষা করুন",
+
+    // Vendor Application
+    "vendor.apply.title": "বিক্রেতা হন",
+    "vendor.apply.subtitle": "কিনেদাও মার্কেটপ্লেসে যোগ দিন এবং শিশু পণ্য বিক্রি শুরু করুন",
+    "vendor.step.businessInfo": "ব্যবসার তথ্য",
+    "vendor.step.address": "ঠিকানা",
+    "vendor.step.documents": "ডকুমেন্ট",
+    "vendor.step.payment": "পেমেন্ট",
+    "vendor.step.review": "পর্যালোচনা",
   },
 } as const;
 

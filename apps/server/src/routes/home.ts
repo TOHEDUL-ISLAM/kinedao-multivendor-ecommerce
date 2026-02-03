@@ -257,7 +257,7 @@ const homeRouter = new Hono().get(
       .from(brands)
       .where(eq(brands.isActive, true))
       .orderBy(asc(brands.sortOrder))
-      .limit(8);
+      .limit(5);
 
     const popularBrands: BrandDTO[] = brandsData.map((b) => ({
       id: b.id,

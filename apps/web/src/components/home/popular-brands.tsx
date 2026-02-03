@@ -36,8 +36,8 @@ export function PopularBrands({ brands, className }: PopularBrandsProps) {
       <div
         className={cn(
           "grid gap-3 sm:gap-4 lg:gap-6",
-          // Responsive: 3 cols mobile, 4 cols tablet, 6 cols desktop
-          "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+          // Responsive: 2-3 cols mobile, 5 cols desktop for 5 brands
+          "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
         )}
       >
         {brands.map((brand, index) => {
@@ -52,12 +52,13 @@ export function PopularBrands({ brands, className }: PopularBrandsProps) {
                 src={brand.logoUrl}
                 alt={brand.name}
                 className={cn(
-                  "h-8 sm:h-10 lg:h-12 w-auto object-contain",
-                  "grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100",
+                  "h-12 sm:h-14 lg:h-16 w-auto max-w-full object-contain",
+                  "group-hover:scale-105",
                   "transition-all duration-300"
                 )}
-                whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
+                whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
                 transition={softSpring}
+                loading="lazy"
               />
             </Link>
           );
@@ -82,8 +83,8 @@ export function PopularBrandsSkeleton() {
   return (
     <section>
       <div className="h-6 sm:h-7 w-40 mx-auto bg-muted rounded animate-pulse mb-4 sm:mb-6" />
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-        {[...Array(6)].map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+        {[...Array(5)].map((_, i) => (
           <div
             key={i}
             className="h-16 sm:h-20 lg:h-24 rounded-xl bg-muted animate-pulse"

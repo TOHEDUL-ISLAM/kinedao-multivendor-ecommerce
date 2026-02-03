@@ -29,6 +29,8 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
+import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
+import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -130,6 +132,16 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorApplyIndexRoute = VendorApplyIndexRouteImport.update({
+  id: '/vendor/apply/',
+  path: '/vendor/apply/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorApplyStatusRoute = VendorApplyStatusRouteImport.update({
+  id: '/vendor/apply/status',
+  path: '/vendor/apply/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +164,8 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/vendor/apply/': typeof VendorApplyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +188,8 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/vendor/apply': typeof VendorApplyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +213,8 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/vendor/apply/': typeof VendorApplyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -221,6 +239,8 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/status'
+    | '/vendor/apply/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -243,6 +263,8 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/status'
+    | '/vendor/apply'
   id:
     | '__root__'
     | '/'
@@ -265,6 +287,8 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/status'
+    | '/vendor/apply/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +312,8 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
+  VendorApplyStatusRoute: typeof VendorApplyStatusRoute
+  VendorApplyIndexRoute: typeof VendorApplyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -432,6 +458,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/apply/': {
+      id: '/vendor/apply/'
+      path: '/vendor/apply'
+      fullPath: '/vendor/apply/'
+      preLoaderRoute: typeof VendorApplyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor/apply/status': {
+      id: '/vendor/apply/status'
+      path: '/vendor/apply/status'
+      fullPath: '/vendor/apply/status'
+      preLoaderRoute: typeof VendorApplyStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -456,6 +496,8 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
+  VendorApplyStatusRoute: VendorApplyStatusRoute,
+  VendorApplyIndexRoute: VendorApplyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

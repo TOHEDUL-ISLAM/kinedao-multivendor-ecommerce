@@ -7,7 +7,8 @@
     "./catalog": "./src/catalog.ts",
     "./auth": "./src/auth.ts",
     "./newsletter": "./src/newsletter.ts",
-    "./cart": "./src/cart.ts"
+    "./cart": "./src/cart.ts",
+    "./vendor": "./src/vendor.ts"
   },
   "dependencies": {
     "zod": "catalog:"

@@ -16,6 +16,8 @@ import { newsletterRouter } from "./routes/newsletter";
 import { categoryRouter } from "./routes/category";
 import { recommendationsRouter } from "./routes/recommendations";
 import { cartRouter } from "./routes/cart";
+import { vendorRouter } from "./routes/vendor";
+import { uploadRouter } from "./routes/upload";
 import { openAPIRouteHandler } from 'hono-openapi';
 
 export type AppEnv = {
@@ -56,6 +58,8 @@ const app = new Hono<AppEnv>()
   .route("/api/category", categoryRouter)
   .route("/api/recommendations", recommendationsRouter)
   .route("/api/cart", cartRouter)
+  .route("/api/vendor", vendorRouter)
+  .route("/api/upload", uploadRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
