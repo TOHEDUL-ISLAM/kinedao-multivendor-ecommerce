@@ -1,12 +1,12 @@
 import { useForm } from "@tanstack/react-form";
-import { useLanguage } from "@/lib/i18n/use-language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { documentsSchema, type DocumentsInput } from "@kineDao.com/api-types/vendor";
 import { useVendorApplicationStore } from "@/stores/vendor-application-store";
 import { FileUpload } from "../file-upload";
-import type { Language } from "@/lib/i18n/translations";
+import { useTranslation } from "@/hooks/use-translation";
+import { CreditCard } from "lucide-react";
 
 interface DocumentsStepProps {
   onNext: () => void;
@@ -14,7 +14,7 @@ interface DocumentsStepProps {
 }
 
 export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const { documents, setDocuments, markStepCompleted } = useVendorApplicationStore();
 
   const form = useForm({
@@ -35,65 +35,13 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
     },
   });
 
-  interface DocumentsLabels {
-    title: string;
-    subtitle: string;
-    nidNumber: string;
-    nidNumberPlaceholder: string;
-    nidFront: string;
-    nidFrontDesc: string;
-    nidBack: string;
-    nidBackDesc: string;
-    tradeLicense: string;
-    tradeLicenseDesc: string;
-    shopLogo: string;
-    shopLogoDesc: string;
-    next: string;
-    back: string;
-  }
-
-  const t: Record<Language, DocumentsLabels> = {
-    en: {
-      title: "Documents",
-      subtitle: "Upload required documents for verification",
-      nidNumber: "NID Number",
-      nidNumberPlaceholder: "10 or 17 digit NID number",
-      nidFront: "NID Front Side",
-      nidFrontDesc: "Clear photo of NID front side",
-      nidBack: "NID Back Side",
-      nidBackDesc: "Clear photo of NID back side",
-      tradeLicense: "Trade License",
-      tradeLicenseDesc: "Upload trade license (optional)",
-      shopLogo: "Shop Logo",
-      shopLogoDesc: "Upload your shop logo (optional)",
-      next: "Next",
-      back: "Back",
-    },
-    bn: {
-      title: "ডকুমেন্ট",
-      subtitle: "যাচাইকরণের জন্য প্রয়োজনীয় ডকুমেন্ট আপলোড করুন",
-      nidNumber: "জাতীয় পরিচয়পত্র নম্বর",
-      nidNumberPlaceholder: "১০ বা ১৭ সংখ্যার NID নম্বর",
-      nidFront: "NID সামনের পাশ",
-      nidFrontDesc: "NID এর সামনের দিকের স্পষ্ট ছবি",
-      nidBack: "NID পিছনের পাশ",
-      nidBackDesc: "NID এর পিছনের দিকের স্পষ্ট ছবি",
-      tradeLicense: "ট্রেড লাইসেন্স",
-      tradeLicenseDesc: "ট্রেড লাইসেন্স আপলোড করুন (ঐচ্ছিক)",
-      shopLogo: "দোকানের লোগো",
-      shopLogoDesc: "আপনার দোকানের লোগো আপলোড করুন (ঐচ্ছিক)",
-      next: "পরবর্তী",
-      back: "পিছনে",
-    },
-  };
-
-  const labels = t[language];
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">{labels.title}</h2>
-        <p className="text-muted-foreground text-sm">{labels.subtitle}</p>
+    <div className="space-y-6 step-enter">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          {t("vendor.form.documents.title")}
+        </h2>
+        <p className="text-muted-foreground">{t("vendor.form.documents.subtitle")}</p>
       </div>
 
       <form
@@ -108,8 +56,10 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
         <form.Field name="nidNumber">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>
-                {labels.nidNumber} <span className="text-red-500">*</span>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <CreditCard className="w-4 h-4 text-primary" />
+                {t("vendor.form.documents.nidNumber")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
               <Input
                 id={field.name}
@@ -117,10 +67,11 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.nidNumberPlaceholder}
+                placeholder={t("vendor.form.documents.nidNumberPlaceholder")}
+                className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
               />
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -134,8 +85,8 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
           <form.Field name="nidFrontUrl">
             {(field) => (
               <FileUpload
-                label={`${labels.nidFront} *`}
-                description={labels.nidFrontDesc}
+                label={`${t("vendor.form.documents.nidFront")} *`}
+                description={t("vendor.form.documents.nidFrontDesc")}
                 value={field.state.value}
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
@@ -150,8 +101,8 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
           <form.Field name="nidBackUrl">
             {(field) => (
               <FileUpload
-                label={`${labels.nidBack} *`}
-                description={labels.nidBackDesc}
+                label={`${t("vendor.form.documents.nidBack")} *`}
+                description={t("vendor.form.documents.nidBackDesc")}
                 value={field.state.value}
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
@@ -169,8 +120,8 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
           <form.Field name="tradeLicenseUrl">
             {(field) => (
               <FileUpload
-                label={labels.tradeLicense}
-                description={labels.tradeLicenseDesc}
+                label={t("vendor.form.documents.tradeLicense")}
+                description={t("vendor.form.documents.tradeLicenseDesc")}
                 value={field.state.value || ""}
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
@@ -185,8 +136,8 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
           <form.Field name="shopLogoUrl">
             {(field) => (
               <FileUpload
-                label={labels.shopLogo}
-                description={labels.shopLogoDesc}
+                label={t("vendor.form.documents.shopLogo")}
+                description={t("vendor.form.documents.shopLogoDesc")}
                 value={field.state.value || ""}
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
@@ -199,20 +150,17 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
         </div>
 
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            {labels.back}
+          <Button type="button" variant="outline" onClick={onBack} className="rounded-xl">
+            {t("vendor.form.back")}
           </Button>
           <form.Subscribe>
             {(state) => (
               <Button
                 type="submit"
                 disabled={!state.canSubmit || state.isSubmitting}
+                className="ml-auto gradient-primary hover:opacity-90 rounded-xl px-6"
               >
-                {state.isSubmitting
-                  ? language === "en"
-                    ? "Saving..."
-                    : "সংরক্ষণ হচ্ছে..."
-                  : labels.next}
+                {state.isSubmitting ? t("vendor.form.saving") : t("vendor.form.next")}
               </Button>
             )}
           </form.Subscribe>

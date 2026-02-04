@@ -253,7 +253,7 @@ function ApplicationStatusPage() {
                 <Link to="/">{labels.common.backToHome}</Link>
               </Button>
               <Button asChild className="flex-1 gap-2">
-                <Link to="/vendor/apply">
+                <Link to="/vendor/apply/form">
                   {labels.rejected.reapplyButton}
                   <ArrowRight className="w-4 h-4" />
                 </Link>

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BD_DISTRICTS, type BDDistrict } from "@kineDao.com/api-types/vendor";
-import { useLanguage } from "@/lib/i18n/use-language";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface DistrictSelectProps {
   value?: string;
@@ -12,7 +12,7 @@ interface DistrictSelectProps {
 }
 
 export function DistrictSelect({ value, onChange, error, disabled }: DistrictSelectProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -35,14 +35,14 @@ export function DistrictSelect({ value, onChange, error, disabled }: DistrictSel
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "flex h-12 w-full items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm ring-offset-background form-transition",
+          "focus:outline-none focus:ring-2 focus:ring-primary/20",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          error && "border-red-500 focus:ring-red-500"
+          error && "border-destructive focus:ring-destructive"
         )}
       >
         <span className={cn(!value && "text-muted-foreground")}>
-          {value || (language === "en" ? "Select district..." : "জেলা নির্বাচন করুন...")}
+          {value || t("vendor.form.address.selectDistrict")}
         </span>
         <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
       </button>
@@ -66,7 +66,7 @@ export function DistrictSelect({ value, onChange, error, disabled }: DistrictSel
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder={language === "en" ? "Search district..." : "জেলা খুঁজুন..."}
+                  placeholder={t("vendor.form.address.searchDistrict")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
@@ -79,7 +79,7 @@ export function DistrictSelect({ value, onChange, error, disabled }: DistrictSel
             <div className="max-h-60 overflow-y-auto p-1">
               {filteredDistricts.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  {language === "en" ? "No district found" : "কোনো জেলা পাওয়া যায়নি"}
+                  {t("vendor.form.address.noDistrictFound")}
                 </div>
               ) : (
                 filteredDistricts.map((district: BDDistrict) => (
@@ -103,7 +103,7 @@ export function DistrictSelect({ value, onChange, error, disabled }: DistrictSel
         </>
       )}
 
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>
   );
 }

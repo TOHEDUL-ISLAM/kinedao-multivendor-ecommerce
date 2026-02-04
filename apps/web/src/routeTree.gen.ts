@@ -31,6 +31,7 @@ import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
 import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
 import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
+import { Route as VendorApplyFormRouteImport } from './routes/vendor/apply/form'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -142,6 +143,11 @@ const VendorApplyStatusRoute = VendorApplyStatusRouteImport.update({
   path: '/vendor/apply/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorApplyFormRoute = VendorApplyFormRouteImport.update({
+  id: '/vendor/apply/form',
+  path: '/vendor/apply/form',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
 }
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/vendor/apply': typeof VendorApplyIndexRoute
 }
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
 }
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/vendor/apply/'
   fileRoutesByTo: FileRoutesByTo
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/vendor/apply'
   id:
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/vendor/apply/'
   fileRoutesById: FileRoutesById
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
+  VendorApplyFormRoute: typeof VendorApplyFormRoute
   VendorApplyStatusRoute: typeof VendorApplyStatusRoute
   VendorApplyIndexRoute: typeof VendorApplyIndexRoute
 }
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorApplyStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/apply/form': {
+      id: '/vendor/apply/form'
+      path: '/vendor/apply/form'
+      fullPath: '/vendor/apply/form'
+      preLoaderRoute: typeof VendorApplyFormRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -496,6 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
+  VendorApplyFormRoute: VendorApplyFormRoute,
   VendorApplyStatusRoute: VendorApplyStatusRoute,
   VendorApplyIndexRoute: VendorApplyIndexRoute,
 }

@@ -1,40 +1,19 @@
 import { useForm } from "@tanstack/react-form";
-import { useLanguage } from "@/lib/i18n/use-language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { paymentSchema, type PaymentInput } from "@kineDao.com/api-types/vendor";
 import { useVendorApplicationStore } from "@/stores/vendor-application-store";
-import { Building2, Smartphone } from "lucide-react";
-import type { Language } from "@/lib/i18n/translations";
+import { Landmark, Smartphone, AlertCircle } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface PaymentStepProps {
   onNext: () => void;
   onBack: () => void;
 }
 
-interface PaymentLabels {
-  title: string;
-  subtitle: string;
-  notice: string;
-  bankSection: string;
-  bankName: string;
-  bankNamePlaceholder: string;
-  accountNumber: string;
-  accountNumberPlaceholder: string;
-  accountName: string;
-  accountNamePlaceholder: string;
-  mfsSection: string;
-  bkash: string;
-  bkashPlaceholder: string;
-  nagad: string;
-  nagadPlaceholder: string;
-  next: string;
-  back: string;
-}
-
 export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const { payment, setPayment, markStepCompleted } = useVendorApplicationStore();
 
   const form = useForm({
@@ -55,56 +34,16 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
     },
   });
 
-  const t: Record<Language, PaymentLabels> = {
-    en: {
-      title: "Payment Information",
-      subtitle: "How would you like to receive payments?",
-      notice: "At least one payment method is required",
-      bankSection: "Bank Account",
-      bankName: "Bank Name",
-      bankNamePlaceholder: "e.g., Dutch Bangla Bank",
-      accountNumber: "Account Number",
-      accountNumberPlaceholder: "Enter bank account number",
-      accountName: "Account Holder Name",
-      accountNamePlaceholder: "Name as per bank records",
-      mfsSection: "Mobile Financial Services",
-      bkash: "bKash Number",
-      bkashPlaceholder: "01XXXXXXXXX",
-      nagad: "Nagad Number",
-      nagadPlaceholder: "01XXXXXXXXX",
-      next: "Next",
-      back: "Back",
-    },
-    bn: {
-      title: "পেমেন্ট তথ্য",
-      subtitle: "আপনি কিভাবে পেমেন্ট পেতে চান?",
-      notice: "অন্তত একটি পেমেন্ট পদ্ধতি প্রয়োজন",
-      bankSection: "ব্যাংক অ্যাকাউন্ট",
-      bankName: "ব্যাংকের নাম",
-      bankNamePlaceholder: "যেমন, ডাচ বাংলা ব্যাংক",
-      accountNumber: "অ্যাকাউন্ট নম্বর",
-      accountNumberPlaceholder: "ব্যাংক অ্যাকাউন্ট নম্বর লিখুন",
-      accountName: "অ্যাকাউন্ট হোল্ডারের নাম",
-      accountNamePlaceholder: "ব্যাংক রেকর্ড অনুযায়ী নাম",
-      mfsSection: "মোবাইল ফিন্যান্সিয়াল সার্ভিস",
-      bkash: "বিকাশ নম্বর",
-      bkashPlaceholder: "01XXXXXXXXX",
-      nagad: "নগদ নম্বর",
-      nagadPlaceholder: "01XXXXXXXXX",
-      next: "পরবর্তী",
-      back: "পিছনে",
-    },
-  };
-
-  const labels = t[language];
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">{labels.title}</h2>
-        <p className="text-muted-foreground text-sm">{labels.subtitle}</p>
-        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-700 dark:text-blue-300">{labels.notice}</p>
+    <div className="space-y-6 step-enter">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          {t("vendor.form.payment.title")}
+        </h2>
+        <p className="text-muted-foreground">{t("vendor.form.payment.subtitle")}</p>
+        <div className="mt-4 flex items-start gap-3 p-4 bg-coral-50 border border-secondary/30 rounded-xl">
+          <AlertCircle className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+          <p className="text-sm text-secondary-foreground">{t("vendor.form.payment.notice")}</p>
         </div>
       </div>
 
@@ -117,28 +56,32 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
         className="space-y-6"
       >
         {/* Bank Account Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-medium">
-            <Building2 className="w-5 h-5" />
-            {labels.bankSection}
+        <div className="space-y-4 p-5 bg-cream-50 rounded-xl border border-border">
+          <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Landmark className="w-5 h-5 text-primary" />
+            {t("vendor.form.payment.bankSection")}
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {t("common.optional")}
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bank Name */}
             <form.Field name="bankName">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name}>{labels.bankName}</Label>
+                  <Label htmlFor={field.name}>{t("vendor.form.payment.bankName")}</Label>
                   <Input
                     id={field.name}
                     name={field.name}
                     value={field.state.value || ""}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={labels.bankNamePlaceholder}
+                    placeholder={t("vendor.form.payment.bankNamePlaceholder")}
+                    className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p key={error?.message} className="text-sm text-red-500">
+                    <p key={error?.message} className="text-sm text-destructive">
                       {error?.message}
                     </p>
                   ))}
@@ -150,17 +93,18 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
             <form.Field name="bankAccountNumber">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name}>{labels.accountNumber}</Label>
+                  <Label htmlFor={field.name}>{t("vendor.form.payment.accountNumber")}</Label>
                   <Input
                     id={field.name}
                     name={field.name}
                     value={field.state.value || ""}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={labels.accountNumberPlaceholder}
+                    placeholder={t("vendor.form.payment.accountNumberPlaceholder")}
+                    className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p key={error?.message} className="text-sm text-red-500">
+                    <p key={error?.message} className="text-sm text-destructive">
                       {error?.message}
                     </p>
                   ))}
@@ -172,17 +116,18 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
             <form.Field name="bankAccountName">
               {(field) => (
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor={field.name}>{labels.accountName}</Label>
+                  <Label htmlFor={field.name}>{t("vendor.form.payment.accountName")}</Label>
                   <Input
                     id={field.name}
                     name={field.name}
                     value={field.state.value || ""}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={labels.accountNamePlaceholder}
+                    placeholder={t("vendor.form.payment.accountNamePlaceholder")}
+                    className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
                   />
                   {field.state.meta.errors.map((error) => (
-                    <p key={error?.message} className="text-sm text-red-500">
+                    <p key={error?.message} className="text-sm text-destructive">
                       {error?.message}
                     </p>
                   ))}
@@ -193,24 +138,27 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
         </div>
 
         {/* MFS Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-medium">
-            <Smartphone className="w-5 h-5" />
-            {labels.mfsSection}
+        <div className="space-y-4 p-5 bg-cream-50 rounded-xl border border-border">
+          <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Smartphone className="w-5 h-5 text-primary" />
+            {t("vendor.form.payment.mfsSection")}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* bKash */}
             <form.Field name="bkashNumber">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name}>{labels.bkash}</Label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <div className="w-6 h-6 rounded-full bg-[#E2136E] flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">b</span>
-                      </div>
-                    </div>
+                  <Label htmlFor={field.name} className="flex items-center gap-2">
+                    <span className="inline-block w-5 h-5 rounded bg-pink-500 text-center text-xs font-bold text-primary-foreground leading-5">
+                      b
+                    </span>
+                    {t("vendor.form.payment.bkash")}
+                  </Label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 bg-muted border border-r-0 border-border rounded-l-xl text-muted-foreground text-sm">
+                      +880
+                    </span>
                     <Input
                       id={field.name}
                       name={field.name}
@@ -218,12 +166,12 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
                       value={field.state.value || ""}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={labels.bkashPlaceholder}
-                      className="pl-12"
+                      placeholder={t("vendor.form.payment.bkashPlaceholder")}
+                      className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-l-none rounded-r-xl h-12"
                     />
                   </div>
                   {field.state.meta.errors.map((error) => (
-                    <p key={error?.message} className="text-sm text-red-500">
+                    <p key={error?.message} className="text-sm text-destructive">
                       {error?.message}
                     </p>
                   ))}
@@ -235,13 +183,16 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
             <form.Field name="nagadNumber">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor={field.name}>{labels.nagad}</Label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                      <div className="w-6 h-6 rounded-full bg-[#F6921E] flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">n</span>
-                      </div>
-                    </div>
+                  <Label htmlFor={field.name} className="flex items-center gap-2">
+                    <span className="inline-block w-5 h-5 rounded bg-orange-500 text-center text-xs font-bold text-primary-foreground leading-5">
+                      N
+                    </span>
+                    {t("vendor.form.payment.nagad")}
+                  </Label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 bg-muted border border-r-0 border-border rounded-l-xl text-muted-foreground text-sm">
+                      +880
+                    </span>
                     <Input
                       id={field.name}
                       name={field.name}
@@ -249,12 +200,12 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
                       value={field.state.value || ""}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={labels.nagadPlaceholder}
-                      className="pl-12"
+                      placeholder={t("vendor.form.payment.nagadPlaceholder")}
+                      className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-l-none rounded-r-xl h-12"
                     />
                   </div>
                   {field.state.meta.errors.map((error) => (
-                    <p key={error?.message} className="text-sm text-red-500">
+                    <p key={error?.message} className="text-sm text-destructive">
                       {error?.message}
                     </p>
                   ))}
@@ -284,20 +235,17 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
         </form.Subscribe>
 
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            {labels.back}
+          <Button type="button" variant="outline" onClick={onBack} className="rounded-xl">
+            {t("vendor.form.back")}
           </Button>
           <form.Subscribe>
             {(state) => (
               <Button
                 type="submit"
                 disabled={!state.canSubmit || state.isSubmitting}
+                className="ml-auto gradient-primary hover:opacity-90 rounded-xl px-6"
               >
-                {state.isSubmitting
-                  ? language === "en"
-                    ? "Saving..."
-                    : "সংরক্ষণ হচ্ছে..."
-                  : labels.next}
+                {state.isSubmitting ? t("vendor.form.saving") : t("vendor.form.next")}
               </Button>
             )}
           </form.Subscribe>

@@ -33,15 +33,17 @@ export function ApplicationWizard() {
   };
 
   return (
-    <div className="space-y-8">
-      <WizardStepper
-        currentStep={currentStep}
-        completedSteps={completedSteps}
-        onStepClick={handleStepClick}
-        canNavigateTo={canNavigateTo}
-      />
+    <div className="space-y-5">
+      <div className="bg-card rounded-2xl shadow-soft border border-border overflow-hidden">
+        <WizardStepper
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          onStepClick={handleStepClick}
+          canNavigateTo={canNavigateTo}
+        />
+      </div>
 
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-card border border-border rounded-2xl shadow-soft p-5 md:p-6">
         {currentStep === 1 && <BusinessInfoStep onNext={goToNextStep} />}
         {currentStep === 2 && <AddressStep onNext={goToNextStep} onBack={goToPreviousStep} />}
         {currentStep === 3 && <DocumentsStep onNext={goToNextStep} onBack={goToPreviousStep} />}

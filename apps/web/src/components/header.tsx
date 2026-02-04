@@ -78,18 +78,17 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1 cursor-pointer hover:opacity-80">
                 <MapPin className="w-3 h-3" />
-                Track Order
+                {t("header.trackOrder")}
               </span>
               <span className="hidden md:flex items-center gap-1 cursor-pointer hover:opacity-80">
                 <Phone className="w-3 h-3" />
-                Help Center
+                {t("header.helpCenter")}
               </span>
             </div>
             <span className="font-medium animate-pulse hidden sm:inline-block">
               🎉 {t("header.freeShipping")}
             </span>
             <div className="flex items-center gap-4">
-               <LanguageToggle />
               <span className="hidden md:flex items-center gap-1">
                 <Phone className="w-3 h-3" />
                 1-800-BABY
@@ -116,6 +115,7 @@ export default function Header() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <LanguageToggle />
               {/* Theme toggle */}
               <Button
                 variant="ghost"
@@ -149,6 +149,14 @@ export default function Header() {
                 </Button>
               </Link>
 
+              {/* Become a Seller */}
+              <Link to="/vendor/apply" className="hidden md:flex">
+                <Button variant="secondary" className="gap-2 rounded-full">
+                  <Store className="w-4 h-4" />
+                  {t("header.becomeSeller")}
+                </Button>
+              </Link>
+
               {/* Account */}
               {isPending ? (
                  <Skeleton className="h-10 w-24 rounded-full" />
@@ -161,7 +169,7 @@ export default function Header() {
                   onClick={() => setIsAuthModalOpen(true)}
                 >
                   <User className="w-4 h-4" />
-                  Account
+                  {t("header.account")}
                 </Button>
               )}
 
@@ -191,35 +199,35 @@ export default function Header() {
               <Link to="/catalog" search={{ sort: "price_asc" }}>
                 <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-yellow/20 hover:text-orange-600 transition-colors">
                   <Zap className="w-4 h-4 text-yellow-500" />
-                  Flash Deals
+                  {t("home.flashDeals")}
                 </Button>
               </Link>
 
               <Link to="/catalog" search={{ sort: "newest" }}>
                 <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-pink/20 hover:text-pink-600 transition-colors">
                   <Sparkles className="w-4 h-4 text-pink-500" />
-                  New Arrivals
+                  {t("nav.newArrivals")}
                 </Button>
               </Link>
 
               <Link to="/catalog" search={{ sort: "bestseller" }}>
                 <Button variant="ghost" className="gap-2 rounded-full shrink-0 hover:bg-baby-mint/20 hover:text-green-600 transition-colors">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  Trending
+                  {t("nav.trending")}
                 </Button>
               </Link>
 
               <Link to="/catalog">
                 <Button variant="ghost" className="gap-2 rounded-full shrink-0">
                   <Store className="w-4 h-4" />
-                  Top Vendors
+                  {t("nav.topVendors")}
                 </Button>
               </Link>
 
               <div className="flex-1" />
 
               <Button variant="ghost" className="gap-2 rounded-full shrink-0 text-primary font-semibold">
-                ✨ কিনেদাও Choice
+                ✨ {t("header.choice")}
               </Button>
             </div>
           </div>

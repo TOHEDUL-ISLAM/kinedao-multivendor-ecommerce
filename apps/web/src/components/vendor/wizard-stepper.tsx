@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n/use-language";
 import { Check } from "lucide-react";
 import type { WizardStep } from "@/stores/vendor-application-store";
-import type { Language } from "@/lib/i18n/translations";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface WizardStepperProps {
   currentStep: WizardStep;
@@ -11,114 +10,114 @@ interface WizardStepperProps {
   canNavigateTo: (step: WizardStep) => boolean;
 }
 
-const STEPS: { step: WizardStep }[] = [
-  { step: 1 },
-  { step: 2 },
-  { step: 3 },
-  { step: 4 },
-  { step: 5 },
-];
-
-const STEP_LABELS: Record<Language, string[]> = {
-  en: ["Business Info", "Address", "Documents", "Payment", "Review"],
-  bn: ["ব্যবসার তথ্য", "ঠিকানা", "ডকুমেন্ট", "পেমেন্ট", "পর্যালোচনা"],
-};
-
 export function WizardStepper({
   currentStep,
   completedSteps,
   onStepClick,
   canNavigateTo,
 }: WizardStepperProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
 
-  const getLabel = (index: number) => {
-    return STEP_LABELS[language][index];
-  };
+  const steps = [
+    {
+      step: 1 as WizardStep,
+      label: t("vendor.step.businessInfo"),
+      shortLabel: t("vendor.step.short.businessInfo"),
+    },
+    {
+      step: 2 as WizardStep,
+      label: t("vendor.step.address"),
+      shortLabel: t("vendor.step.short.address"),
+    },
+    {
+      step: 3 as WizardStep,
+      label: t("vendor.step.documents"),
+      shortLabel: t("vendor.step.short.documents"),
+    },
+    {
+      step: 4 as WizardStep,
+      label: t("vendor.step.payment"),
+      shortLabel: t("vendor.step.short.payment"),
+    },
+    {
+      step: 5 as WizardStep,
+      label: t("vendor.step.review"),
+      shortLabel: t("vendor.step.short.review"),
+    },
+  ];
+
+  const progressRatio = steps.length > 1 ? (currentStep - 1) / (steps.length - 1) : 0;
+  const clampedProgress = Math.min(1, Math.max(0, progressRatio));
+  const edgeInsetPercent = steps.length > 0 ? 100 / (steps.length * 2) : 0;
+  const trackInset = `${edgeInsetPercent}%`;
 
   return (
-    <nav aria-label="Progress" className="w-full">
-      {/* Desktop view */}
-      <ol className="hidden md:flex items-center justify-between">
-        {STEPS.map((stepInfo, index) => {
+    <nav aria-label="Progress" className="w-full py-6 px-4 md:px-6">
+      <div className="hidden md:flex items-center relative">
+        <div className="absolute top-5 h-0.5 bg-border" style={{ left: trackInset, right: trackInset }} />
+        <div
+          className="absolute top-5 h-0.5 bg-primary origin-left transition-transform duration-500"
+          style={{ left: trackInset, right: trackInset, transform: `scaleX(${clampedProgress})` }}
+        />
+
+        {steps.map((stepInfo) => {
           const isCompleted = completedSteps.includes(stepInfo.step);
           const isCurrent = currentStep === stepInfo.step;
           const isClickable = canNavigateTo(stepInfo.step);
 
           return (
-            <li key={stepInfo.step} className="flex-1 relative">
+            <div key={stepInfo.step} className="flex-1 min-w-0 flex justify-center relative z-10 px-1">
               <button
                 onClick={() => isClickable && onStepClick(stepInfo.step)}
                 disabled={!isClickable}
                 className={cn(
-                  "group flex flex-col items-center w-full",
-                  isClickable ? "cursor-pointer" : "cursor-not-allowed"
+                  "w-full flex flex-col items-center transition-all duration-300",
+                  isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                 )}
               >
-                {/* Connector line */}
-                {index > 0 && (
-                  <div
-                    className={cn(
-                      "absolute top-5 -left-1/2 w-full h-0.5",
-                      isCompleted || isCurrent ? "bg-primary" : "bg-muted"
-                    )}
-                    style={{ zIndex: 0 }}
-                  />
-                )}
-
-                {/* Step circle */}
                 <div
                   className={cn(
-                    "relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors",
-                    isCompleted
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : isCurrent
-                        ? "border-primary bg-background text-primary"
-                        : "border-muted bg-background text-muted-foreground"
+                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300",
+                    isCompleted && "bg-primary text-primary-foreground",
+                    isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/15",
+                    !isCompleted && !isCurrent && "bg-card border-2 border-border text-muted-foreground"
                   )}
                 >
-                  {isCompleted ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <span className="text-sm font-medium">{stepInfo.step}</span>
-                  )}
+                  {isCompleted ? <Check className="w-5 h-5" /> : stepInfo.step}
                 </div>
-
-                {/* Step label */}
                 <span
                   className={cn(
-                    "mt-2 text-xs font-medium text-center",
-                    isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"
+                    "mt-2 text-xs font-medium text-center max-w-full break-words leading-tight",
+                    isCurrent && "text-primary",
+                    isCompleted && "text-foreground",
+                    !isCompleted && !isCurrent && "text-muted-foreground"
                   )}
                 >
-                  {getLabel(index)}
+                  {stepInfo.label}
                 </span>
               </button>
-            </li>
+            </div>
           );
         })}
-      </ol>
+      </div>
 
-      {/* Mobile view - simplified */}
       <div className="md:hidden">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-muted-foreground">
-            {language === "en" ? "Step" : "ধাপ"} {currentStep} {language === "en" ? "of" : "এর"} 5
+            {t("vendor.step.step")} {currentStep} {t("vendor.step.of")} {steps.length}
           </span>
-          <span className="text-sm font-medium">{getLabel(currentStep - 1)}</span>
+          <span className="text-sm font-medium">{steps[currentStep - 1]?.shortLabel}</span>
         </div>
 
-        {/* Progress bar */}
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(currentStep / 5) * 100}%` }}
+            style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
 
-        {/* Step indicators */}
         <div className="flex justify-between mt-2">
-          {STEPS.map((stepInfo) => {
+          {steps.map((stepInfo) => {
             const isCompleted = completedSteps.includes(stepInfo.step);
             const isCurrent = currentStep === stepInfo.step;
 

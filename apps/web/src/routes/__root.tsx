@@ -1,4 +1,4 @@
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
@@ -73,6 +73,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootDocument() {
+  const location = useLocation();
+  const isVendorForm = location.pathname === "/vendor/apply/form";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -89,21 +92,21 @@ function RootDocument() {
             <ClientOnly
               fallback={
                 <div className="min-h-svh flex flex-col">
-                  <Header />
+                  {!isVendorForm && <Header />}
                   <main className="flex-1">
                     <Outlet />
                   </main>
-                  <Footer />
+                  {!isVendorForm && <Footer />}
                 </div>
               }
             >
               <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
                 <div className="min-h-svh flex flex-col">
-                  <Header />
+                  {!isVendorForm && <Header />}
                   <main className="flex-1">
                     <Outlet />
                   </main>
-                  <Footer />
+                  {!isVendorForm && <Footer />}
                 </div>
 
                 {/* Global Modals */}

@@ -1,32 +1,19 @@
 import { useForm } from "@tanstack/react-form";
-import { useLanguage } from "@/lib/i18n/use-language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { businessInfoSchema, BUSINESS_TYPES, type BusinessInfoInput, type BusinessType } from "@kineDao.com/api-types/vendor";
 import { useVendorApplicationStore } from "@/stores/vendor-application-store";
 import { cn } from "@/lib/utils";
-import type { Language } from "@/lib/i18n/translations";
+import { useTranslation } from "@/hooks/use-translation";
+import { Mail, Phone, Store, User } from "lucide-react";
 
 interface BusinessInfoStepProps {
   onNext: () => void;
 }
 
-const BUSINESS_TYPE_LABELS: Record<Language, Record<BusinessType, string>> = {
-  en: {
-    sole_proprietor: "Sole Proprietorship",
-    partnership: "Partnership",
-    company: "Limited Company",
-  },
-  bn: {
-    sole_proprietor: "একক মালিকানা",
-    partnership: "অংশীদারিত্ব",
-    company: "লিমিটেড কোম্পানি",
-  },
-};
-
 export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const { businessInfo, setBusinessInfo, markStepCompleted } = useVendorApplicationStore();
 
   const form = useForm({
@@ -48,68 +35,19 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
     },
   });
 
-  interface BusinessLabels {
-    title: string;
-    subtitle: string;
-    shopNameEn: string;
-    shopNameEnPlaceholder: string;
-    shopNameBn: string;
-    shopNameBnPlaceholder: string;
-    ownerName: string;
-    ownerNamePlaceholder: string;
-    phone: string;
-    phonePlaceholder: string;
-    email: string;
-    emailPlaceholder: string;
-    businessType: string;
-    selectType: string;
-    next: string;
-  }
-
-  const t: Record<Language, BusinessLabels> = {
-    en: {
-      title: "Business Information",
-      subtitle: "Tell us about your business",
-      shopNameEn: "Shop Name (English)",
-      shopNameEnPlaceholder: "Enter your shop name in English",
-      shopNameBn: "Shop Name (Bangla)",
-      shopNameBnPlaceholder: "আপনার দোকানের নাম বাংলায় লিখুন",
-      ownerName: "Owner Name",
-      ownerNamePlaceholder: "Enter owner's full name",
-      phone: "Phone Number",
-      phonePlaceholder: "01XXXXXXXXX",
-      email: "Email Address",
-      emailPlaceholder: "your@email.com",
-      businessType: "Business Type",
-      selectType: "Select business type",
-      next: "Next",
-    },
-    bn: {
-      title: "ব্যবসার তথ্য",
-      subtitle: "আপনার ব্যবসা সম্পর্কে বলুন",
-      shopNameEn: "দোকানের নাম (ইংরেজি)",
-      shopNameEnPlaceholder: "ইংরেজিতে আপনার দোকানের নাম লিখুন",
-      shopNameBn: "দোকানের নাম (বাংলা)",
-      shopNameBnPlaceholder: "বাংলায় আপনার দোকানের নাম লিখুন",
-      ownerName: "মালিকের নাম",
-      ownerNamePlaceholder: "মালিকের পুরো নাম লিখুন",
-      phone: "ফোন নম্বর",
-      phonePlaceholder: "01XXXXXXXXX",
-      email: "ইমেল",
-      emailPlaceholder: "your@email.com",
-      businessType: "ব্যবসার ধরন",
-      selectType: "ব্যবসার ধরন নির্বাচন করুন",
-      next: "পরবর্তী",
-    },
+  const businessTypeLabels: Record<BusinessType, string> = {
+    sole_proprietor: t("vendor.form.business.type.sole_proprietor"),
+    partnership: t("vendor.form.business.type.partnership"),
+    company: t("vendor.form.business.type.company"),
   };
 
-  const labels = t[language];
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">{labels.title}</h2>
-        <p className="text-muted-foreground text-sm">{labels.subtitle}</p>
+    <div className="space-y-6 step-enter">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          {t("vendor.form.business.title")}
+        </h2>
+        <p className="text-muted-foreground">{t("vendor.form.business.subtitle")}</p>
       </div>
 
       <form
@@ -118,14 +56,16 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
           e.stopPropagation();
           form.handleSubmit();
         }}
-        className="space-y-4"
+        className="space-y-5"
       >
         {/* Shop Name (English) - Required */}
         <form.Field name="shopNameEn">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>
-                {labels.shopNameEn} <span className="text-red-500">*</span>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <Store className="w-4 h-4 text-primary" />
+                {t("vendor.form.business.shopNameEn")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
               <Input
                 id={field.name}
@@ -133,10 +73,11 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.shopNameEnPlaceholder}
+                placeholder={t("vendor.form.business.shopNameEnPlaceholder")}
+                className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
               />
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -148,17 +89,24 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
         <form.Field name="shopNameBn">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>{labels.shopNameBn}</Label>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <Store className="w-4 h-4 text-primary" />
+                {t("vendor.form.business.shopNameBn")}
+                <span className="text-muted-foreground text-xs">
+                  ({t("common.optional")})
+                </span>
+              </Label>
               <Input
                 id={field.name}
                 name={field.name}
                 value={field.state.value || ""}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.shopNameBnPlaceholder}
+                placeholder={t("vendor.form.business.shopNameBnPlaceholder")}
+                className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
               />
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -170,8 +118,10 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
         <form.Field name="ownerName">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>
-                {labels.ownerName} <span className="text-red-500">*</span>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <User className="w-4 h-4 text-primary" />
+                {t("vendor.form.business.ownerName")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
               <Input
                 id={field.name}
@@ -179,10 +129,11 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.ownerNamePlaceholder}
+                placeholder={t("vendor.form.business.ownerNamePlaceholder")}
+                className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
               />
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -194,20 +145,28 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
         <form.Field name="phone">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>
-                {labels.phone} <span className="text-red-500">*</span>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <Phone className="w-4 h-4 text-primary" />
+                {t("vendor.form.business.phone")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                type="tel"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.phonePlaceholder}
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-4 bg-muted border border-r-0 border-border rounded-l-xl text-muted-foreground text-sm font-medium">
+                  +880
+                </span>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="tel"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder={t("vendor.form.business.phonePlaceholder")}
+                  className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-l-none rounded-r-xl h-12"
+                />
+              </div>
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -219,8 +178,10 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
         <form.Field name="email">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>
-                {labels.email} <span className="text-red-500">*</span>
+              <Label htmlFor={field.name} className="flex items-center gap-2 text-foreground">
+                <Mail className="w-4 h-4 text-primary" />
+                {t("vendor.form.business.email")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
               <Input
                 id={field.name}
@@ -229,10 +190,11 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder={labels.emailPlaceholder}
+                placeholder={t("vendor.form.business.emailPlaceholder")}
+                className="form-transition bg-card border-border focus:ring-2 focus:ring-primary/20 rounded-xl h-12"
               />
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -244,8 +206,9 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
         <form.Field name="businessType">
           {(field) => (
             <div className="space-y-2">
-              <Label>
-                {labels.businessType} <span className="text-red-500">*</span>
+              <Label className="flex items-center gap-2 text-foreground">
+                {t("vendor.form.business.businessType")}
+                <span className="text-destructive ml-1">*</span>
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {BUSINESS_TYPES.map((type: BusinessType) => (
@@ -254,18 +217,18 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
                     type="button"
                     onClick={() => field.handleChange(type)}
                     className={cn(
-                      "p-3 rounded-lg border-2 text-sm font-medium transition-colors text-left",
+                      "p-3 rounded-xl border-2 text-sm font-medium transition-colors text-left bg-card",
                       field.state.value === type
                         ? "border-primary bg-primary/5 text-primary"
-                        : "border-muted hover:border-muted-foreground/50"
+                        : "border-border hover:border-muted-foreground/50"
                     )}
                   >
-                    {BUSINESS_TYPE_LABELS[language][type]}
+                    {businessTypeLabels[type]}
                   </button>
                 ))}
               </div>
               {field.state.meta.errors.map((error) => (
-                <p key={error?.message} className="text-sm text-red-500">
+                <p key={error?.message} className="text-sm text-destructive">
                   {error?.message}
                 </p>
               ))}
@@ -273,19 +236,15 @@ export function BusinessInfoStep({ onNext }: BusinessInfoStepProps) {
           )}
         </form.Field>
 
-        <div className="pt-4">
+        <div className="pt-4 flex justify-end">
           <form.Subscribe>
             {(state) => (
               <Button
                 type="submit"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto gradient-primary hover:opacity-90 rounded-xl px-6"
                 disabled={!state.canSubmit || state.isSubmitting}
               >
-                {state.isSubmitting
-                  ? language === "en"
-                    ? "Saving..."
-                    : "সংরক্ষণ হচ্ছে..."
-                  : labels.next}
+                {state.isSubmitting ? t("vendor.form.saving") : t("vendor.form.next")}
               </Button>
             )}
           </form.Subscribe>

@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Loader2, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n/use-language";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface FileUploadProps {
   value?: string;
@@ -28,7 +28,7 @@ export function FileUpload({
   error,
   disabled,
 }: FileUploadProps) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -39,17 +39,13 @@ export function FileUpload({
       // Validate file size
       const maxBytes = maxSizeMB * 1024 * 1024;
       if (file.size > maxBytes) {
-        setUploadError(
-          language === "en"
-            ? `File size must be less than ${maxSizeMB}MB`
-            : `ফাইলের আকার ${maxSizeMB}MB এর কম হতে হবে`
-        );
+        setUploadError(t("vendor.form.upload.fileSize", { size: maxSizeMB }));
         return;
       }
 
       // Validate file type
       if (accept !== "*" && !file.type.match(accept.replace("*", ".*"))) {
-        setUploadError(language === "en" ? "Invalid file type" : "অবৈধ ফাইল টাইপ");
+        setUploadError(t("vendor.form.upload.invalidType"));
         return;
       }
 
@@ -57,9 +53,6 @@ export function FileUpload({
       setUploadError(null);
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
         const response = await api.upload.$post({
           form: { file },
         } as any);
@@ -71,12 +64,12 @@ export function FileUpload({
         const data = await response.json();
         onChange(data.url);
       } catch {
-        setUploadError(language === "en" ? "Upload failed. Please try again." : "আপলোড ব্যর্থ। আবার চেষ্টা করুন।");
+        setUploadError(t("vendor.form.upload.failed"));
       } finally {
         setIsUploading(false);
       }
     },
-    [accept, maxSizeMB, language, onChange]
+    [accept, maxSizeMB, onChange, t]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,12 +116,12 @@ export function FileUpload({
 
   return (
     <div className="space-y-2">
-      {label && <p className="text-sm font-medium">{label}</p>}
+      {label && <p className="text-sm font-medium text-foreground">{label}</p>}
 
       {value ? (
         // Preview
-        <div className="relative group">
-          <div className="relative aspect-[4/3] rounded-lg overflow-hidden border bg-muted">
+        <div className="relative group rounded-xl overflow-hidden border-2 border-primary/30 bg-teal-50">
+          <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={value}
               alt="Uploaded preview"
@@ -140,7 +133,7 @@ export function FileUpload({
               }}
             />
             <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
-              <ImageIcon className="w-12 h-12 text-muted-foreground" />
+              <FileImage className="w-12 h-12 text-muted-foreground" />
             </div>
           </div>
           {!disabled && (
@@ -157,55 +150,50 @@ export function FileUpload({
         </div>
       ) : (
         // Upload area
-        <div
+        <label
           className={cn(
-            "relative border-2 border-dashed rounded-lg p-6 transition-colors",
-            dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
+            "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200",
+            dragActive ? "border-primary bg-teal-50 scale-[1.02]" : "border-border bg-cream-50 hover:border-primary/50 hover:bg-teal-50/50",
             isUploading && "opacity-50 pointer-events-none",
             disabled && "opacity-50 cursor-not-allowed",
-            displayError && "border-red-500"
+            displayError && "border-destructive bg-destructive/5"
           )}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
         >
+          <div className="flex flex-col items-center justify-center py-4 px-6 text-center">
+            <div className={cn("icon-container w-12 h-12 mb-3", dragActive ? "icon-teal" : "bg-muted")}>
+              {isUploading ? (
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              ) : dragActive ? (
+                <FileImage className="w-6 h-6 text-primary" />
+              ) : (
+                <Upload className="w-6 h-6 text-muted-foreground" />
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">
+              <span className="text-primary font-medium">{t("vendor.form.upload.clickToUpload")}</span>{" "}
+              {t("vendor.form.upload.orDrag")}
+            </p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+            <p className="text-xs text-muted-foreground mt-2">
+              {t("vendor.form.upload.maxSize", { size: maxSizeMB })}
+            </p>
+          </div>
           <input
             ref={inputRef}
             type="file"
             accept={accept}
             onChange={handleInputChange}
             disabled={disabled || isUploading}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            className="hidden"
           />
-
-          <div className="flex flex-col items-center justify-center text-center">
-            {isUploading ? (
-              <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
-            ) : (
-              <Upload className="w-10 h-10 text-muted-foreground mb-2" />
-            )}
-
-            <p className="text-sm font-medium">
-              {isUploading
-                ? language === "en"
-                  ? "Uploading..."
-                  : "আপলোড হচ্ছে..."
-                : language === "en"
-                  ? "Drop file here or click to upload"
-                  : "ফাইল এখানে ড্রপ করুন বা ক্লিক করুন"}
-            </p>
-
-            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-
-            <p className="text-xs text-muted-foreground mt-2">
-              {language === "en" ? `Max ${maxSizeMB}MB` : `সর্বোচ্চ ${maxSizeMB}MB`}
-            </p>
-          </div>
-        </div>
+        </label>
       )}
 
-      {displayError && <p className="text-sm text-red-500">{displayError}</p>}
+      {displayError && <p className="text-sm text-destructive">{displayError}</p>}
     </div>
   );
 }

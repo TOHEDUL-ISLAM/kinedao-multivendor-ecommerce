@@ -250,6 +250,7 @@ function CartPage() {
                               max={Math.max(item.product.stock, 1)}
                               size="md"
                               disabled={isOutOfStock}
+                              exceedMessage={t("cart.onlyAvailable", { count: item.product.stock })}
                             />
 
                             <div className="flex flex-col items-end gap-0.5 text-right">
