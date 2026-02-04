@@ -267,6 +267,8 @@ export const translations = {
     "common.from": "From",
     "common.to": "To",
     "common.items": "items",
+    "common.scrollLeft": "Scroll left",
+    "common.scrollRight": "Scroll right",
 
     // Footer
     "footer.description": "Your trusted online destination for premium baby products. Quality guaranteed, happiness delivered.",
@@ -865,6 +867,8 @@ export const translations = {
     "common.from": "থেকে",
     "common.to": "পর্যন্ত",
     "common.items": "টি পণ্য",
+    "common.scrollLeft": "বাম দিকে স্ক্রোল করুন",
+    "common.scrollRight": "ডান দিকে স্ক্রোল করুন",
 
     // Footer
     "footer.description": "প্রিমিয়াম শিশু পণ্যের জন্য আপনার বিশ্বস্ত অনলাইন গন্তব্য। মান নিশ্চিত, খুশি সরবরাহ করা হয়।",
