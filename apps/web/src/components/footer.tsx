@@ -10,7 +10,7 @@ export default function Footer() {
     <footer className="bg-gradient-to-b from-pink-50 to-white dark:from-pink-950/20 dark:to-background border-t border-pink-100 dark:border-pink-900/20">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6 xl:gap-8">
           {/* Brand Section */}
           <div className="space-y-6 flex flex-col items-start text-left">
             <Link to="/" className="flex items-center gap-2 group">
@@ -19,7 +19,7 @@ export default function Footer() {
                 কিনেদাও
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {t("footer.description")}
             </p>
 
@@ -55,107 +55,104 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Links Grid for Mobile (Quick Links + Customer Service) */}
-          <div className="grid grid-cols-2 gap-8">
-            {/* Quick Links */}
-            <div className="text-left">
-              <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.quickLinks")}</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    to="/catalog"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("nav.shop")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/catalog"
-                    search={{ category: "new-arrivals" }}
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("nav.newArrivals")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/catalog"
-                    search={{ category: "deals" }}
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("nav.deals")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/about"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.about")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/contact"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.contact")}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+          {/* Quick Links */}
+          <div className="text-left">
+            <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.quickLinks")}</h3>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  to="/catalog"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("nav.shop")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/catalog"
+                  search={{ category: "new-arrivals" }}
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("nav.newArrivals")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/catalog"
+                  search={{ category: "deals" }}
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("nav.deals")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/about"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.about")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contact"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.contact")}
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-            {/* Customer Service */}
-            <div className="text-left">
-              <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.customerService")}</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    to="/help"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.helpCenter")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/track-order"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.trackOrder")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/returns"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.returns")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/shipping"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.shipping")}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/faq"
-                    className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
-                  >
-                    {t("footer.faq")}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+          {/* Customer Service */}
+          <div className="text-left">
+            <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.customerService")}</h3>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  to="/help"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.helpCenter")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/track-order"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.trackOrder")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/returns"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.returns")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/shipping"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.shipping")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/faq"
+                  className="text-sm text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400 transition-colors inline-block py-1"
+                >
+                  {t("footer.faq")}
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Contact Info */}
-          <div className="flex flex-col items-start text-left space-y-6">
+          <div className="flex flex-col items-start text-left">
             <h3 className="font-semibold text-lg mb-4 text-foreground">{t("footer.contactUs")}</h3>
             <ul className="space-y-4 w-full">
               <li className="flex flex-row items-start gap-3">
