@@ -1,0 +1,11 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="80" fill="#FFFFFF" rx="8"/>
+  <rect width="200" height="80" fill="none" stroke="#E8E8E8" stroke-width="1" rx="8"/>
+  <text x="100" y="50" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#FF69B4" text-anchor="middle">
+    Pigeon
+  </text>
+  <path d="M 25 35 Q 30 28 35 35 Q 32 38 30 40 Q 28 38 25 35 Z" fill="#FF69B4"/>
+  <circle cx="28" cy="32" r="2" fill="#FFFFFF"/>
+  <path d="M 165 35 Q 170 28 175 35 Q 172 38 170 40 Q 168 38 165 35 Z" fill="#FF69B4"/>
+  <circle cx="168" cy="32" r="2" fill="#FFFFFF"/>
+</svg>

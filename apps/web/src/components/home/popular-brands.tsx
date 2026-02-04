@@ -46,13 +46,13 @@ export function PopularBrands({ brands, className }: PopularBrandsProps) {
               key={brand.id}
               to="/catalog"
               search={{ brand: brand.slug }}
-              className="group flex items-center justify-center p-3 sm:p-4 lg:p-6 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-5 lg:p-6 rounded-xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300 min-h-[100px] sm:min-h-[120px]"
             >
               <motion.img
                 src={brand.logoUrl}
                 alt={brand.name}
                 className={cn(
-                  "h-12 sm:h-14 lg:h-16 w-auto max-w-full object-contain",
+                  "h-16 sm:h-20 lg:h-24 w-full max-w-full object-contain",
                   "group-hover:scale-105",
                   "transition-all duration-300"
                 )}
@@ -87,7 +87,7 @@ export function PopularBrandsSkeleton() {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="h-16 sm:h-20 lg:h-24 rounded-xl bg-muted animate-pulse"
+            className="min-h-[100px] sm:min-h-[120px] rounded-xl bg-muted animate-pulse"
           />
         ))}
       </div>

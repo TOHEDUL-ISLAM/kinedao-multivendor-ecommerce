@@ -179,12 +179,16 @@ const campaignImageUrls = [
 ];
 
 const brandLogos = [
-  "https://placehold.co/200x100/f0f0f0/333?text=BabyLove",
-  "https://placehold.co/200x100/f0f0f0/333?text=TinyTots",
-  "https://placehold.co/200x100/f0f0f0/333?text=LittleAngel",
-  "https://placehold.co/200x100/f0f0f0/333?text=BabySoft",
-  "https://placehold.co/200x100/f0f0f0/333?text=CuddleBear",
-  "https://placehold.co/200x100/f0f0f0/333?text=SweetDreams",
+  // Huggies - Leading diaper brand
+  "/brands/huggies.svg",
+  // Hasbro - Toys and games company
+  "/brands/hasbro.svg",
+  // Chicco - Italian baby products brand
+  "/brands/chicco.svg",
+  // Pigeon - Baby feeding and care products
+  "/brands/pigeon.svg",
+  // Mothercare - Baby and maternity products
+  "/brands/mothercare.svg",
 ];
 
 const clothingSizes = ["S", "M", "L", "XL", "XXL"];
@@ -527,12 +531,11 @@ async function seed() {
   // 2. Seed Brands (6 brands)
   console.log("Creating brands...");
   const brandData = [
-    { name: "BabyLove", logo: brandLogos[0] },
-    { name: "TinyTots", logo: brandLogos[1] },
-    { name: "LittleAngel", logo: brandLogos[2] },
-    { name: "BabySoft", logo: brandLogos[3] },
-    { name: "CuddleBear", logo: brandLogos[4] },
-    { name: "SweetDreams", logo: brandLogos[5] },
+    { name: "Huggies", logo: brandLogos[0] },
+    { name: "Hasbro", logo: brandLogos[1] },
+    { name: "Chicco", logo: brandLogos[2] },
+    { name: "Pigeon", logo: brandLogos[3] },
+    { name: "Mothercare", logo: brandLogos[4] },
   ];
 
   await db.insert(brands).values(
