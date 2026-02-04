@@ -127,7 +127,7 @@ export const CategoriesSection = ({ categories = [] }: CategoriesSectionProps) =
 
       <div
         ref={scrollContainerRef}
-        className="grid auto-cols-[minmax(100px,140px)] grid-flow-col gap-4 md:gap-6 overflow-x-auto scrollbar-hide pb-4 justify-start"
+        className="grid auto-cols-[minmax(100px,140px)] grid-flow-col gap-4 md:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide py-4 justify-start"
         role="list"
         aria-label={t("home.shopByCategory")}
       >
