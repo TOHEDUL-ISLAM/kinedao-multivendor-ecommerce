@@ -13,6 +13,8 @@ import {
   testimonials,
   featuredCollections,
   instagramPosts,
+  cartItems,
+  carts,
 } from "@kineDao.com/db/schema";
 import { faker } from "@faker-js/faker";
 
@@ -479,6 +481,9 @@ async function seed() {
   await db.delete(productSkus);
   await db.delete(productOptions);
   await db.delete(productImages);
+  // Delete cart items before products (foreign key constraint)
+  await db.delete(cartItems);
+  await db.delete(carts);
   await db.delete(products);
   await db.delete(categories);
   await db.delete(vendors);

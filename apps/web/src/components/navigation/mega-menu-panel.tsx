@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCategoryFeaturedProducts } from "@/hooks/use-categories";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
 import type {
   CategoryTreeNodeDTO,
@@ -132,7 +133,7 @@ function RecommendedProductCard({
   product,
   onLinkClick,
 }: RecommendedProductCardProps) {
-  const { language } = useTranslation();
+  const { language, t } = useTranslation();
   const displayTitle =
     language === "bn" && product.titleBn ? product.titleBn : product.title;
 
@@ -143,8 +144,8 @@ function RecommendedProductCard({
       onClick={onLinkClick}
       className="flex flex-col items-center gap-2 w-[88px] shrink-0 group"
     >
-      <div className="relative">
-        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:shadow-card transition-all duration-200">
+      <div className="relative w-16 h-16">
+        <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:shadow-card transition-all duration-200">
           {product.imageUrl ? (
             <img
               src={product.imageUrl}
@@ -158,9 +159,11 @@ function RecommendedProductCard({
           )}
         </div>
         {product.isNew && (
-          <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
-            NEW
-          </span>
+          <div className="absolute -top-1 -right-1">
+            <Badge className="bg-baby-blue text-blue-900 hover:bg-baby-blue/90 rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+              {t("product.new")}
+            </Badge>
+          </div>
         )}
       </div>
       <span className="w-full text-xs text-center text-foreground group-hover:text-primary transition-colors line-clamp-2 break-words">
