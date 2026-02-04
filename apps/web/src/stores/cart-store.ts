@@ -2,11 +2,18 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { api } from "@/lib/api-client";
 import { getCartHeaders } from "@/lib/cart-session";
+import { toast } from "sonner";
 import type { CartItem, CartResponse } from "@kineDao.com/api-types/cart";
 
 interface AddCartItemInput {
   productId: string;
   skuId?: string;
+}
+
+interface DeletedCartItem {
+  item: CartItem;
+  index: number;
+  timestamp: number;
 }
 
 interface CartStore {
@@ -16,15 +23,19 @@ interface CartStore {
   isSyncing: boolean;
   error: string | null;
   lastMergedUserId: string | null;
+  deletedItems: Map<string, DeletedCartItem>;
   fetchCart: () => Promise<void>;
   addItem: (input: AddCartItemInput, quantity?: number) => Promise<boolean>;
   updateQuantity: (itemId: string, quantity: number) => void;
-  removeItem: (itemId: string) => Promise<void>;
+  removeItem: (itemId: string, t?: (key: string) => string) => Promise<void>;
+  undoRemove: (itemId: string, t?: (key: string) => string) => void;
+  finalizeDelete: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   mergeGuestCart: (userId: string | null | undefined) => Promise<void>;
 }
 
 const pendingUpdates = new Map<string, ReturnType<typeof setTimeout>>();
+const pendingDeletes = new Map<string, ReturnType<typeof setTimeout>>();
 
 const calculateSummary = (items: CartItem[]) => {
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -51,6 +62,7 @@ export const useCartStore = create<CartStore>()(
       isSyncing: false,
       error: null,
       lastMergedUserId: null,
+      deletedItems: new Map(),
 
       fetchCart: async () => {
         const headers = getCartHeaders();
@@ -174,7 +186,7 @@ export const useCartStore = create<CartStore>()(
         set({ isSyncing: true });
       },
 
-      removeItem: async (itemId) => {
+      removeItem: async (itemId, t = (key) => key) => {
         const cart = get().cart;
         if (!cart) return;
 
@@ -184,18 +196,112 @@ export const useCartStore = create<CartStore>()(
           pendingUpdates.delete(itemId);
         }
 
+        // Find the item and its index
+        const itemIndex = cart.items.findIndex((entry) => entry.id === itemId);
+        const item = cart.items[itemIndex];
+        if (!item) return;
+
+        // Store item in deleted cache
+        const deletedItems = get().deletedItems;
+        deletedItems.set(itemId, {
+          item,
+          index: itemIndex,
+          timestamp: Date.now(),
+        });
+
+        // Optimistically remove from cart
         const nextItems = cart.items.filter((entry) => entry.id !== itemId);
         const { subtotal, itemCount } = calculateSummary(nextItems);
 
         set({
           cart: { ...cart, items: nextItems, subtotal, itemCount },
           itemCount,
+          deletedItems,
           error: null,
         });
+
+        // Show toast with undo action
+        toast(t("cart.itemRemoved"), {
+          description: item.product.title,
+          duration: 5000,
+          position: "bottom-right",
+          action: {
+            label: t("cart.undo"),
+            onClick: () => {
+              get().undoRemove(itemId, t);
+            },
+          },
+          onDismiss: () => {
+            void get().finalizeDelete(itemId);
+          },
+          onAutoClose: () => {
+            void get().finalizeDelete(itemId);
+          },
+          classNames: {
+            toast: 'bg-background border-border shadow-lg',
+            title: 'text-sm font-medium',
+            description: 'text-xs text-muted-foreground',
+            actionButton: 'bg-primary text-primary-foreground hover:bg-primary/90',
+          },
+        });
+      },
+
+      undoRemove: (itemId, t = (key) => key) => {
+        const cart = get().cart;
+        const deletedItems = get().deletedItems;
+        const deletedItem = deletedItems.get(itemId);
+
+        if (!cart || !deletedItem) return;
+
+        // Cancel pending delete
+        const pendingDelete = pendingDeletes.get(itemId);
+        if (pendingDelete) {
+          clearTimeout(pendingDelete);
+          pendingDeletes.delete(itemId);
+        }
+
+        // Restore item to original position
+        const nextItems = [...cart.items];
+        nextItems.splice(deletedItem.index, 0, deletedItem.item);
+        const { subtotal, itemCount } = calculateSummary(nextItems);
+
+        // Remove from deleted cache
+        deletedItems.delete(itemId);
+
+        set({
+          cart: { ...cart, items: nextItems, subtotal, itemCount },
+          itemCount,
+          deletedItems,
+          error: null,
+        });
+
+        // Show success toast
+        toast.success(t("cart.itemRestored"), {
+          description: deletedItem.item.product.title,
+          duration: 2000,
+          position: "bottom-right",
+          classNames: {
+            toast: 'bg-background border-green-200 dark:border-green-800 shadow-lg',
+            title: 'text-sm font-medium text-green-700 dark:text-green-400',
+            description: 'text-xs text-muted-foreground',
+          },
+        });
+      },
+
+      finalizeDelete: async (itemId) => {
+        const deletedItems = get().deletedItems;
+        const deletedItem = deletedItems.get(itemId);
+
+        if (!deletedItem) return;
+
+        // Remove from cache
+        deletedItems.delete(itemId);
+        set({ deletedItems });
 
         const headers = getCartHeaders();
         if (!headers) return;
 
+        // Actually delete from server
         set({ isSyncing: true });
         try {
           const response = await api.cart.items[":itemId"].$delete({

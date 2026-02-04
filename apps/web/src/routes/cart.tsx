@@ -235,7 +235,7 @@ function CartPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 sm:h-10 sm:w-10 -mr-2 sm:mr-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
-                              onClick={() => void removeItem(item.id)}
+                              onClick={() => void removeItem(item.id, t)}
                               aria-label={t("cart.remove")}
                             >
                               <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
