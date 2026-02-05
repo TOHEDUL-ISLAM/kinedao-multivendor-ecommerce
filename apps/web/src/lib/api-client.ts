@@ -2,8 +2,15 @@ import { hc } from "hono/client";
 import type { AppType } from "../../../../apps/server/src/index";
 import { env } from "./env";
 
-// Create typed RPC client
-export const apiClient = hc<AppType>(env.VITE_SERVER_URL);
+// Create typed RPC client with credentials to send authentication cookies
+export const apiClient = hc<AppType>(env.VITE_SERVER_URL, {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+    return fetch(input, {
+      ...init,
+      credentials: "include", // Include cookies for authentication
+    });
+  },
+});
 
 // Export convenient API object for easy access
 export const api = {

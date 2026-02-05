@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,26 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
       onSubmit: documentsSchema,
     },
   });
+
+  // Sync form state with store when component mounts or store data changes
+  // This ensures previews are maintained when navigating back from review
+  useEffect(() => {
+    if (documents.nidFrontUrl) {
+      form.setFieldValue("nidFrontUrl", documents.nidFrontUrl);
+    }
+    if (documents.nidBackUrl) {
+      form.setFieldValue("nidBackUrl", documents.nidBackUrl);
+    }
+    if (documents.tradeLicenseUrl) {
+      form.setFieldValue("tradeLicenseUrl", documents.tradeLicenseUrl);
+    }
+    if (documents.shopLogoUrl) {
+      form.setFieldValue("shopLogoUrl", documents.shopLogoUrl);
+    }
+    if (documents.nidNumber) {
+      form.setFieldValue("nidNumber", documents.nidNumber);
+    }
+  }, [documents, form]);
 
   return (
     <div className="space-y-6 step-enter">
@@ -91,7 +112,7 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
                 accept="image/*"
-                maxSizeMB={5}
+                maxSizeMB={10}
                 error={field.state.meta.errors[0]?.message}
               />
             )}
@@ -107,7 +128,7 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
                 accept="image/*"
-                maxSizeMB={5}
+                maxSizeMB={10}
                 error={field.state.meta.errors[0]?.message}
               />
             )}
@@ -126,7 +147,7 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
                 accept="image/*,.pdf"
-                maxSizeMB={5}
+                maxSizeMB={20}
                 error={field.state.meta.errors[0]?.message}
               />
             )}
@@ -142,7 +163,7 @@ export function DocumentsStep({ onNext, onBack }: DocumentsStepProps) {
                 onChange={(url) => field.handleChange(url)}
                 onClear={() => field.handleChange("")}
                 accept="image/*"
-                maxSizeMB={2}
+                maxSizeMB={10}
                 error={field.state.meta.errors[0]?.message}
               />
             )}

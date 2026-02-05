@@ -1,8 +1,8 @@
-import { useLanguageStore } from "@/stores/language-store";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { translations, type TranslationKey } from "@/lib/i18n/translations";
 
 export function useTranslation() {
-  const { language } = useLanguageStore();
+  const { language } = useLanguage();
 
   const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
     let text: string = translations[language][key] || key;

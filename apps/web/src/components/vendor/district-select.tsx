@@ -76,7 +76,13 @@ export function DistrictSelect({ value, onChange, error, disabled }: DistrictSel
             </div>
 
             {/* District list */}
-            <div className="max-h-60 overflow-y-auto p-1">
+            <div
+              className="max-h-60 overflow-y-auto overscroll-contain p-1"
+              style={{
+                WebkitOverflowScrolling: "touch",
+                touchAction: "pan-y",
+              }}
+            >
               {filteredDistricts.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
                   {t("vendor.form.address.noDistrictFound")}

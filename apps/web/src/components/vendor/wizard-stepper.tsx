@@ -112,7 +112,7 @@ export function WizardStepper({
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(currentStep / steps.length) * 100}%` }}
+            style={{ width: `${clampedProgress * 100}%` }}
           />
         </div>
 

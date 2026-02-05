@@ -6,6 +6,7 @@ import { formatTranslation, getTranslation } from "./translations";
 interface LanguageStore {
   language: Language;
   setLanguage: (language: Language) => void;
+  toggle: () => void;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
 
@@ -16,6 +17,12 @@ export const useLanguage = create<LanguageStore>()(
 
       setLanguage: (language: Language) => {
         set({ language });
+      },
+
+      toggle: () => {
+        set((state) => ({
+          language: state.language === "en" ? "bn" : "en",
+        }));
       },
 
       t: (key: TranslationKey, params?: Record<string, string | number>) => {
@@ -30,7 +37,7 @@ export const useLanguage = create<LanguageStore>()(
       },
     }),
     {
-      name: "kineDao-language", // localStorage key
+      name: "kinedao-language", // localStorage key (unified with language-store)
     }
   )
 );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Languages } from "lucide-react";
-import { useLanguageStore } from "@/stores/language-store";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { cn } from "@/lib/utils";
 
 interface LanguageToggleProps {
@@ -9,7 +9,7 @@ interface LanguageToggleProps {
 }
 
 export function LanguageToggle({ className }: LanguageToggleProps) {
-  const { language, toggle } = useLanguageStore();
+  const { language, toggle } = useLanguage();
   const isEnglish = language === "en";
 
   return (
