@@ -26,4 +26,6 @@ export const api = {
   cart: apiClient.api.cart,
   vendor: apiClient.api.vendor,
   upload: apiClient.api.upload,
+  shippingAddresses: apiClient.api["shipping-addresses"],
+  orders: apiClient.api.orders,
 };

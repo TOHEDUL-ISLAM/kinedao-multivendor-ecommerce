@@ -19,3 +19,9 @@ export * from "./cart";
 
 // Vendor applications schema
 export * from "./vendor-applications";
+
+// Shipping addresses schema
+export * from "./shipping-addresses";
+
+// Orders schema
+export * from "./orders";

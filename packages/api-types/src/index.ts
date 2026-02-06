@@ -12,3 +12,6 @@ export * from "./cart";
 
 // Re-export all types from vendor
 export * from "./vendor";
+
+// Re-export all types from checkout
+export * from "./checkout";
