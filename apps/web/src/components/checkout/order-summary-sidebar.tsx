@@ -28,7 +28,7 @@ export function OrderSummarySidebar() {
 	const total = subtotal + shipping;
 
 	return (
-		<div className="bg-card border border-border rounded-2xl shadow-soft overflow-hidden sticky top-24">
+		<div className="bg-card border border-border rounded-2xl shadow-soft overflow-hidden">
 			{/* Mobile: Collapsible header */}
 			<button
 				type="button"

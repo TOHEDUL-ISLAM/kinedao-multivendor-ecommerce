@@ -10,7 +10,6 @@ import {
 	CheckCircle,
 	Package,
 	MapPin,
-	Clock,
 	Banknote,
 	AlertTriangle,
 } from "lucide-react";
@@ -31,9 +30,10 @@ export const Route = createFileRoute("/order-confirmation")({
 		}
 		return { session };
 	},
-	loader: async ({ search }) => {
+	loaderDeps: ({ search }) => ({ groupId: search.groupId }),
+	loader: async ({ deps }) => {
 		const response = await api.orders.group[":groupId"].$get({
-			param: { groupId: search.groupId },
+			param: { groupId: deps.groupId },
 		});
 		if (!response.ok) {
 			throw redirect({ to: "/" });
@@ -245,11 +245,12 @@ function OrderConfirmationPage() {
 						{t("checkout.confirmation.continueShopping")}
 					</Link>
 				</Button>
-				<Button asChild className="flex-1">
+				{/* TODO: Create /account/orders route for order history */}
+				{/* <Button asChild className="flex-1">
 					<Link to="/account/orders">
 						{t("checkout.confirmation.viewOrders")}
 					</Link>
-				</Button>
+				</Button> */}
 			</div>
 		</div>
 	);

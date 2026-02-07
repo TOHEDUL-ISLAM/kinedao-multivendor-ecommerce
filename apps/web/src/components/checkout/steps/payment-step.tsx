@@ -1,7 +1,6 @@
 import { useTranslation } from "@/hooks/use-translation";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import { useCartStore } from "@/stores/cart-store";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -10,16 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Banknote, Info } from "lucide-react";
 import { useMemo } from "react";
 
-interface PaymentStepProps {
-	onNext: () => void;
-	onBack: () => void;
-}
-
-export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
+export function PaymentStep() {
 	const { t, language } = useTranslation();
 	const cart = useCartStore((state) => state.cart);
-	const { customerNotes, setCustomerNotes, markStepCompleted } =
-		useCheckoutStore();
+	const { customerNotes, setCustomerNotes } = useCheckoutStore();
 
 	const formatPrice = (paisa: number) => {
 		const amount = paisa / 100;
@@ -46,11 +39,6 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
 	}, [cart]);
 
 	const totalPackages = vendorGroups.length;
-
-	const handleContinue = () => {
-		markStepCompleted(2);
-		onNext();
-	};
 
 	return (
 		<div className="space-y-6">
@@ -170,15 +158,6 @@ export function PaymentStep({ onNext, onBack }: PaymentStepProps) {
 				</div>
 			)}
 
-			{/* Navigation */}
-			<div className="flex gap-3 pt-4">
-				<Button type="button" variant="outline" onClick={onBack}>
-					{t("checkout.back")}
-				</Button>
-				<Button type="button" onClick={handleContinue} className="flex-1">
-					{t("checkout.continue")}
-				</Button>
-			</div>
 		</div>
 	);
 }

@@ -19,7 +19,7 @@ import type { AppEnv } from "../index";
 // Helper function to calculate shipping cost
 function calculateShippingCost(district: string): ShippingCostDTO {
 	for (const [zone, config] of Object.entries(SHIPPING_ZONES) as Array<[ShippingZone, typeof SHIPPING_ZONES[keyof typeof SHIPPING_ZONES]]>) {
-		if (config.districts.includes(district)) {
+		if ((config.districts as readonly string[]).includes(district)) {
 			return {
 				zone: zone,
 				costPaisa: config.costPaisa,

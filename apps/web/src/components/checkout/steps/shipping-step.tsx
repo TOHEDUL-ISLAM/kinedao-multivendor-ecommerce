@@ -17,17 +17,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DistrictSelect } from "@/components/vendor/district-select";
 
-interface ShippingStepProps {
-	onNext: () => void;
-}
-
-export function ShippingStep({ onNext }: ShippingStepProps) {
+export function ShippingStep() {
 	const { t, language } = useTranslation();
 	const queryClient = useQueryClient();
 	const [showAddressForm, setShowAddressForm] = useState(false);
 	const cart = useCartStore((state) => state.cart);
-	const { setSelectedAddress, setShippingCost, markStepCompleted } =
-		useCheckoutStore();
+	const { setSelectedAddress, setShippingCost } = useCheckoutStore();
 	const selectedAddressId = useCheckoutStore(
 		(state) => state.selectedAddressId,
 	);
@@ -129,15 +124,6 @@ export function ShippingStep({ onNext }: ShippingStepProps) {
 		} catch (error) {
 			console.error("Failed to calculate shipping:", error);
 		}
-	};
-
-	const handleContinue = () => {
-		if (!selectedAddressId) {
-			toast.error(t("checkout.shipping.selectAddress"));
-			return;
-		}
-		markStepCompleted(1);
-		onNext();
 	};
 
 	if (isLoading) {
@@ -509,19 +495,6 @@ export function ShippingStep({ onNext }: ShippingStepProps) {
 				</Card>
 			)}
 
-			{/* Continue button */}
-			{!showAddressForm && (
-				<div className="flex gap-3 pt-4">
-					<Button
-						type="button"
-						onClick={handleContinue}
-						disabled={!selectedAddressId}
-						className="flex-1"
-					>
-						{t("checkout.continue")}
-					</Button>
-				</div>
-			)}
 		</div>
 	);
 }

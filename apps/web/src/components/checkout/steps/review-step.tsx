@@ -8,29 +8,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/lib/api-client";
 import { Loader2, Edit, AlertTriangle, Package } from "lucide-react";
 import { useMemo, useEffect } from "react";
-import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 
 interface ReviewStepProps {
-	onBack: () => void;
 	onEditStep: (step: 1 | 2) => void;
 }
 
-export function ReviewStep({ onBack, onEditStep }: ReviewStepProps) {
+export function ReviewStep({ onEditStep }: ReviewStepProps) {
 	const { t, language } = useTranslation();
-	const navigate = useNavigate();
 	const cart = useCartStore((state) => state.cart);
-	const fetchCart = useCartStore((state) => state.fetchCart);
 	const {
 		selectedAddress,
 		shippingCost,
 		customerNotes,
 		acceptedTerms,
 		setAcceptedTerms,
-		isPlacingOrder,
-		setIsPlacingOrder,
 		setShippingCost,
-		reset,
 	} = useCheckoutStore();
 
 	// Auto-calculate shipping cost if missing but address exists
@@ -90,56 +82,6 @@ export function ReviewStep({ onBack, onEditStep }: ReviewStepProps) {
 				item.product.isHypoallergenic,
 		);
 	}, [cart]);
-
-	const handlePlaceOrder = async () => {
-		if (!selectedAddress || !acceptedTerms) {
-			toast.error(t("checkout.missingInfo"));
-			return;
-		}
-
-		if (!selectedAddress.id) {
-			toast.error("Please select a shipping address");
-			return;
-		}
-
-		setIsPlacingOrder(true);
-		try {
-			const response = await api.orders.place.$post({
-				json: {
-					shippingAddressId: selectedAddress.id,
-					customerNotes: customerNotes || undefined,
-					acceptedTerms: true,
-				},
-			});
-
-			if (!response.ok) {
-				const error = await response.json();
-				console.error("Order placement failed:", error);
-				const errorMessage = error.error || error.message || t("checkout.orderFailed");
-				toast.error(errorMessage);
-				return;
-			}
-
-			const data = await response.json();
-
-			// Clear cart and reset checkout
-			await fetchCart();
-			reset();
-
-			// Navigate to confirmation page
-			navigate({
-				to: "/order-confirmation",
-				search: { groupId: data.groupId },
-			});
-
-			toast.success(t("checkout.orderPlaced"));
-		} catch (error) {
-			console.error("Order placement error:", error);
-			toast.error(t("checkout.orderFailed"));
-		} finally {
-			setIsPlacingOrder(false);
-		}
-	};
 
 	if (!cart) {
 		return (
@@ -353,23 +295,6 @@ export function ReviewStep({ onBack, onEditStep }: ReviewStepProps) {
 				</label>
 			</div>
 
-			{/* Navigation */}
-			<div className="flex gap-3 pt-4">
-				<Button type="button" variant="outline" onClick={onBack}>
-					{t("checkout.back")}
-				</Button>
-				<Button
-					type="button"
-					onClick={handlePlaceOrder}
-					disabled={!acceptedTerms || isPlacingOrder}
-					className="flex-1"
-				>
-					{isPlacingOrder && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-					{isPlacingOrder
-						? t("checkout.review.placingOrder")
-						: t("checkout.review.placeOrder")}
-				</Button>
-			</div>
 		</div>
 	);
 }

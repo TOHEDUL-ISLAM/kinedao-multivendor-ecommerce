@@ -15,7 +15,7 @@ For detailed product requirements and user stories, see [initial-prd.md](initial
 - **Backend**: Hono (lightweight server framework) with Hono RPC for type-safe APIs
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Better-Auth (email + Google/Facebook OAuth)
-- **UI**: TailwindCSS 4 + shadcn/ui components
+- **UI**: TailwindCSS 4 + Mantine UI (`@mantine/core`) as the primary component system (recommended replacement for shadcn/ui)
 - **Database Setup**: Supabase (local development)
 - **Type Safety**: End-to-end type safety via Hono RPC + Zod validation
 
@@ -467,9 +467,12 @@ Check `.env` files in `apps/web/` and `apps/server/` directories.
 
 ### UI Components
 
-- Base components: [apps/web/src/components/ui/](apps/web/src/components/ui/) (shadcn/ui)
-- Styling: TailwindCSS 4 with utility classes
-- Theme: `next-themes` for dark mode support
+- Why Mantine is preferred here: faster MVP delivery with high-quality, accessible, production-ready components (forms, modals, pagination, drawers, notifications)
+- Primary UI library for new development: Mantine (`@mantine/core`, `@mantine/hooks`)
+- Styling: TailwindCSS 4 for layout/utilities + Mantine theme tokens for component-level consistency
+- Legacy base components: [apps/web/src/components/ui/](apps/web/src/components/ui/) (shadcn/ui, existing code only)
+- Migration rule: Do not add new shadcn/ui components; build new screens/components with Mantine and replace legacy shadcn components incrementally
+- Theme: `next-themes` remains in use until Mantine color-scheme handling fully replaces it
 - Icons: `lucide-react`
 - Notifications: `sonner` toast library
 

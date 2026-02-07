@@ -32,7 +32,7 @@ import { sendOrderConfirmationEmail } from "../lib/order-email";
 // Helper function to calculate shipping cost
 function calculateShippingCost(district: string): ShippingCostDTO {
 	for (const [zone, config] of Object.entries(SHIPPING_ZONES) as Array<[ShippingZone, typeof SHIPPING_ZONES[keyof typeof SHIPPING_ZONES]]>) {
-		if (config.districts.includes(district)) {
+		if ((config.districts as readonly string[]).includes(district)) {
 			return {
 				zone: zone,
 				costPaisa: config.costPaisa,
@@ -160,11 +160,11 @@ export const ordersRouter = new Hono<AppEnv>()
 					stock_qty: number;
 					is_available: boolean;
 				}>(
-					sql`SELECT ps.id, ps.product_id, ps.price_amount, ps.stock_qty, ps.is_available
+					sql.raw(`SELECT ps.id, ps.product_id, ps.price_amount, ps.stock_qty, ps.is_available
             FROM product_skus ps
-            WHERE ps.product_id = ANY(${productIds})
+            WHERE ps.product_id = ANY(ARRAY[${productIds.map((id) => `'${id}'`).join(", ")}]::uuid[])
             ORDER BY ps.product_id, ps.price_amount ASC
-            FOR UPDATE`,
+            FOR UPDATE`),
 				);
 
 				// Build stock map: productId -> { skuId, stockQty, priceAmount }
@@ -275,6 +275,9 @@ export const ordersRouter = new Hono<AppEnv>()
             RETURNING last_number`,
 				);
 
+				if (!seqResult.rows[0]) {
+					throw new Error("Failed to generate order number");
+				}
 				const lastNumber = seqResult.rows[0].last_number;
 				const year = new Date().getFullYear();
 
@@ -550,7 +553,7 @@ export const ordersRouter = new Hono<AppEnv>()
 				groupId,
 				orders: orderDTOs,
 				grandTotal,
-				createdAt: orderRows[0].createdAt.toISOString(),
+				createdAt: orderRows[0]?.createdAt.toISOString() || new Date().toISOString(),
 			};
 
 			return c.json(response, 200);
