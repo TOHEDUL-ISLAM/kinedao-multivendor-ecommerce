@@ -138,20 +138,14 @@ function HomePage() {
         </section>
       )}
 
-      {/* Popular Brands + Featured Collections */}
-      {(isLoading || (data?.popularBrands && data.popularBrands.length > 0)) && (
+      {/* Featured Collections */}
+      {(isLoading || (data?.featuredCollections && data.featuredCollections.length > 0)) && (
         <section className="bg-secondary/30 py-8 sm:py-10 lg:py-12">
           <div className="container mx-auto px-4">
             {isLoading ? (
-              <>
-                <PopularBrandsSkeleton />
-                <FeaturedCollectionsSkeleton />
-              </>
+              <FeaturedCollectionsSkeleton />
             ) : (
-              <>
-                <PopularBrands brands={data!.popularBrands} />
-                <FeaturedCollections collections={data?.featuredCollections} />
-              </>
+              <FeaturedCollections collections={data?.featuredCollections} />
             )}
           </div>
         </section>
