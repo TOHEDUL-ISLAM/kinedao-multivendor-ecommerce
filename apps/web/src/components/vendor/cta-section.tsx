@@ -9,21 +9,20 @@ export function CTASection() {
   return (
     <section className="py-16 md:py-20">
       <div className="container max-w-6xl mx-auto px-4">
-        <div className="gradient-coral rounded-2xl md:rounded-3xl p-8 md:p-12 shadow-card">
+        <div className="gradient-hero rounded-2xl md:rounded-3xl p-8 md:p-12 shadow-card">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-secondary-foreground mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                 {t("vendor.apply.cta.title")}
               </h2>
-              <p className="text-secondary-foreground/80 text-lg">
+              <p className="text-muted-foreground text-lg">
                 {t("vendor.apply.cta.subtitle")}
               </p>
             </div>
             <Button
               asChild
               size="lg"
-              variant="outline"
-              className="bg-card hover:bg-accent border-2 border-secondary-foreground/20 text-secondary-foreground font-semibold px-8 py-6 rounded-xl shrink-0"
+              className="gradient-primary hover:opacity-90 shadow-soft font-semibold px-8 py-6 rounded-xl shrink-0"
             >
               <Link to="/vendor/apply/form">
                 {t("vendor.apply.cta.button")}
