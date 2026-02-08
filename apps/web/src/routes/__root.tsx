@@ -3,6 +3,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { ReactLenis } from "@studio-freight/react-lenis";
+import { MantineProvider } from "@mantine/core";
 
 import { Toaster } from "@/components/ui/sonner";
 import { QuickViewModal } from "@/components/quick-view-modal";
@@ -51,6 +52,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     links: [
       {
         rel: "stylesheet",
+        href: "https://unpkg.com/@mantine/core@8.3.14/styles.css",
+      },
+      {
+        rel: "stylesheet",
         href: appCss,
       },
       {
@@ -82,41 +87,43 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          <QueryClientProvider client={queryClient}>
-            <ClientOnly
-              fallback={
-                <div className="min-h-svh flex flex-col">
-                  {!isVendorForm && <Header />}
-                  <main className="flex-1">
-                    <Outlet />
-                  </main>
-                  {!isVendorForm && <Footer />}
-                </div>
-              }
-            >
-              <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
-                <div className="min-h-svh flex flex-col">
-                  {!isVendorForm && <Header />}
-                  <main className="flex-1">
-                    <Outlet />
-                  </main>
-                  {!isVendorForm && <Footer />}
-                </div>
+        <MantineProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            <QueryClientProvider client={queryClient}>
+              <ClientOnly
+                fallback={
+                  <div className="min-h-svh flex flex-col">
+                    {!isVendorForm && <Header />}
+                    <main className="flex-1">
+                      <Outlet />
+                    </main>
+                    {!isVendorForm && <Footer />}
+                  </div>
+                }
+              >
+                <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
+                  <div className="min-h-svh flex flex-col">
+                    {!isVendorForm && <Header />}
+                    <main className="flex-1">
+                      <Outlet />
+                    </main>
+                    {!isVendorForm && <Footer />}
+                  </div>
 
-                {/* Global Modals */}
-                <QuickViewModal />
+                  {/* Global Modals */}
+                  <QuickViewModal />
 
-                <Toaster richColors position="bottom-right" expand={true} />
-              </ReactLenis>
-            </ClientOnly>
-          </QueryClientProvider>
-        </ThemeProvider>
+                  <Toaster richColors position="bottom-right" expand={true} />
+                </ReactLenis>
+              </ClientOnly>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </MantineProvider>
 
         <TanStackRouterDevtools position="bottom-left" />
         <Scripts />

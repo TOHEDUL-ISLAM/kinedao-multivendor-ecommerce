@@ -183,3 +183,80 @@ export interface OrderGroupDTO {
 	grandTotal: number;
 	createdAt: string;
 }
+
+// =====================
+// Order List & Detail Schemas
+// =====================
+
+export const orderListQuerySchema = z.object({
+	status: z
+		.enum([
+			"all",
+			"pending",
+			"confirmed",
+			"processing",
+			"shipped",
+			"delivered",
+			"cancelled",
+		])
+		.optional()
+		.default("all"),
+	dateRange: z.enum(["30d", "6mo", "all"]).optional().default("all"),
+	page: z.coerce.number().min(1).optional().default(1),
+	limit: z.coerce.number().min(1).max(50).optional().default(10),
+});
+
+export type OrderListQuery = z.infer<typeof orderListQuerySchema>;
+
+export const orderIdParamSchema = z.object({
+	orderId: z.string().uuid(),
+});
+
+export const cancelOrderSchema = z.object({
+	reason: z.string().max(500).optional(),
+});
+
+export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
+
+// =====================
+// Order List & Detail DTOs
+// =====================
+
+export interface OrderListItemDTO {
+	id: string;
+	orderNumber: string;
+	groupId: string;
+	vendorName: string;
+	status: string;
+	total: number;
+	itemCount: number;
+	// All order items with full details
+	items: Array<{
+		id: string;
+		quantity: number;
+		unitPrice: number;
+		lineTotal: number;
+		productSnapshot: {
+			title: string;
+			titleBn: string | null;
+			image: string | null;
+			ageRange: string | null;
+		};
+	}>;
+	createdAt: string;
+}
+
+export interface OrderListResponseDTO {
+	orders: OrderListItemDTO[];
+	total: number;
+	page: number;
+	totalPages: number;
+}
+
+export interface OrderDetailDTO extends OrderDTO {
+	confirmedAt: string | null;
+	shippedAt: string | null;
+	deliveredAt: string | null;
+	cancelledAt: string | null;
+	estimatedDelivery: string; // e.g. "1-2 days"
+}

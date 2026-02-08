@@ -12,9 +12,12 @@ import {
 	MapPin,
 	Banknote,
 	AlertTriangle,
+	Printer,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
+import { NextStepsCard } from "@/components/orders/next-steps-card";
+import { SHIPPING_ZONES } from "@kineDao.com/api-types/checkout";
 
 const orderConfirmationSearchSchema = z.object({
 	groupId: z.string().uuid(),
@@ -55,6 +58,7 @@ function OrderConfirmationPage() {
 
 	const orderNumbers = orderGroup.orders.map((o) => o.orderNumber).join(", ");
 	const shippingAddress = orderGroup.orders[0].shippingAddress;
+	const totalItems = orderGroup.orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
 
 	// Check if any item has baby-specific attributes
 	const hasBabyProducts = orderGroup.orders.some((order) =>
@@ -66,6 +70,42 @@ function OrderConfirmationPage() {
 				item.productSnapshot.isHypoallergenic,
 		),
 	);
+
+	// Calculate estimated delivery
+	const getEstimatedDelivery = () => {
+		const district = shippingAddress.district;
+		let estimatedDays = "5-7";
+
+		for (const [_, config] of Object.entries(SHIPPING_ZONES)) {
+			if ((config.districts as readonly string[]).includes(district)) {
+				estimatedDays = config.estimatedDays;
+				break;
+			}
+		}
+
+		// Calculate date range
+		const orderDate = new Date(orderGroup.createdAt);
+		const [minDays, maxDays] = estimatedDays.split("-").map(Number);
+
+		const minDate = new Date(orderDate);
+		minDate.setDate(minDate.getDate() + minDays);
+
+		const maxDate = new Date(orderDate);
+		maxDate.setDate(maxDate.getDate() + maxDays);
+
+		const formatDate = (date: Date) => {
+			return date.toLocaleDateString(language === "bn" ? "bn-BD" : "en-BD", {
+				month: "short",
+				day: "numeric",
+			});
+		};
+
+		return `${formatDate(minDate)} - ${formatDate(maxDate)}`;
+	};
+
+	const handlePrint = () => {
+		window.print();
+	};
 
 	return (
 		<div className="container max-w-4xl mx-auto px-4 py-8">
@@ -89,9 +129,17 @@ function OrderConfirmationPage() {
 						{t("checkout.confirmation.orderNumber")}
 						{orderGroup.orders.length > 1 ? "s" : ""}
 					</p>
-					<p className="text-xl font-bold text-primary">{orderNumbers}</p>
+					<p className="text-xl font-bold text-primary mb-3">{orderNumbers}</p>
+					<div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+						<span>{t("checkout.confirmation.itemsCount", { count: totalItems })}</span>
+						<span>•</span>
+						<span>{t("checkout.confirmation.estimatedDelivery")}: {getEstimatedDelivery()}</span>
+					</div>
 				</div>
 			</Card>
+
+			{/* Next Steps */}
+			<NextStepsCard />
 
 			{/* Order items by vendor */}
 			<div className="space-y-4 mb-6">
@@ -239,18 +287,21 @@ function OrderConfirmationPage() {
 			)}
 
 			{/* Action buttons */}
-			<div className="flex flex-col sm:flex-row gap-3">
+			<div className="flex flex-col sm:flex-row gap-3 no-print">
+				<Button asChild className="flex-1">
+					<Link to="/account/orders">
+						{t("checkout.confirmation.viewOrders")}
+					</Link>
+				</Button>
 				<Button asChild variant="outline" className="flex-1">
 					<Link to="/">
 						{t("checkout.confirmation.continueShopping")}
 					</Link>
 				</Button>
-				{/* TODO: Create /account/orders route for order history */}
-				{/* <Button asChild className="flex-1">
-					<Link to="/account/orders">
-						{t("checkout.confirmation.viewOrders")}
-					</Link>
-				</Button> */}
+				<Button onClick={handlePrint} variant="outline" className="flex-1">
+					<Printer className="w-4 h-4 mr-2" />
+					{t("checkout.confirmation.printReceipt")}
+				</Button>
 			</div>
 		</div>
 	);

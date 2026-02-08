@@ -31,8 +31,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
 import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
+import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
 import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
 import { Route as VendorApplyFormRouteImport } from './routes/vendor/apply/form'
+import { Route as AccountOrdersOrderIdRouteImport } from './routes/account/orders/$orderId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -144,6 +146,11 @@ const VendorApplyIndexRoute = VendorApplyIndexRouteImport.update({
   path: '/vendor/apply/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountOrdersIndexRoute = AccountOrdersIndexRouteImport.update({
+  id: '/account/orders/',
+  path: '/account/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendorApplyStatusRoute = VendorApplyStatusRouteImport.update({
   id: '/vendor/apply/status',
   path: '/vendor/apply/status',
@@ -152,6 +159,11 @@ const VendorApplyStatusRoute = VendorApplyStatusRouteImport.update({
 const VendorApplyFormRoute = VendorApplyFormRouteImport.update({
   id: '/vendor/apply/form',
   path: '/vendor/apply/form',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountOrdersOrderIdRoute = AccountOrdersOrderIdRouteImport.update({
+  id: '/account/orders/$orderId',
+  path: '/account/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -177,8 +189,10 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/account/orders/': typeof AccountOrdersIndexRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -203,8 +217,10 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/account/orders': typeof AccountOrdersIndexRoute
   '/vendor/apply': typeof VendorApplyIndexRoute
 }
 export interface FileRoutesById {
@@ -230,8 +246,10 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
+  '/account/orders/': typeof AccountOrdersIndexRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
 }
 export interface FileRouteTypes {
@@ -258,8 +276,10 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/account/orders/$orderId'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
+    | '/account/orders/'
     | '/vendor/apply/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -284,8 +304,10 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/account/orders/$orderId'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
+    | '/account/orders'
     | '/vendor/apply'
   id:
     | '__root__'
@@ -310,8 +332,10 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/account/orders/$orderId'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
+    | '/account/orders/'
     | '/vendor/apply/'
   fileRoutesById: FileRoutesById
 }
@@ -337,8 +361,10 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
+  AccountOrdersOrderIdRoute: typeof AccountOrdersOrderIdRoute
   VendorApplyFormRoute: typeof VendorApplyFormRoute
   VendorApplyStatusRoute: typeof VendorApplyStatusRoute
+  AccountOrdersIndexRoute: typeof AccountOrdersIndexRoute
   VendorApplyIndexRoute: typeof VendorApplyIndexRoute
 }
 
@@ -498,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorApplyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/orders/': {
+      id: '/account/orders/'
+      path: '/account/orders'
+      fullPath: '/account/orders/'
+      preLoaderRoute: typeof AccountOrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vendor/apply/status': {
       id: '/vendor/apply/status'
       path: '/vendor/apply/status'
@@ -510,6 +543,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor/apply/form'
       fullPath: '/vendor/apply/form'
       preLoaderRoute: typeof VendorApplyFormRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/orders/$orderId': {
+      id: '/account/orders/$orderId'
+      path: '/account/orders/$orderId'
+      fullPath: '/account/orders/$orderId'
+      preLoaderRoute: typeof AccountOrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -537,8 +577,10 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
+  AccountOrdersOrderIdRoute: AccountOrdersOrderIdRoute,
   VendorApplyFormRoute: VendorApplyFormRoute,
   VendorApplyStatusRoute: VendorApplyStatusRoute,
+  AccountOrdersIndexRoute: AccountOrdersIndexRoute,
   VendorApplyIndexRoute: VendorApplyIndexRoute,
 }
 export const routeTree = rootRouteImport

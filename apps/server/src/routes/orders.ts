@@ -25,6 +25,12 @@ import {
 	type OrderGroupDTO,
 	type ShippingCostDTO,
 	type ShippingZone,
+	orderListQuerySchema,
+	type OrderListResponseDTO,
+	type OrderListItemDTO,
+	orderIdParamSchema,
+	type OrderDetailDTO,
+	cancelOrderSchema,
 } from "@kineDao.com/api-types/checkout";
 import type { AppEnv } from "../index";
 import { sendOrderConfirmationEmail } from "../lib/order-email";
@@ -560,13 +566,13 @@ export const ordersRouter = new Hono<AppEnv>()
 		},
 	)
 
-	// List user's orders (for future order history page)
+	// List user's orders with filtering and pagination
 	.get(
 		"/",
 		describeRoute({
 			tags: ["Orders"],
 			summary: "List user's orders",
-			description: "Get paginated list of user's orders",
+			description: "Get paginated, filtered list of user's orders for order history page",
 			responses: {
 				200: {
 					description: "Orders retrieved",
@@ -586,21 +592,441 @@ export const ordersRouter = new Hono<AppEnv>()
 				},
 			},
 		}),
+		zValidator("query", orderListQuerySchema),
 		async (c) => {
 			const userId = c.var.user?.id;
 			if (!userId) {
 				return c.json({ error: "Unauthorized" }, 401);
 			}
 
-			// Simple list for now (can add pagination later)
+			const { status, dateRange, page, limit } = c.req.valid("query");
+
+			// Build WHERE conditions
+			const conditions = [eq(orders.userId, userId)];
+
+			// Filter by status (skip if "all")
+			if (status !== "all") {
+				conditions.push(eq(orders.status, status));
+			}
+
+			// Filter by date range
+			if (dateRange === "30d") {
+				const thirtyDaysAgo = new Date();
+				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+				conditions.push(sql`${orders.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
+			} else if (dateRange === "6mo") {
+				const sixMonthsAgo = new Date();
+				sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+				conditions.push(sql`${orders.createdAt} >= ${sixMonthsAgo.toISOString()}`);
+			}
+
+			// Count total orders
+			const countResult = await db
+				.select({ count: sql<number>`count(*)::int` })
+				.from(orders)
+				.where(and(...conditions));
+
+			const total = countResult[0]?.count || 0;
+			const totalPages = Math.ceil(total / limit);
+			const offset = (page - 1) * limit;
+
+			// Fetch paginated orders
 			const orderRows = await db
 				.select()
 				.from(orders)
-				.where(eq(orders.userId, userId))
+				.where(and(...conditions))
 				.orderBy(sql`${orders.createdAt} DESC`)
-				.limit(50);
+				.limit(limit)
+				.offset(offset);
 
-			return c.json({ orders: orderRows }, 200);
+			if (orderRows.length === 0) {
+				const response: OrderListResponseDTO = {
+					orders: [],
+					total: 0,
+					page,
+					totalPages: 0,
+				};
+				return c.json(response, 200);
+			}
+
+			// Get vendor names
+			const vendorIds = orderRows.map((o) => o.vendorId);
+			const vendorRows = await db
+				.select({ id: vendors.id, name: vendors.name })
+				.from(vendors)
+				.where(inArray(vendors.id, vendorIds));
+			const vendorMap = new Map(vendorRows.map((v) => [v.id, v.name]));
+
+			// Get order items for preview (first 2 per order)
+			const orderIds = orderRows.map((o) => o.id);
+			const allItems = await db
+				.select()
+				.from(orderItems)
+				.where(inArray(orderItems.orderId, orderIds));
+
+			// Group items by orderId
+			const itemsByOrder = new Map<string, typeof allItems>();
+			for (const item of allItems) {
+				if (!itemsByOrder.has(item.orderId)) {
+					itemsByOrder.set(item.orderId, []);
+				}
+				itemsByOrder.get(item.orderId)!.push(item);
+			}
+
+			// Build OrderListItemDTOs
+			const orderListItems: OrderListItemDTO[] = orderRows.map((order) => {
+				const items = itemsByOrder.get(order.id) || [];
+				const itemCount = items.length;
+				const itemDTOs = items.map((item) => {
+					const snapshot = item.productSnapshot as OrderItemProductSnapshot;
+					return {
+						id: item.id,
+						quantity: item.quantity,
+						unitPrice: item.unitPrice,
+						lineTotal: item.lineTotal,
+						productSnapshot: {
+							title: snapshot.title,
+							titleBn: snapshot.titleBn,
+							image: snapshot.image,
+							ageRange: snapshot.ageRange,
+						},
+					};
+				});
+
+				return {
+					id: order.id,
+					orderNumber: order.orderNumber,
+					groupId: order.groupId,
+					vendorName: vendorMap.get(order.vendorId) ?? "Unknown",
+					status: order.status,
+					total: order.total,
+					itemCount,
+					items: itemDTOs,
+					createdAt: order.createdAt.toISOString(),
+				};
+			});
+
+			const response: OrderListResponseDTO = {
+				orders: orderListItems,
+				total,
+				page,
+				totalPages,
+			};
+
+			return c.json(response, 200);
+		},
+	)
+
+	// Get single order detail
+	.get(
+		"/:orderId",
+		describeRoute({
+			tags: ["Orders"],
+			summary: "Get order detail",
+			description: "Get full details of a single order by ID",
+			responses: {
+				200: {
+					description: "Order retrieved",
+					content: {
+						"application/json": {
+							schema: resolver(z.any()),
+						},
+					},
+				},
+				401: {
+					description: "Unauthorized",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				403: {
+					description: "Forbidden - order belongs to different user",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Order not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("param", orderIdParamSchema),
+		async (c) => {
+			const userId = c.var.user?.id;
+			if (!userId) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
+
+			const { orderId } = c.req.valid("param");
+
+			// Fetch order
+			const [order] = await db
+				.select()
+				.from(orders)
+				.where(eq(orders.id, orderId))
+				.limit(1);
+
+			if (!order) {
+				return c.json({ error: "Order not found" }, 404);
+			}
+
+			// Check if order belongs to current user
+			if (order.userId !== userId) {
+				return c.json({ error: "Forbidden" }, 403);
+			}
+
+			// Fetch vendor name
+			const [vendor] = await db
+				.select({ name: vendors.name })
+				.from(vendors)
+				.where(eq(vendors.id, order.vendorId))
+				.limit(1);
+
+			const vendorName = vendor?.name ?? "Unknown";
+
+			// Fetch all order items
+			const items = await db
+				.select()
+				.from(orderItems)
+				.where(eq(orderItems.orderId, order.id));
+
+			const itemDTOs: OrderItemDTO[] = items.map((item) => ({
+				id: item.id,
+				productId: item.productId,
+				quantity: item.quantity,
+				unitPrice: item.unitPrice,
+				lineTotal: item.lineTotal,
+				productSnapshot: item.productSnapshot as OrderItemProductSnapshot,
+			}));
+
+			// Calculate estimated delivery from shipping address district
+			const shippingCostInfo = calculateShippingCost(
+				(order.shippingAddress as ShippingAddressSnapshot).district,
+			);
+
+			// Build OrderDetailDTO
+			const orderDetail: OrderDetailDTO = {
+				id: order.id,
+				orderNumber: order.orderNumber,
+				groupId: order.groupId,
+				vendorId: order.vendorId,
+				vendorName,
+				status: order.status,
+				paymentMethod: order.paymentMethod,
+				subtotal: order.subtotal,
+				shippingCost: order.shippingCost,
+				codFee: order.codFee,
+				total: order.total,
+				shippingAddress: order.shippingAddress as ShippingAddressSnapshot,
+				customerNotes: order.customerNotes,
+				items: itemDTOs,
+				createdAt: order.createdAt.toISOString(),
+				confirmedAt: order.confirmedAt?.toISOString() ?? null,
+				shippedAt: order.shippedAt?.toISOString() ?? null,
+				deliveredAt: order.deliveredAt?.toISOString() ?? null,
+				cancelledAt: order.cancelledAt?.toISOString() ?? null,
+				estimatedDelivery: `${shippingCostInfo.estimatedDays} days`,
+			};
+
+			return c.json(orderDetail, 200);
+		},
+	)
+
+	// Cancel order
+	.post(
+		"/:orderId/cancel",
+		describeRoute({
+			tags: ["Orders"],
+			summary: "Cancel order",
+			description:
+				"Cancel a pending order and restore stock. Only pending orders can be cancelled.",
+			responses: {
+				200: {
+					description: "Order cancelled successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.any()),
+						},
+					},
+				},
+				400: {
+					description: "Bad request - only pending orders can be cancelled",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				401: {
+					description: "Unauthorized",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				403: {
+					description: "Forbidden",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Order not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("param", orderIdParamSchema),
+		zValidator("json", cancelOrderSchema),
+		async (c) => {
+			const userId = c.var.user?.id;
+			if (!userId) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
+
+			const { orderId } = c.req.valid("param");
+			const { reason } = c.req.valid("json");
+
+			// Fetch order
+			const [order] = await db
+				.select()
+				.from(orders)
+				.where(eq(orders.id, orderId))
+				.limit(1);
+
+			if (!order) {
+				return c.json({ error: "Order not found" }, 404);
+			}
+
+			// Check if order belongs to current user
+			if (order.userId !== userId) {
+				return c.json({ error: "Forbidden" }, 403);
+			}
+
+			// Check if order is pending
+			if (order.status !== "pending") {
+				return c.json(
+					{ error: "Only pending orders can be cancelled" },
+					400,
+				);
+			}
+
+			// Cancel order and restore stock in transaction
+			await db.transaction(async (tx) => {
+				// Update order status
+				await tx
+					.update(orders)
+					.set({
+						status: "cancelled",
+						cancelledAt: new Date(),
+						// Optionally store cancellation reason in customer notes if it was empty
+						customerNotes: reason
+							? order.customerNotes
+								? `${order.customerNotes}\n\nCancellation reason: ${reason}`
+								: `Cancellation reason: ${reason}`
+							: order.customerNotes,
+					})
+					.where(eq(orders.id, orderId));
+
+				// Get order items to restore stock
+				const items = await tx
+					.select()
+					.from(orderItems)
+					.where(eq(orderItems.orderId, orderId));
+
+				// For each item, restore stock
+				// We need to find the SKU that was used - we'll use the same logic as order placement
+				// (select cheapest available SKU for the product)
+				for (const item of items) {
+					// Lock and update SKU stock
+					await tx.execute(
+						sql`UPDATE product_skus
+              SET stock_qty = stock_qty + ${item.quantity}
+              WHERE product_id = ${item.productId}
+              AND id = (
+                SELECT id FROM product_skus
+                WHERE product_id = ${item.productId}
+                AND is_available = true
+                ORDER BY price_amount ASC
+                LIMIT 1
+                FOR UPDATE
+              )`,
+					);
+				}
+			});
+
+			// Fetch updated order and return as OrderDetailDTO
+			const [updatedOrder] = await db
+				.select()
+				.from(orders)
+				.where(eq(orders.id, orderId))
+				.limit(1);
+
+			const [vendor] = await db
+				.select({ name: vendors.name })
+				.from(vendors)
+				.where(eq(vendors.id, updatedOrder!.vendorId))
+				.limit(1);
+
+			const items = await db
+				.select()
+				.from(orderItems)
+				.where(eq(orderItems.orderId, orderId));
+
+			const itemDTOs: OrderItemDTO[] = items.map((item) => ({
+				id: item.id,
+				productId: item.productId,
+				quantity: item.quantity,
+				unitPrice: item.unitPrice,
+				lineTotal: item.lineTotal,
+				productSnapshot: item.productSnapshot as OrderItemProductSnapshot,
+			}));
+
+			const shippingCostInfo = calculateShippingCost(
+				(updatedOrder!.shippingAddress as ShippingAddressSnapshot).district,
+			);
+
+			const orderDetail: OrderDetailDTO = {
+				id: updatedOrder!.id,
+				orderNumber: updatedOrder!.orderNumber,
+				groupId: updatedOrder!.groupId,
+				vendorId: updatedOrder!.vendorId,
+				vendorName: vendor?.name ?? "Unknown",
+				status: updatedOrder!.status,
+				paymentMethod: updatedOrder!.paymentMethod,
+				subtotal: updatedOrder!.subtotal,
+				shippingCost: updatedOrder!.shippingCost,
+				codFee: updatedOrder!.codFee,
+				total: updatedOrder!.total,
+				shippingAddress:
+					updatedOrder!.shippingAddress as ShippingAddressSnapshot,
+				customerNotes: updatedOrder!.customerNotes,
+				items: itemDTOs,
+				createdAt: updatedOrder!.createdAt.toISOString(),
+				confirmedAt: updatedOrder!.confirmedAt?.toISOString() ?? null,
+				shippedAt: updatedOrder!.shippedAt?.toISOString() ?? null,
+				deliveredAt: updatedOrder!.deliveredAt?.toISOString() ?? null,
+				cancelledAt: updatedOrder!.cancelledAt?.toISOString() ?? null,
+				estimatedDelivery: `${shippingCostInfo.estimatedDays} days`,
+			};
+
+			return c.json(orderDetail, 200);
 		},
 	);
 
