@@ -1,0 +1,9 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="80" fill="#FFFFFF" rx="8"/>
+  <rect width="200" height="80" fill="none" stroke="#E8E8E8" stroke-width="1" rx="8"/>
+  <text x="100" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#C8102E" text-anchor="middle">
+    HUGGIES
+  </text>
+  <circle cx="30" cy="40" r="4" fill="#FFA500"/>
+  <circle cx="170" cy="40" r="4" fill="#FFA500"/>
+</svg>

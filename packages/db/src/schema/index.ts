@@ -1,2 +1,21 @@
+// Auth schema (managed by Better-Auth)
 export * from "./auth";
-export {};
+
+// Catalog schemas
+export * from "./vendors";
+export * from "./categories";
+export * from "./products";
+export * from "./campaigns";
+
+// Category recommendation & mega menu schemas
+export * from "./category-metrics";
+export * from "./mega-menu";
+
+// Homepage content schemas
+export * from "./home";
+
+// Cart schemas
+export * from "./cart";
+
+// Vendor applications schema
+export * from "./vendor-applications";

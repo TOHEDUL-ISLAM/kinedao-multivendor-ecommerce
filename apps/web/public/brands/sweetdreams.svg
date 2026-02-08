@@ -1,0 +1,10 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="80" fill="#DDA0DD" rx="8"/>
+  <text x="100" y="48" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#4B0082" text-anchor="middle">
+    SweetDreams
+  </text>
+  <path d="M 30 28 Q 35 23 40 28 L 38 32 Q 35 30 32 32 Z" fill="#FFD700"/>
+  <path d="M 45 32 Q 50 27 55 32 L 53 36 Q 50 34 47 36 Z" fill="#FFD700"/>
+  <path d="M 160 28 Q 165 23 170 28 L 168 32 Q 165 30 162 32 Z" fill="#FFD700"/>
+  <circle cx="100" cy="25" r="6" fill="#FFD700"/>
+</svg>

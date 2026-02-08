@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  <rect width="200" height="80" rx="8" fill="#FFF4E6"/>
+  <text x="100" y="35" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FF6B35" text-anchor="middle">Child's</text>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FF6B35" text-anchor="middle">Goods</text>
+</svg>

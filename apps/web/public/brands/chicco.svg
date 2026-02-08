@@ -1,0 +1,10 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="80" fill="#FFFFFF" rx="8"/>
+  <rect width="200" height="80" fill="none" stroke="#E8E8E8" stroke-width="1" rx="8"/>
+  <text x="100" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#E31E24" text-anchor="middle">
+    Chicco
+  </text>
+  <circle cx="35" cy="40" r="8" fill="#E31E24" opacity="0.3"/>
+  <circle cx="165" cy="40" r="8" fill="#E31E24" opacity="0.3"/>
+  <path d="M 90 30 Q 100 25 110 30" stroke="#E31E24" stroke-width="2" fill="none"/>
+</svg>

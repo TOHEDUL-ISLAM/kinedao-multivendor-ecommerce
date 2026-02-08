@@ -1,0 +1,9 @@
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="80" fill="#FFFFFF" rx="8"/>
+  <rect width="200" height="80" fill="none" stroke="#E8E8E8" stroke-width="1" rx="8"/>
+  <text x="100" y="50" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#00A651" text-anchor="middle">
+    Mothercare
+  </text>
+  <path d="M 25 30 Q 35 25 40 30 Q 40 40 35 45 Q 30 40 25 30 Z" fill="#00A651" opacity="0.3"/>
+  <path d="M 160 30 Q 170 25 175 30 Q 175 40 170 45 Q 165 40 160 30 Z" fill="#00A651" opacity="0.3"/>
+</svg>
