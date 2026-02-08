@@ -6,13 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
-import { Banknote, Info } from "lucide-react";
+import { Banknote, Info, Package } from "lucide-react";
 import { useMemo } from "react";
 
 export function PaymentStep() {
 	const { t, language } = useTranslation();
 	const cart = useCartStore((state) => state.cart);
-	const { customerNotes, setCustomerNotes } = useCheckoutStore();
+	const { customerNotes, setCustomerNotes, shippingCost } = useCheckoutStore();
 
 	const formatPrice = (paisa: number) => {
 		const amount = paisa / 100;
@@ -111,6 +111,19 @@ export function PaymentStep() {
 								</div>
 
 								<Card className="p-4">
+									<div className="mb-4 pb-3 border-b">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<span className="text-sm font-semibold text-primary">
+													{t("checkout.deliveryFee")}: {shippingCost ? formatPrice(shippingCost.costPaisa) : ""}
+												</span>
+											</div>
+										</div>
+										<div className="mt-1 text-sm text-muted-foreground">
+											<p>{t("checkout.standardDelivery")}</p>
+										</div>
+									</div>
+
 									<div className="space-y-4">
 										{group.items.map((item) => (
 											<div key={item.id} className="flex gap-3">

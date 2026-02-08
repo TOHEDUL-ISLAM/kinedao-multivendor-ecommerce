@@ -23,8 +23,12 @@ export function OrderSummarySidebar() {
 			: `৳${amount.toLocaleString("en-BD")}`;
 	};
 
+	// Calculate number of unique vendors in cart
+	const vendorCount = new Set(cart.items.map((item) => item.product.vendor.id)).size;
+
 	const subtotal = cart.subtotal;
-	const shipping = shippingCost?.costPaisa ?? 0;
+	// Total shipping = shipping cost per vendor × number of vendors
+	const shipping = shippingCost ? shippingCost.costPaisa * vendorCount : 0;
 	const total = subtotal + shipping;
 
 	return (
@@ -102,7 +106,8 @@ export function OrderSummarySidebar() {
 							{t("checkout.deliveryFee")}
 							{shippingCost && (
 								<span className="block text-xs">
-									({language === "bn" ? shippingCost.labelBn : shippingCost.labelEn})
+									({language === "bn" ? shippingCost.labelBn : shippingCost.labelEn}
+									{vendorCount > 1 && ` × ${vendorCount} ${language === "bn" ? "প্যাকেজ" : "packages"}`})
 								</span>
 							)}
 						</span>

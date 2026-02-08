@@ -211,12 +211,17 @@ export function ReviewStep({ onEditStep }: ReviewStepProps) {
 											{t("checkout.deliveryOrPickup")}
 										</p>
 									</div>
+									{shippingCost && (
+										<span className="text-sm font-medium text-primary">
+											{formatPrice(shippingCost.costPaisa)}
+										</span>
+									)}
 								</div>
 								<div className="mt-2 text-sm text-muted-foreground">
 									<p>{t("checkout.standardDelivery")}</p>
 									{shippingCost && (
 										<p className="text-xs">
-											{t("checkout.guaranteedBy")} {shippingCost.estimatedDays} {t("checkout.days")}
+											{t("checkout.guaranteedBy")} {shippingCost.estimatedDays} {t("checkout.days")} • {language === "bn" ? shippingCost.labelBn : shippingCost.labelEn}
 										</p>
 									)}
 								</div>
@@ -278,21 +283,23 @@ export function ReviewStep({ onEditStep }: ReviewStepProps) {
 			)}
 
 			{/* Terms and conditions */}
-			<div className="flex items-start gap-3">
-				<Checkbox
-					id="terms"
-					checked={acceptedTerms}
-					onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-				/>
-				<label
-					htmlFor="terms"
-					className="text-sm leading-normal cursor-pointer"
-				>
-					{t("checkout.review.terms")}{" "}
-					<a href="/terms" className="text-primary underline">
-						{t("checkout.review.termsLink")}
-					</a>
-				</label>
+			<div className="flex justify-end">
+				<div className="flex items-start gap-3">
+					<Checkbox
+						id="terms"
+						checked={acceptedTerms}
+						onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+					/>
+					<label
+						htmlFor="terms"
+						className="text-sm leading-normal cursor-pointer"
+					>
+						{t("checkout.review.terms")}{" "}
+						<a href="/terms" className="text-primary underline">
+							{t("checkout.review.termsLink")}
+						</a>
+					</label>
+				</div>
 			</div>
 
 		</div>
