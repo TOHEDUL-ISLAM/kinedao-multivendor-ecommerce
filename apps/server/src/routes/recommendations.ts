@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import { categories, categoryMetrics, products, productImages, productSkus, vendors } from "@kineDao.com/db/schema";
 import { and, eq, sql, desc, arrayContains, inArray } from "drizzle-orm";
 import {
@@ -244,7 +244,11 @@ const recommendationsRouter = new Hono().get(
     const recommendedProductIds = recommendedProductRows.map((r) => r.product.id);
     const recommendedImages = recommendedProductIds.length > 0
       ? await db
-          .select()
+          .select({
+            productId: productImages.productId,
+            s3Key: productImages.s3Key,
+            alt: productImages.alt,
+          })
           .from(productImages)
           .where(sql`${productImages.productId} IN ${recommendedProductIds}`)
       : [];
@@ -288,7 +292,7 @@ const recommendationsRouter = new Hono().get(
         ratingCount: row.product.ratingCount,
         isNew: row.product.isNew,
         isHot: row.product.isHot,
-        imageUrl: prodImages[0]?.url || null,
+        imageUrl: prodImages[0] ? getS3Url(prodImages[0].s3Key) : null,
         imageAlt: prodImages[0]?.alt || null,
         priceAmount: lowestSku?.priceAmount || 0,
         compareAtAmount: lowestSku?.compareAtAmount || null,

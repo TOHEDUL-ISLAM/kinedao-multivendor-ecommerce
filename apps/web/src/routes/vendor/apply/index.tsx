@@ -22,10 +22,10 @@ export const Route = createFileRoute("/vendor/apply/")({
       if (response.ok) {
         const data = await response.json();
 
-        // If already approved, redirect to vendor dashboard
+        // If approved, redirect to dashboard
         if (data.application?.status === "approved") {
           throw redirect({
-            to: "/dashboard", // TODO: Change to /vendor/dashboard when implemented
+            to: "/vendor/dashboard",
           });
         }
 

@@ -91,6 +91,10 @@ export const orders = pgTable(
 		// Customer notes
 		customerNotes: text("customer_notes"),
 
+		// Tracking (set by vendor when marking as shipped)
+		trackingNumber: varchar("tracking_number", { length: 100 }),
+		trackingCarrier: varchar("tracking_carrier", { length: 100 }),
+
 		// Timestamps
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

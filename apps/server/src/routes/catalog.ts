@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   productImages,
@@ -29,7 +29,10 @@ async function formatProductCard(
   }
 ): Promise<ProductCardDTO> {
   const [image] = await db
-    .select()
+    .select({
+      s3Key: productImages.s3Key,
+      alt: productImages.alt,
+    })
     .from(productImages)
     .where(eq(productImages.productId, product.id))
     .orderBy(asc(productImages.sortOrder))
@@ -76,7 +79,7 @@ async function formatProductCard(
     ratingCount: product.ratingCount,
     isNew: product.isNew,
     isHot: product.isHot,
-    imageUrl: image?.url || null,
+    imageUrl: image ? getS3Url(image.s3Key) : null,
     imageAlt: image?.alt || null,
     priceAmount: anySku?.priceAmount || 0,
     compareAtAmount: anySku?.compareAtAmount || null,

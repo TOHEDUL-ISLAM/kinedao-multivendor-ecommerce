@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
 	shippingAddresses,
 	carts,
@@ -229,7 +229,7 @@ export const ordersRouter = new Hono<AppEnv>()
 				const imageRows = await tx
 					.select({
 						productId: productImages.productId,
-						url: productImages.url,
+						s3Key: productImages.s3Key,
 					})
 					.from(productImages)
 					.where(inArray(productImages.productId, productIds))
@@ -238,7 +238,7 @@ export const ordersRouter = new Hono<AppEnv>()
 				const imageMap = new Map<string, string>();
 				for (const img of imageRows) {
 					if (!imageMap.has(img.productId)) {
-						imageMap.set(img.productId, img.url);
+						imageMap.set(img.productId, getS3Url(img.s3Key));
 					}
 				}
 

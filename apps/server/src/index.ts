@@ -20,6 +20,7 @@ import { vendorRouter } from "./routes/vendor";
 import { uploadRouter } from "./routes/upload";
 import { shippingAddressesRouter } from "./routes/shipping-addresses";
 import { ordersRouter } from "./routes/orders";
+import { vendorDashboardRouter } from "./routes/vendor-dashboard";
 import { openAPIRouteHandler } from 'hono-openapi';
 
 export type AppEnv = {
@@ -64,6 +65,7 @@ const app = new Hono<AppEnv>()
   .route("/api/upload", uploadRouter)
   .route("/api/shipping-addresses", shippingAddressesRouter)
   .route("/api/orders", ordersRouter)
+  .route("/api/vendor-dashboard", vendorDashboardRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))

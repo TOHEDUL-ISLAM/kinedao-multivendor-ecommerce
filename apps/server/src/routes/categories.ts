@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   categories,
   products,
@@ -244,7 +244,9 @@ async function getFeaturedProductsForCategory(
   const featuredRows = await db
     .select({
       product: products,
-      image: productImages,
+      image: {
+        s3Key: productImages.s3Key,
+      },
       sku: productSkus,
     })
     .from(megaMenuFeaturedProducts)
@@ -284,7 +286,7 @@ async function getFeaturedProductsForCategory(
           title: row.product.title,
           titleBn: row.product.titleBn,
           slug: row.product.slug,
-          imageUrl: row.image?.url || null,
+          imageUrl: row.image?.s3Key ? getS3Url(row.image.s3Key) : null,
           priceAmount: row.sku?.priceAmount || 0,
           currency: row.sku?.currency || "BDT",
           isNew: row.product.isNew,
@@ -298,7 +300,9 @@ async function getFeaturedProductsForCategory(
   const fallbackRows = await db
     .select({
       product: products,
-      image: productImages,
+      image: {
+        s3Key: productImages.s3Key,
+      },
       sku: productSkus,
     })
     .from(products)
@@ -332,7 +336,7 @@ async function getFeaturedProductsForCategory(
         title: row.product.title,
         titleBn: row.product.titleBn,
         slug: row.product.slug,
-        imageUrl: row.image?.url || null,
+        imageUrl: row.image?.s3Key ? getS3Url(row.image.s3Key) : null,
         priceAmount: row.sku?.priceAmount || 0,
         currency: row.sku?.currency || "BDT",
         isNew: row.product.isNew,

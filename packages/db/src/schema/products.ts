@@ -83,12 +83,21 @@ export const productImages = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    url: text("url").notNull(),
+    // Store S3 key, NOT full URL (URLs are generated on-demand)
+    s3Key: text("s3_key").notNull(), // e.g., "products/123/images/original/uuid.jpg"
+    variant: varchar("variant", { length: 20 })
+      .default("original")
+      .$type<"original" | "medium" | "thumbnail">()
+      .notNull(),
     alt: varchar("alt", { length: 200 }),
     sortOrder: integer("sort_order").default(0),
+    isPrimary: boolean("is_primary").default(false), // For main product image
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("product_images_product_idx").on(table.productId)]
+  (table) => [
+    index("product_images_product_idx").on(table.productId),
+    index("product_images_variant_idx").on(table.variant),
+  ]
 );
 
 // Product options table (e.g., Size, Color)

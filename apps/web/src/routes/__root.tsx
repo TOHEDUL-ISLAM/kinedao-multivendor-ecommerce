@@ -80,6 +80,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 function RootDocument() {
   const location = useLocation();
   const isVendorForm = location.pathname === "/vendor/apply/form";
+  const isVendorDashboard = location.pathname.startsWith("/vendor/dashboard") ||
+    location.pathname.startsWith("/vendor/products") ||
+    location.pathname.startsWith("/vendor/orders") ||
+    location.pathname.startsWith("/vendor/earnings") ||
+    location.pathname.startsWith("/vendor/settings");
+  const hideMainChrome = isVendorForm || isVendorDashboard;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -98,21 +104,21 @@ function RootDocument() {
               <ClientOnly
                 fallback={
                   <div className="min-h-svh flex flex-col">
-                    {!isVendorForm && <Header />}
+                    {!hideMainChrome && <Header />}
                     <main className="flex-1">
                       <Outlet />
                     </main>
-                    {!isVendorForm && <Footer />}
+                    {!hideMainChrome && <Footer />}
                   </div>
                 }
               >
                 <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
                   <div className="min-h-svh flex flex-col">
-                    {!isVendorForm && <Header />}
+                    {!hideMainChrome && <Header />}
                     <main className="flex-1">
                       <Outlet />
                     </main>
-                    {!isVendorForm && <Footer />}
+                    {!hideMainChrome && <Footer />}
                   </div>
 
                   {/* Global Modals */}

@@ -25,3 +25,6 @@ export * from "./shipping-addresses";
 
 // Orders schema
 export * from "./orders";
+
+// Vendor payouts schema
+export * from "./vendor-payouts";

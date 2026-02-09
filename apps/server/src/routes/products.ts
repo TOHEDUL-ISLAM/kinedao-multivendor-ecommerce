@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   productImages,
@@ -75,7 +75,12 @@ const productsRouter = new Hono().get(
 
   // Fetch images
   const images = await db
-    .select()
+    .select({
+      id: productImages.id,
+      s3Key: productImages.s3Key,
+      alt: productImages.alt,
+      sortOrder: productImages.sortOrder,
+    })
     .from(productImages)
     .where(eq(productImages.productId, id))
     .orderBy(asc(productImages.sortOrder));
@@ -130,7 +135,7 @@ const productsRouter = new Hono().get(
     weightLimitKg: product.weightLimitKg,
     expiryDate: product.expiryDate?.toISOString() || null,
     safetyCertifications: product.safetyCertifications || [],
-    imageUrl: images[0]?.url || null,
+    imageUrl: images[0] ? getS3Url(images[0].s3Key) : null,
     imageAlt: images[0]?.alt || null,
     priceAmount: lowestSku?.priceAmount || 0,
     compareAtAmount: lowestSku?.compareAtAmount || null,
@@ -150,7 +155,7 @@ const productsRouter = new Hono().get(
     },
     images: images.map((img) => ({
       id: img.id,
-      url: img.url,
+      url: getS3Url(img.s3Key),
       alt: img.alt,
       sortOrder: img.sortOrder,
     })),
@@ -228,7 +233,12 @@ const productsRouter = new Hono().get(
   const { product, vendor, category } = productRow;
 
   const images = await db
-    .select()
+    .select({
+      id: productImages.id,
+      s3Key: productImages.s3Key,
+      alt: productImages.alt,
+      sortOrder: productImages.sortOrder,
+    })
     .from(productImages)
     .where(eq(productImages.productId, product.id))
     .orderBy(asc(productImages.sortOrder));
@@ -280,7 +290,7 @@ const productsRouter = new Hono().get(
     weightLimitKg: product.weightLimitKg,
     expiryDate: product.expiryDate?.toISOString() || null,
     safetyCertifications: product.safetyCertifications || [],
-    imageUrl: images[0]?.url || null,
+    imageUrl: images[0] ? getS3Url(images[0].s3Key) : null,
     imageAlt: images[0]?.alt || null,
     priceAmount: lowestSku?.priceAmount || 0,
     compareAtAmount: lowestSku?.compareAtAmount || null,
@@ -300,7 +310,7 @@ const productsRouter = new Hono().get(
     },
     images: images.map((img) => ({
       id: img.id,
-      url: img.url,
+      url: getS3Url(img.s3Key),
       alt: img.alt,
       sortOrder: img.sortOrder,
     })),
@@ -388,7 +398,12 @@ const productsRouter = new Hono().get(
     // Fetch images, options, skus in parallel
     const [images, options, skus, vendorSalesResult] = await Promise.all([
       db
-        .select()
+        .select({
+          id: productImages.id,
+          s3Key: productImages.s3Key,
+          alt: productImages.alt,
+          sortOrder: productImages.sortOrder,
+        })
         .from(productImages)
         .where(eq(productImages.productId, product.id))
         .orderBy(asc(productImages.sortOrder)),
@@ -433,7 +448,11 @@ const productsRouter = new Hono().get(
     const relatedProductIds = relatedProductRows.map((r) => r.product.id);
     const relatedImages = relatedProductIds.length > 0
       ? await db
-          .select()
+          .select({
+            productId: productImages.productId,
+            s3Key: productImages.s3Key,
+            alt: productImages.alt,
+          })
           .from(productImages)
           .where(sql`${productImages.productId} IN ${relatedProductIds}`)
       : [];
@@ -477,7 +496,7 @@ const productsRouter = new Hono().get(
         ratingCount: row.product.ratingCount,
         isNew: row.product.isNew,
         isHot: row.product.isHot,
-        imageUrl: prodImages[0]?.url || null,
+        imageUrl: prodImages[0] ? getS3Url(prodImages[0].s3Key) : null,
         imageAlt: prodImages[0]?.alt || null,
         priceAmount: lowestSku?.priceAmount || 0,
         compareAtAmount: lowestSku?.compareAtAmount || null,
@@ -574,7 +593,7 @@ const productsRouter = new Hono().get(
       weightLimitKg: product.weightLimitKg,
       expiryDate: product.expiryDate?.toISOString() || null,
       safetyCertifications: product.safetyCertifications || [],
-      imageUrl: images[0]?.url || null,
+      imageUrl: images[0] ? getS3Url(images[0].s3Key) : null,
       imageAlt: images[0]?.alt || null,
       priceAmount: lowestSku?.priceAmount || 0,
       compareAtAmount: lowestSku?.compareAtAmount || null,
@@ -585,7 +604,7 @@ const productsRouter = new Hono().get(
       category: categoryBreadcrumb,
       images: images.map((img) => ({
         id: img.id,
-        url: img.url,
+        url: getS3Url(img.s3Key),
         alt: img.alt,
         sortOrder: img.sortOrder,
       })),

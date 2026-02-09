@@ -15,6 +15,8 @@ import {
   instagramPosts,
   cartItems,
   carts,
+  orders,
+  orderItems,
 } from "@kineDao.com/db/schema";
 import { faker } from "@faker-js/faker";
 
@@ -480,6 +482,9 @@ async function seed() {
 
   // Clear existing data
   console.log("Clearing existing data...");
+  // Delete in order of dependencies (child tables first)
+  await db.delete(orderItems); // References products
+  await db.delete(orders); // Parent of orderItems
   await db.delete(campaignProducts);
   await db.delete(campaigns);
   await db.delete(productSkus);
@@ -780,9 +785,16 @@ async function seed() {
     for (const product of insertedProducts) {
       const images = faker.helpers.arrayElements(imageCollections[imageKey], 3);
       images.forEach((url, index) => {
+        // Convert external URL to mock s3Key for seeding
+        // Extract the photo ID from Unsplash URL and create a mock s3Key
+        const photoId = url.match(/photo-([^?]+)/)?.[1] || `seed-${index}`;
+        const s3Key = `seed/products/${photoId}.jpg`;
+
         imageInserts.push({
           productId: product.id,
-          url,
+          s3Key: s3Key,
+          variant: "original",
+          isPrimary: index === 0,
           alt: `${product.title} - Image ${index + 1}`,
           sortOrder: index,
         });

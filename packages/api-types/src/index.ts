@@ -15,3 +15,6 @@ export * from "./vendor";
 
 // Re-export all types from checkout
 export * from "./checkout";
+
+// Re-export all types from vendor dashboard
+export * from "./vendor-dashboard";

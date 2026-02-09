@@ -28,13 +28,21 @@ import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VendorDashboardRouteImport } from './routes/vendor/_dashboard'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
 import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
 import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
 import { Route as VendorApplyFormRouteImport } from './routes/vendor/apply/form'
+import { Route as VendorDashboardSettingsRouteImport } from './routes/vendor/_dashboard/settings'
+import { Route as VendorDashboardEarningsRouteImport } from './routes/vendor/_dashboard/earnings'
+import { Route as VendorDashboardDashboardRouteImport } from './routes/vendor/_dashboard/dashboard'
 import { Route as AccountOrdersOrderIdRouteImport } from './routes/account/orders/$orderId'
+import { Route as VendorDashboardProductsIndexRouteImport } from './routes/vendor/_dashboard/products/index'
+import { Route as VendorDashboardOrdersIndexRouteImport } from './routes/vendor/_dashboard/orders/index'
+import { Route as VendorDashboardProductsNewRouteImport } from './routes/vendor/_dashboard/products/new'
+import { Route as VendorDashboardProductsProductIdEditRouteImport } from './routes/vendor/_dashboard/products/$productId.edit'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -131,6 +139,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorDashboardRoute = VendorDashboardRouteImport.update({
+  id: '/vendor/_dashboard',
+  path: '/vendor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
@@ -161,11 +174,51 @@ const VendorApplyFormRoute = VendorApplyFormRouteImport.update({
   path: '/vendor/apply/form',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorDashboardSettingsRoute = VendorDashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => VendorDashboardRoute,
+} as any)
+const VendorDashboardEarningsRoute = VendorDashboardEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => VendorDashboardRoute,
+} as any)
+const VendorDashboardDashboardRoute =
+  VendorDashboardDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => VendorDashboardRoute,
+  } as any)
 const AccountOrdersOrderIdRoute = AccountOrdersOrderIdRouteImport.update({
   id: '/account/orders/$orderId',
   path: '/account/orders/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorDashboardProductsIndexRoute =
+  VendorDashboardProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => VendorDashboardRoute,
+  } as any)
+const VendorDashboardOrdersIndexRoute =
+  VendorDashboardOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
+    getParentRoute: () => VendorDashboardRoute,
+  } as any)
+const VendorDashboardProductsNewRoute =
+  VendorDashboardProductsNewRouteImport.update({
+    id: '/products/new',
+    path: '/products/new',
+    getParentRoute: () => VendorDashboardRoute,
+  } as any)
+const VendorDashboardProductsProductIdEditRoute =
+  VendorDashboardProductsProductIdEditRouteImport.update({
+    id: '/products/$productId/edit',
+    path: '/products/$productId/edit',
+    getParentRoute: () => VendorDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -189,11 +242,19 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor': typeof VendorDashboardRouteWithChildren
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/vendor/dashboard': typeof VendorDashboardDashboardRoute
+  '/vendor/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
+  '/vendor/products/new': typeof VendorDashboardProductsNewRoute
+  '/vendor/orders/': typeof VendorDashboardOrdersIndexRoute
+  '/vendor/products/': typeof VendorDashboardProductsIndexRoute
+  '/vendor/products/$productId/edit': typeof VendorDashboardProductsProductIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -217,11 +278,19 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor': typeof VendorDashboardRouteWithChildren
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/vendor/dashboard': typeof VendorDashboardDashboardRoute
+  '/vendor/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/account/orders': typeof AccountOrdersIndexRoute
   '/vendor/apply': typeof VendorApplyIndexRoute
+  '/vendor/products/new': typeof VendorDashboardProductsNewRoute
+  '/vendor/orders': typeof VendorDashboardOrdersIndexRoute
+  '/vendor/products': typeof VendorDashboardProductsIndexRoute
+  '/vendor/products/$productId/edit': typeof VendorDashboardProductsProductIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -246,11 +315,19 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/vendor/_dashboard': typeof VendorDashboardRouteWithChildren
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
+  '/vendor/_dashboard/dashboard': typeof VendorDashboardDashboardRoute
+  '/vendor/_dashboard/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/_dashboard/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
   '/account/orders/': typeof AccountOrdersIndexRoute
   '/vendor/apply/': typeof VendorApplyIndexRoute
+  '/vendor/_dashboard/products/new': typeof VendorDashboardProductsNewRoute
+  '/vendor/_dashboard/orders/': typeof VendorDashboardOrdersIndexRoute
+  '/vendor/_dashboard/products/': typeof VendorDashboardProductsIndexRoute
+  '/vendor/_dashboard/products/$productId/edit': typeof VendorDashboardProductsProductIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -276,11 +353,19 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor'
     | '/account/orders/$orderId'
+    | '/vendor/dashboard'
+    | '/vendor/earnings'
+    | '/vendor/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/account/orders/'
     | '/vendor/apply/'
+    | '/vendor/products/new'
+    | '/vendor/orders/'
+    | '/vendor/products/'
+    | '/vendor/products/$productId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -304,11 +389,19 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor'
     | '/account/orders/$orderId'
+    | '/vendor/dashboard'
+    | '/vendor/earnings'
+    | '/vendor/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/account/orders'
     | '/vendor/apply'
+    | '/vendor/products/new'
+    | '/vendor/orders'
+    | '/vendor/products'
+    | '/vendor/products/$productId/edit'
   id:
     | '__root__'
     | '/'
@@ -332,11 +425,19 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/category/$slug'
     | '/product/$slug'
+    | '/vendor/_dashboard'
     | '/account/orders/$orderId'
+    | '/vendor/_dashboard/dashboard'
+    | '/vendor/_dashboard/earnings'
+    | '/vendor/_dashboard/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
     | '/account/orders/'
     | '/vendor/apply/'
+    | '/vendor/_dashboard/products/new'
+    | '/vendor/_dashboard/orders/'
+    | '/vendor/_dashboard/products/'
+    | '/vendor/_dashboard/products/$productId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -361,6 +462,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
+  VendorDashboardRoute: typeof VendorDashboardRouteWithChildren
   AccountOrdersOrderIdRoute: typeof AccountOrdersOrderIdRoute
   VendorApplyFormRoute: typeof VendorApplyFormRoute
   VendorApplyStatusRoute: typeof VendorApplyStatusRoute
@@ -503,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/_dashboard': {
+      id: '/vendor/_dashboard'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof VendorDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product/$slug': {
       id: '/product/$slug'
       path: '/product/$slug'
@@ -545,6 +654,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorApplyFormRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/_dashboard/settings': {
+      id: '/vendor/_dashboard/settings'
+      path: '/settings'
+      fullPath: '/vendor/settings'
+      preLoaderRoute: typeof VendorDashboardSettingsRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
+    '/vendor/_dashboard/earnings': {
+      id: '/vendor/_dashboard/earnings'
+      path: '/earnings'
+      fullPath: '/vendor/earnings'
+      preLoaderRoute: typeof VendorDashboardEarningsRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
+    '/vendor/_dashboard/dashboard': {
+      id: '/vendor/_dashboard/dashboard'
+      path: '/dashboard'
+      fullPath: '/vendor/dashboard'
+      preLoaderRoute: typeof VendorDashboardDashboardRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
     '/account/orders/$orderId': {
       id: '/account/orders/$orderId'
       path: '/account/orders/$orderId'
@@ -552,8 +682,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/_dashboard/products/': {
+      id: '/vendor/_dashboard/products/'
+      path: '/products'
+      fullPath: '/vendor/products/'
+      preLoaderRoute: typeof VendorDashboardProductsIndexRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
+    '/vendor/_dashboard/orders/': {
+      id: '/vendor/_dashboard/orders/'
+      path: '/orders'
+      fullPath: '/vendor/orders/'
+      preLoaderRoute: typeof VendorDashboardOrdersIndexRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
+    '/vendor/_dashboard/products/new': {
+      id: '/vendor/_dashboard/products/new'
+      path: '/products/new'
+      fullPath: '/vendor/products/new'
+      preLoaderRoute: typeof VendorDashboardProductsNewRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
+    '/vendor/_dashboard/products/$productId/edit': {
+      id: '/vendor/_dashboard/products/$productId/edit'
+      path: '/products/$productId/edit'
+      fullPath: '/vendor/products/$productId/edit'
+      preLoaderRoute: typeof VendorDashboardProductsProductIdEditRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
   }
 }
+
+interface VendorDashboardRouteChildren {
+  VendorDashboardDashboardRoute: typeof VendorDashboardDashboardRoute
+  VendorDashboardEarningsRoute: typeof VendorDashboardEarningsRoute
+  VendorDashboardSettingsRoute: typeof VendorDashboardSettingsRoute
+  VendorDashboardProductsNewRoute: typeof VendorDashboardProductsNewRoute
+  VendorDashboardOrdersIndexRoute: typeof VendorDashboardOrdersIndexRoute
+  VendorDashboardProductsIndexRoute: typeof VendorDashboardProductsIndexRoute
+  VendorDashboardProductsProductIdEditRoute: typeof VendorDashboardProductsProductIdEditRoute
+}
+
+const VendorDashboardRouteChildren: VendorDashboardRouteChildren = {
+  VendorDashboardDashboardRoute: VendorDashboardDashboardRoute,
+  VendorDashboardEarningsRoute: VendorDashboardEarningsRoute,
+  VendorDashboardSettingsRoute: VendorDashboardSettingsRoute,
+  VendorDashboardProductsNewRoute: VendorDashboardProductsNewRoute,
+  VendorDashboardOrdersIndexRoute: VendorDashboardOrdersIndexRoute,
+  VendorDashboardProductsIndexRoute: VendorDashboardProductsIndexRoute,
+  VendorDashboardProductsProductIdEditRoute:
+    VendorDashboardProductsProductIdEditRoute,
+}
+
+const VendorDashboardRouteWithChildren = VendorDashboardRoute._addFileChildren(
+  VendorDashboardRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -577,6 +760,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
+  VendorDashboardRoute: VendorDashboardRouteWithChildren,
   AccountOrdersOrderIdRoute: AccountOrdersOrderIdRoute,
   VendorApplyFormRoute: VendorApplyFormRoute,
   VendorApplyStatusRoute: VendorApplyStatusRoute,

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   campaigns,
@@ -28,7 +28,7 @@ function formatProductFromRelation(
   product: typeof products.$inferSelect & {
     vendor: { id: string; name: string; slug: string; isVerified: boolean | null };
     category: { id: string; name: string; slug: string };
-    images: { url: string; alt: string | null; sortOrder: number | null }[];
+    images: { s3Key: string; alt: string | null; sortOrder: number | null }[];
     skus: {
       priceAmount: number;
       compareAtAmount: number | null;
@@ -45,7 +45,7 @@ function formatProductFromRelation(
   // Filter for available ones first
   const availableSkus = product.skus.filter((s) => s.isAvailable);
   const skusToCheck = availableSkus.length > 0 ? availableSkus : product.skus;
-  
+
   const sku = skusToCheck.sort((a, b) => a.priceAmount - b.priceAmount)[0];
   const hasVariants =
     product.skus.length > 1 ||
@@ -69,7 +69,7 @@ function formatProductFromRelation(
     ratingCount: product.ratingCount,
     isNew: product.isNew,
     isHot: product.isHot,
-    imageUrl: image?.url || null,
+    imageUrl: image ? getS3Url(image.s3Key) : null,
     imageAlt: image?.alt || null,
     priceAmount: sku?.priceAmount || 0,
     compareAtAmount: sku?.compareAtAmount || null,

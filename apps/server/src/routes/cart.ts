@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   carts,
   cartItems,
@@ -157,7 +157,7 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   const imageRows = await db
     .select({
       productId: productImages.productId,
-      url: productImages.url,
+      s3Key: productImages.s3Key,
       alt: productImages.alt,
       sortOrder: productImages.sortOrder,
     })
@@ -171,7 +171,7 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   >();
   for (const image of imageRows) {
     if (!imageByProduct.has(image.productId)) {
-      imageByProduct.set(image.productId, { url: image.url, alt: image.alt });
+      imageByProduct.set(image.productId, { url: getS3Url(image.s3Key), alt: image.alt });
     }
   }
 

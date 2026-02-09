@@ -28,4 +28,5 @@ export const api = {
   upload: apiClient.api.upload,
   shippingAddresses: apiClient.api["shipping-addresses"],
   orders: apiClient.api.orders,
+  vendorDashboard: apiClient.api["vendor-dashboard"],
 };

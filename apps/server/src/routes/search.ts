@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import { products, productImages, productSkus, vendors, categories } from "@kineDao.com/db/schema";
 import { eq, or, ilike, and, asc } from "drizzle-orm";
 import { searchQuerySchema, type SearchSuggestResponse } from "@kineDao.com/api-types/catalog";
@@ -61,7 +61,9 @@ const searchRouter = new Hono().get(
   const productsWithDetails = await Promise.all(
     productResults.map(async (product) => {
       const [image] = await db
-        .select()
+        .select({
+          s3Key: productImages.s3Key,
+        })
         .from(productImages)
         .where(eq(productImages.productId, product.id))
         .orderBy(asc(productImages.sortOrder))
@@ -79,7 +81,7 @@ const searchRouter = new Hono().get(
         title: product.title,
         titleBn: product.titleBn,
         slug: product.slug,
-        imageUrl: image?.url || null,
+        imageUrl: image ? getS3Url(image.s3Key) : null,
         priceAmount: sku?.priceAmount || 0,
         currency: sku?.currency || "BDT",
       };

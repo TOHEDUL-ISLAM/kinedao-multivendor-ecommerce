@@ -9,7 +9,8 @@
     "./newsletter": "./src/newsletter.ts",
     "./cart": "./src/cart.ts",
     "./vendor": "./src/vendor.ts",
-    "./checkout": "./src/checkout.ts"
+    "./checkout": "./src/checkout.ts",
+    "./vendor-dashboard": "./src/vendor-dashboard.ts"
   },
   "dependencies": {
     "zod": "catalog:"
