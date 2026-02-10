@@ -428,7 +428,10 @@ export const adminBannerFormSchema = z.object({
 	discountPercentage: z.coerce.number().int().min(1).max(100).optional(),
 	imageUrl: z.string().url("Invalid image URL"),
 	s3Key: z.string().min(1, "S3 key is required"),
-	linkUrl: z.string().url("Invalid link URL").optional(),
+	linkUrl: z.string().refine(
+		(val) => !val || val.startsWith("/") || val.startsWith("http://") || val.startsWith("https://"),
+		{ message: "Link URL must be a relative path (starting with /) or absolute URL (starting with http:// or https://)" }
+	).optional(),
 	placement: z.enum(["hero_carousel", "promotional_card", "homepage_middle", "sidebar"]),
 	isActive: z.boolean().default(true),
 	sortOrder: z.coerce.number().int().default(0),

@@ -26,6 +26,7 @@ import { useTheme } from "next-themes";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ConfirmActionModal } from "@/components/admin/confirm-action-modal";
 import { toast } from "sonner";
+import { getS3Url } from "@/lib/s3-helpers";
 import type { AdminProductListItemDTO } from "@kineDao.com/api-types/admin";
 
 const PRODUCT_COUNTS_QUERY_KEY = ["admin-product-counts"] as const;
@@ -439,7 +440,7 @@ function AdminProductsPage() {
                 {productDetail.images.map((img) => (
                   <Image
                     key={img.id}
-                    src={`${img.s3Key}`}
+                    src={getS3Url(img.s3Key)}
                     alt="Product"
                     radius="md"
                     h={120}

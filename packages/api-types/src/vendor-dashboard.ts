@@ -84,7 +84,7 @@ export const vendorProductListQuerySchema = z.object({
 	page: z.coerce.number().int().min(1).default(1),
 	limit: z.coerce.number().int().min(1).max(50).default(20),
 	status: z
-		.enum(["all", "pending", "approved", "rejected"])
+		.enum(["all", "draft", "pending", "approved", "rejected"])
 		.default("all"),
 	search: z.string().optional(),
 	categoryId: z.string().uuid().optional(),

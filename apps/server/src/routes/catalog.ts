@@ -130,7 +130,7 @@ const catalogRouter = new Hono().get(
   const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit } = c.req.valid("query");
 
   // Build base conditions (exclude cursor for total count)
-  const conditions = [eq(products.isActive, true)];
+  const conditions = [eq(products.isActive, true), eq(products.status, "approved")];
   const cursorConditions: typeof conditions = [];
 
   // Text search
@@ -433,7 +433,7 @@ const catalogRouter = new Hono().get(
     .from(categories)
     .leftJoin(
       products,
-      and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+      and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(
       categories.id,
@@ -505,7 +505,7 @@ const catalogRouter = new Hono().get(
     .from(vendors)
     .leftJoin(
       products,
-      and(eq(products.vendorId, vendors.id), eq(products.isActive, true))
+      and(eq(products.vendorId, vendors.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(
       vendors.id,
@@ -540,7 +540,7 @@ const catalogRouter = new Hono().get(
       count: sql<number>`count(*)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true))
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")))
     .groupBy(products.brand)
     .orderBy(desc(sql`count(*)`));
 
@@ -556,7 +556,7 @@ const catalogRouter = new Hono().get(
       count: sql<number>`count(*)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true))
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")))
     .groupBy(products.ageRange)
     .orderBy(desc(sql`count(*)`));
 
@@ -575,7 +575,7 @@ const catalogRouter = new Hono().get(
       isHypoallergenic: sql<number>`count(*) filter (where ${products.isHypoallergenic} = true)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true));
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")));
 
   // Price range from SKUs
   const [priceRange] = await db
@@ -585,7 +585,7 @@ const catalogRouter = new Hono().get(
     })
     .from(productSkus)
     .innerJoin(products, eq(productSkus.productId, products.id))
-    .where(eq(products.isActive, true));
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")));
 
   const response: CatalogFacetsResponse = {
     categories: categoryDTOs,

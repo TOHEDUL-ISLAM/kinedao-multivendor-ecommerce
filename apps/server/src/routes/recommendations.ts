@@ -72,6 +72,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -94,6 +95,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -128,6 +130,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -150,6 +153,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -234,6 +238,7 @@ const recommendationsRouter = new Hono().get(
         and(
           inArray(products.categoryId, categoryIds),
           eq(products.isActive, true),
+          eq(products.status, "approved"),
           sql`${products.id} NOT IN (${sql.join(productIds.map((id) => sql`${id}`), sql`, `)})`
         )
       )

@@ -48,6 +48,7 @@ const searchRouter = new Hono().get(
     .where(
       and(
         eq(products.isActive, true),
+        eq(products.status, "approved"),
         or(
           ilike(products.title, searchPattern),
           ilike(products.titleBn, searchPattern),

@@ -329,7 +329,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorApplications)
-					.where(whereClause),
+					.where(whereClause ? whereClause : undefined),
 				db
 					.select({
 						id: vendorApplications.id,
@@ -343,7 +343,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						reviewedAt: vendorApplications.reviewedAt,
 					})
 					.from(vendorApplications)
-					.where(whereClause)
+					.where(whereClause ? whereClause : undefined)
 					.orderBy(desc(vendorApplications.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -646,7 +646,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(products)
-					.where(whereClause),
+					.where(whereClause ? whereClause : undefined),
 				db
 					.select({
 						id: products.id,
@@ -678,7 +678,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(products)
 					.leftJoin(vendors, eq(products.vendorId, vendors.id))
 					.leftJoin(categories, eq(products.categoryId, categories.id))
-					.where(whereClause)
+					.where(whereClause ? whereClause : undefined)
 					.orderBy(
 						query.sort === "newest"
 							? desc(products.createdAt)
@@ -1014,7 +1014,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(orders)
-					.where(whereClause),
+					.where(whereClause ? whereClause : undefined),
 				db
 					.select({
 						id: orders.id,
@@ -1034,7 +1034,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(orders)
 					.leftJoin(user, eq(orders.userId, user.id))
 					.leftJoin(vendors, eq(orders.vendorId, vendors.id))
-					.where(whereClause)
+					.where(whereClause ? whereClause : undefined)
 					.orderBy(
 						query.sort === "newest"
 							? desc(orders.createdAt)
@@ -1235,7 +1235,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(user)
-					.where(whereClause),
+					.where(whereClause ? whereClause : undefined),
 				db
 					.select({
 						id: user.id,
@@ -1259,7 +1259,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						)`,
 					})
 					.from(user)
-					.where(whereClause)
+					.where(whereClause ? whereClause : undefined)
 					.orderBy(desc(user.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -1483,7 +1483,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorPayouts)
-					.where(whereClause),
+					.where(whereClause ? whereClause : undefined),
 				db
 					.select({
 						id: vendorPayouts.id,
@@ -1504,7 +1504,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(vendorPayouts)
 					.leftJoin(vendors, eq(vendorPayouts.vendorId, vendors.id))
 					.leftJoin(user, eq(vendorPayouts.processedBy, user.id))
-					.where(whereClause)
+					.where(whereClause ? whereClause : undefined)
 					.orderBy(desc(vendorPayouts.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -1615,6 +1615,15 @@ export const adminRouter = new Hono<AdminEnv>()
 			const adminUserId = c.var.adminUserId;
 			const input = c.req.valid("json");
 
+			// Validate dates
+			if (input.startsAt && input.endsAt) {
+				const start = new Date(input.startsAt);
+				const end = new Date(input.endsAt);
+				if (end <= start) {
+					return c.json({ error: "End date must be after start date" }, 400);
+				}
+			}
+
 			const [newBanner] = await db
 				.insert(banners)
 				.values({
@@ -1695,6 +1704,15 @@ export const adminRouter = new Hono<AdminEnv>()
 
 			if (!banner) {
 				return c.json({ error: "Banner not found" }, 404);
+			}
+
+			// Validate dates
+			if (input.startsAt && input.endsAt) {
+				const start = new Date(input.startsAt);
+				const end = new Date(input.endsAt);
+				if (end <= start) {
+					return c.json({ error: "End date must be after start date" }, 400);
+				}
 			}
 
 			await db

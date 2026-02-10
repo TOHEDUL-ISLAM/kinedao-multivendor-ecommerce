@@ -64,7 +64,7 @@ const productsRouter = new Hono().get(
     .from(products)
     .innerJoin(vendors, eq(products.vendorId, vendors.id))
     .innerJoin(categories, eq(products.categoryId, categories.id))
-    .where(eq(products.id, id))
+    .where(and(eq(products.id, id), eq(products.isActive, true), eq(products.status, "approved")))
     .limit(1);
 
   if (!productRow) {
@@ -386,7 +386,7 @@ const productsRouter = new Hono().get(
       .innerJoin(categories, eq(products.categoryId, categories.id))
       .leftJoin(parentCategory, eq(categories.parentId, parentCategory.id))
       .leftJoin(grandparentCategory, eq(parentCategory.parentId, grandparentCategory.id))
-      .where(eq(products.slug, slug))
+      .where(and(eq(products.slug, slug), eq(products.isActive, true), eq(products.status, "approved")))
       .limit(1);
 
     if (!productRow) {
@@ -439,7 +439,8 @@ const productsRouter = new Hono().get(
         and(
           eq(products.categoryId, product.categoryId),
           ne(products.id, product.id),
-          eq(products.isActive, true)
+          eq(products.isActive, true),
+          eq(products.status, "approved")
         )
       )
       .limit(4);

@@ -56,7 +56,7 @@ const categoriesRouter = new Hono().get(
     .from(categories)
     .leftJoin(
       products,
-      and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+      and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder));
@@ -118,6 +118,7 @@ const categoriesRouter = new Hono().get(
               FROM ${products}
               WHERE ${products.categoryId} = ${categories.id}
               AND ${products.isActive} = true
+              AND ${products.status} = 'approved'
             )`
           : sql<number>`0`,
       })
@@ -267,6 +268,7 @@ async function getFeaturedProductsForCategory(
         eq(megaMenuFeaturedProducts.categoryId, categoryId),
         eq(megaMenuFeaturedProducts.isActive, true),
         eq(products.isActive, true),
+        eq(products.status, "approved"),
         sql`(${megaMenuFeaturedProducts.startsAt} IS NULL OR ${megaMenuFeaturedProducts.startsAt} <= ${now})`,
         sql`(${megaMenuFeaturedProducts.endsAt} IS NULL OR ${megaMenuFeaturedProducts.endsAt} >= ${now})`
       )
@@ -320,7 +322,8 @@ async function getFeaturedProductsForCategory(
     .where(
       and(
         eq(products.categoryId, categoryId),
-        eq(products.isActive, true)
+        eq(products.isActive, true),
+        eq(products.status, "approved")
       )
     )
     .orderBy(sql`${products.bestSellerScore} DESC NULLS LAST`)

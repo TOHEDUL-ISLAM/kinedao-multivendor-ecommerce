@@ -191,7 +191,7 @@ const homeRouter = new Hono().get(
 
     // Fetch products with relations - OPTIMIZED
     const productsRaw = await db.query.products.findMany({
-      where: eq(products.isActive, true),
+      where: and(eq(products.isActive, true), eq(products.status, "approved")),
       with: {
         vendor: true,
         category: true,
@@ -232,7 +232,7 @@ const homeRouter = new Hono().get(
       .from(categories)
       .leftJoin(
         products,
-        and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+        and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
       )
       .where(sql`${categories.parentId} IS NULL`)
       .groupBy(categories.id)

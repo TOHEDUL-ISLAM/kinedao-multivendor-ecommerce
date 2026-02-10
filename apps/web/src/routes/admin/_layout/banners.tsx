@@ -28,6 +28,7 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import type { AdminBannerListItemDTO } from "@kineDao.com/api-types/admin";
+import "@mantine/dates/styles.css";
 
 export const Route = createFileRoute("/admin/_layout/banners")({
   component: AdminBannersPage,
@@ -198,10 +199,62 @@ function AdminBannersPage() {
       endsAt: null,
     },
     validate: {
-      titleEn: (value: string) => (!value ? "Title (English) is required" : null),
-      imageFile: (value: File | null) => (!value ? "Image is required" : null),
+      titleEn: (value: string) => {
+        if (!value) return "English title is required";
+        if (value.length > 200) return "Title must be 200 characters or less";
+        return null;
+      },
+      titleBn: (value: string) => {
+        if (value && value.length > 200) return "Title must be 200 characters or less";
+        return null;
+      },
+      subtitleEn: (value: string) => {
+        if (value && value.length > 300) return "Subtitle must be 300 characters or less";
+        return null;
+      },
+      subtitleBn: (value: string) => {
+        if (value && value.length > 300) return "Subtitle must be 300 characters or less";
+        return null;
+      },
+      priceLabel: (value: string) => {
+        if (value && value.length > 100) return "Price label must be 100 characters or less";
+        return null;
+      },
+      badgeText: (value: string) => {
+        if (value && value.length > 50) return "Badge text must be 50 characters or less";
+        return null;
+      },
+      ctaText: (value: string) => {
+        if (value && value.length > 100) return "CTA text must be 100 characters or less";
+        return null;
+      },
+      discountPercentage: (value: number | null) => {
+        if (value !== null && (value < 1 || value > 100)) {
+          return "Discount must be between 1 and 100";
+        }
+        return null;
+      },
+      imageFile: (value: File | null) => {
+        if (!value) return "Image is required";
+        if (value.size > 5 * 1024 * 1024) return "Image must be less than 5MB";
+        return null;
+      },
+      linkUrl: (value: string) => {
+        if (value && !value.startsWith("/") && !value.startsWith("http")) {
+          return "URL must start with / or http";
+        }
+        return null;
+      },
       placement: (value: string) => (!value ? "Placement is required" : null),
+      endsAt: (value: Date | null, values: BannerFormValues) => {
+        if (value && values.startsAt && value <= values.startsAt) {
+          return "End date must be after start date";
+        }
+        return null;
+      },
     },
+    validateInputOnChange: true,
+    validateInputOnBlur: true,
   });
 
   // Edit banner form
@@ -225,9 +278,61 @@ function AdminBannersPage() {
       endsAt: null,
     },
     validate: {
-      titleEn: (value: string) => (!value ? "Title (English) is required" : null),
+      titleEn: (value: string) => {
+        if (!value) return "English title is required";
+        if (value.length > 200) return "Title must be 200 characters or less";
+        return null;
+      },
+      titleBn: (value: string) => {
+        if (value && value.length > 200) return "Title must be 200 characters or less";
+        return null;
+      },
+      subtitleEn: (value: string) => {
+        if (value && value.length > 300) return "Subtitle must be 300 characters or less";
+        return null;
+      },
+      subtitleBn: (value: string) => {
+        if (value && value.length > 300) return "Subtitle must be 300 characters or less";
+        return null;
+      },
+      priceLabel: (value: string) => {
+        if (value && value.length > 100) return "Price label must be 100 characters or less";
+        return null;
+      },
+      badgeText: (value: string) => {
+        if (value && value.length > 50) return "Badge text must be 50 characters or less";
+        return null;
+      },
+      ctaText: (value: string) => {
+        if (value && value.length > 100) return "CTA text must be 100 characters or less";
+        return null;
+      },
+      discountPercentage: (value: number | null) => {
+        if (value !== null && (value < 1 || value > 100)) {
+          return "Discount must be between 1 and 100";
+        }
+        return null;
+      },
+      imageFile: (value: File | null) => {
+        if (value && value.size > 5 * 1024 * 1024) return "Image must be less than 5MB";
+        return null;
+      },
+      linkUrl: (value: string) => {
+        if (value && !value.startsWith("/") && !value.startsWith("http")) {
+          return "URL must start with / or http";
+        }
+        return null;
+      },
       placement: (value: string) => (!value ? "Placement is required" : null),
+      endsAt: (value: Date | null, values: BannerFormValues) => {
+        if (value && values.startsAt && value <= values.startsAt) {
+          return "End date must be after start date";
+        }
+        return null;
+      },
     },
+    validateInputOnChange: true,
+    validateInputOnBlur: true,
   });
 
   // Upload image mutation
@@ -263,21 +368,41 @@ function AdminBannersPage() {
           subtitleBn: values.subtitleBn || undefined,
           priceLabel: values.priceLabel || undefined,
           badgeText: values.badgeText || undefined,
-          badgeColor: values.badgeColor || undefined,
+          badgeColor: (values.badgeColor as "red" | "teal" | "purple" | "orange" | "green" | undefined) || undefined,
           ctaText: values.ctaText || undefined,
           discountPercentage: values.discountPercentage || undefined,
           imageUrl: uploadResult.url,
-          s3Key: uploadResult.key,
+          s3Key: uploadResult.s3Key,
           linkUrl: values.linkUrl || undefined,
           placement: values.placement as "hero_carousel" | "promotional_card" | "homepage_middle" | "sidebar",
           isActive: values.isActive,
           sortOrder: values.sortOrder,
-          startsAt: values.startsAt?.toISOString() || undefined,
-          endsAt: values.endsAt?.toISOString() || undefined,
+          startsAt: values.startsAt ? (values.startsAt instanceof Date ? values.startsAt.toISOString() : new Date(values.startsAt).toISOString()) : undefined,
+          endsAt: values.endsAt ? (values.endsAt instanceof Date ? values.endsAt.toISOString() : new Date(values.endsAt).toISOString()) : undefined,
         },
       });
 
-      if (!response.ok) throw new Error("Failed to create banner");
+      if (!response.ok) {
+        // Extract error message from response
+        const errorData: any = await response.json();
+        console.error("Banner creation failed - Full error object:", JSON.stringify(errorData, null, 2));
+
+        // Try to extract error message from various possible structures
+        let errorMessage = "Failed to create banner";
+
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.error) {
+          errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.issues) {
+          // Zod validation errors
+          errorMessage = errorData.issues.map((issue: any) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        }
+
+        throw new Error(errorMessage);
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -286,8 +411,37 @@ function AdminBannersPage() {
       setAddModalOpen(false);
       addForm.reset();
     },
-    onError: () => {
-      toast.error(t.error);
+    onError: async (error: any) => {
+      console.error("Create banner error:", error);
+
+      // Try to extract detailed error message
+      let errorMessage = "Failed to create banner";
+
+      if (error?.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error("API Error Details:", errorData);
+        } catch (e) {
+          console.error("Could not parse error response:", e);
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      // Show specific error messages
+      if (errorMessage.includes("Failed to upload") || errorMessage.includes("upload")) {
+        toast.error(`Image upload failed: ${errorMessage}. Check file size (max 5MB) and format.`);
+      } else if (errorMessage.includes("No image")) {
+        toast.error("Please select an image file.");
+      } else if (errorMessage.includes("datetime")) {
+        toast.error(`Date format error: ${errorMessage}. Please check start and end dates.`);
+      } else {
+        toast.error(`Error: ${errorMessage}`, {
+          duration: 5000,
+          description: "Check the console (F12) for more details"
+        });
+      }
     },
   });
 
@@ -301,7 +455,7 @@ function AdminBannersPage() {
       if (values.imageFile) {
         const uploadResult = await uploadImageMutation.mutateAsync(values.imageFile);
         imageUrl = uploadResult.url;
-        s3Key = uploadResult.key;
+        s3Key = uploadResult.s3Key;
       }
 
       // Update banner
@@ -314,7 +468,7 @@ function AdminBannersPage() {
           subtitleBn: values.subtitleBn || undefined,
           priceLabel: values.priceLabel || undefined,
           badgeText: values.badgeText || undefined,
-          badgeColor: values.badgeColor || undefined,
+          badgeColor: (values.badgeColor as "red" | "teal" | "purple" | "orange" | "green" | undefined) || undefined,
           ctaText: values.ctaText || undefined,
           discountPercentage: values.discountPercentage || undefined,
           imageUrl: imageUrl!,
@@ -323,12 +477,32 @@ function AdminBannersPage() {
           placement: values.placement as "hero_carousel" | "promotional_card" | "homepage_middle" | "sidebar",
           isActive: values.isActive,
           sortOrder: values.sortOrder,
-          startsAt: values.startsAt?.toISOString() || undefined,
-          endsAt: values.endsAt?.toISOString() || undefined,
+          startsAt: values.startsAt ? (values.startsAt instanceof Date ? values.startsAt.toISOString() : new Date(values.startsAt).toISOString()) : undefined,
+          endsAt: values.endsAt ? (values.endsAt instanceof Date ? values.endsAt.toISOString() : new Date(values.endsAt).toISOString()) : undefined,
         },
       });
 
-      if (!response.ok) throw new Error("Failed to update banner");
+      if (!response.ok) {
+        // Extract error message from response
+        const errorData: any = await response.json();
+        console.error("Banner update failed - Full error object:", JSON.stringify(errorData, null, 2));
+
+        // Try to extract error message from various possible structures
+        let errorMessage = "Failed to update banner";
+
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.error) {
+          errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.issues) {
+          // Zod validation errors
+          errorMessage = errorData.issues.map((issue: any) => `${issue.path.join('.')}: ${issue.message}`).join(', ');
+        }
+
+        throw new Error(errorMessage);
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -338,8 +512,35 @@ function AdminBannersPage() {
       setSelectedBanner(null);
       editForm.reset();
     },
-    onError: () => {
-      toast.error(t.error);
+    onError: async (error: any) => {
+      console.error("Update banner error:", error);
+
+      // Try to extract detailed error message
+      let errorMessage = "Failed to update banner";
+
+      if (error?.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error("API Error Details:", errorData);
+        } catch (e) {
+          console.error("Could not parse error response:", e);
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      // Show specific error messages
+      if (errorMessage.includes("Failed to upload") || errorMessage.includes("upload")) {
+        toast.error(`Image upload failed: ${errorMessage}. Check file size (max 5MB) and format.`);
+      } else if (errorMessage.includes("datetime")) {
+        toast.error(`Date format error: ${errorMessage}. Please check start and end dates.`);
+      } else {
+        toast.error(`Error: ${errorMessage}`, {
+          duration: 5000,
+          description: "Check the console (F12) for more details"
+        });
+      }
     },
   });
 
@@ -526,6 +727,7 @@ function AdminBannersPage() {
             <FileInput
               label={t.uploadImage}
               placeholder={t.uploadImage}
+              description="Recommended: 1200x500px for hero, 600x400px for promotional cards. Max 5MB."
               leftSection={<ImageIcon size={16} />}
               accept="image/*"
               required
@@ -533,83 +735,101 @@ function AdminBannersPage() {
             />
             <TextInput
               label={t.titleEn}
-              placeholder={t.titleEn}
+              placeholder="Premium Baby Essentials"
+              description="Main headline for the banner (max 200 characters)"
               required
               {...addForm.getInputProps("titleEn")}
             />
             <TextInput
               label={t.titleBn}
-              placeholder={t.titleBn}
+              placeholder="প্রিমিয়াম বেবি এসেনশিয়াল"
+              description="Optional Bangla translation"
               {...addForm.getInputProps("titleBn")}
             />
             <TextInput
               label={t.subtitleEn}
               placeholder="Everything your little one needs"
+              description="Supporting text below title (max 300 characters)"
               {...addForm.getInputProps("subtitleEn")}
             />
             <TextInput
               label={t.subtitleBn}
               placeholder="আপনার ছোট্টটির জন্য সবকিছু"
+              description="Optional Bangla translation"
               {...addForm.getInputProps("subtitleBn")}
             />
             <TextInput
               label={t.priceLabel}
               placeholder="From $19.99"
+              description="Optional price display (e.g., 'From ৳999' or 'Starting at $19.99')"
               {...addForm.getInputProps("priceLabel")}
             />
             <TextInput
               label={t.badgeText}
               placeholder="NEW COLLECTION"
+              description="Small badge label (e.g., 'NEW', 'SALE', or leave empty if using discount %)"
               {...addForm.getInputProps("badgeText")}
             />
             <Select
               label={t.badgeColor}
               placeholder="Select color"
+              description="Color for the badge background"
               data={badgeColorOptions}
+              clearable
               {...addForm.getInputProps("badgeColor")}
             />
             <TextInput
               label={t.ctaText}
               placeholder="Shop Now →"
+              description="Text for the call-to-action button (e.g., 'Shop Now', 'Learn More')"
               {...addForm.getInputProps("ctaText")}
             />
             <NumberInput
               label={t.discountPercentage}
               placeholder="50"
+              description="Shows as '50% OFF' badge. Leave empty if using custom badge text."
               min={1}
               max={100}
               {...addForm.getInputProps("discountPercentage")}
             />
             <TextInput
               label={t.linkUrl}
-              placeholder="https://example.com"
+              placeholder="/catalog or https://example.com"
+              description="Where to navigate when banner is clicked. Use / for internal pages."
               {...addForm.getInputProps("linkUrl")}
             />
             <Select
               label={t.placementLabel}
               placeholder={t.placementLabel}
+              description="Hero Carousel: Large rotating banners. Promotional Card: Smaller side cards."
               data={placementOptions}
               required
               {...addForm.getInputProps("placement")}
             />
             <Switch
               label={t.activeLabel}
+              description="Only active banners are displayed on the website"
               {...addForm.getInputProps("isActive", { type: "checkbox" })}
             />
             <NumberInput
               label={t.sortOrderLabel}
               placeholder="0"
+              description="Lower numbers appear first (0, 1, 2...)"
               min={0}
               {...addForm.getInputProps("sortOrder")}
             />
             <DateTimePicker
               label={t.startsAt}
               placeholder={t.startsAt}
+              description="Optional: Banner shows after this date/time"
+              clearable
               {...addForm.getInputProps("startsAt")}
             />
             <DateTimePicker
               label={t.endsAt}
               placeholder={t.endsAt}
+              description="Optional: Banner hides after this date/time"
+              clearable
               {...addForm.getInputProps("endsAt")}
             />
             <Group justify="flex-end" gap="sm">
@@ -668,88 +888,106 @@ function AdminBannersPage() {
               placeholder={t.uploadImage}
               leftSection={<ImageIcon size={16} />}
               accept="image/*"
-              description="Leave empty to keep current image"
+              description="Leave empty to keep current image. Max 5MB."
               {...editForm.getInputProps("imageFile")}
             />
             <TextInput
               label={t.titleEn}
-              placeholder={t.titleEn}
+              placeholder="Premium Baby Essentials"
+              description="Main headline for the banner (max 200 characters)"
               required
               {...editForm.getInputProps("titleEn")}
             />
             <TextInput
               label={t.titleBn}
-              placeholder={t.titleBn}
+              placeholder="প্রিমিয়াম বেবি এসেনশিয়াল"
+              description="Optional Bangla translation"
               {...editForm.getInputProps("titleBn")}
             />
             <TextInput
               label={t.subtitleEn}
               placeholder="Everything your little one needs"
+              description="Supporting text below title (max 300 characters)"
               {...editForm.getInputProps("subtitleEn")}
             />
             <TextInput
               label={t.subtitleBn}
               placeholder="আপনার ছোট্টটির জন্য সবকিছু"
+              description="Optional Bangla translation"
               {...editForm.getInputProps("subtitleBn")}
             />
             <TextInput
               label={t.priceLabel}
               placeholder="From $19.99"
+              description="Optional price display (e.g., 'From ৳999' or 'Starting at $19.99')"
               {...editForm.getInputProps("priceLabel")}
             />
             <TextInput
               label={t.badgeText}
               placeholder="NEW COLLECTION"
+              description="Small badge label (e.g., 'NEW', 'SALE', or leave empty if using discount %)"
               {...editForm.getInputProps("badgeText")}
             />
             <Select
               label={t.badgeColor}
               placeholder="Select color"
+              description="Color for the badge background"
               data={badgeColorOptions}
+              clearable
               {...editForm.getInputProps("badgeColor")}
             />
             <TextInput
               label={t.ctaText}
               placeholder="Shop Now →"
+              description="Text for the call-to-action button (e.g., 'Shop Now', 'Learn More')"
               {...editForm.getInputProps("ctaText")}
             />
             <NumberInput
               label={t.discountPercentage}
               placeholder="50"
+              description="Shows as '50% OFF' badge. Leave empty if using custom badge text."
               min={1}
               max={100}
               {...editForm.getInputProps("discountPercentage")}
             />
             <TextInput
               label={t.linkUrl}
-              placeholder="https://example.com"
+              placeholder="/catalog or https://example.com"
+              description="Where to navigate when banner is clicked. Use / for internal pages."
               {...editForm.getInputProps("linkUrl")}
             />
             <Select
               label={t.placementLabel}
               placeholder={t.placementLabel}
+              description="Hero Carousel: Large rotating banners. Promotional Card: Smaller side cards."
               data={placementOptions}
               required
               {...editForm.getInputProps("placement")}
             />
             <Switch
               label={t.activeLabel}
+              description="Only active banners are displayed on the website"
               {...editForm.getInputProps("isActive", { type: "checkbox" })}
             />
             <NumberInput
               label={t.sortOrderLabel}
               placeholder="0"
+              description="Lower numbers appear first (0, 1, 2...)"
               min={0}
               {...editForm.getInputProps("sortOrder")}
             />
             <DateTimePicker
               label={t.startsAt}
               placeholder={t.startsAt}
+              description="Optional: Banner shows after this date/time"
+              clearable
               {...editForm.getInputProps("startsAt")}
             />
             <DateTimePicker
               label={t.endsAt}
               placeholder={t.endsAt}
+              description="Optional: Banner hides after this date/time"
+              clearable
               {...editForm.getInputProps("endsAt")}
             />
             <Group justify="flex-end" gap="sm">

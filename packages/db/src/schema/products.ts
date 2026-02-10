@@ -55,7 +55,7 @@ export const products = pgTable(
     isHot: boolean("is_hot").default(false),
     status: varchar("status", { length: 20 })
       .default("pending")
-      .$type<"pending" | "approved" | "rejected">()
+      .$type<"draft" | "pending" | "approved" | "rejected">()
       .notNull(),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),

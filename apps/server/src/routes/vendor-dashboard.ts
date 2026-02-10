@@ -647,8 +647,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				slug = `${slug}-${Date.now().toString(36)}`;
 			}
 
-			// Determine status - all products start as pending for admin approval
-			const productStatus = "pending";
+			// Determine status - draft if saving draft, otherwise pending for admin approval
+			const productStatus = input.isDraft ? "draft" : "pending";
 
 			// Create in transaction
 			const result = await db.transaction(async (tx) => {
@@ -787,8 +787,11 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				return c.json({ error: "Product not found" }, 404);
 			}
 
+			// Determine status: draft if saving draft, otherwise pending for approval
+			const updateStatus = input.isDraft ? "draft" : "pending";
+
 			await db.transaction(async (tx) => {
-				// Update product - reset to pending for re-approval
+				// Update product - status based on isDraft flag
 				await tx
 					.update(products)
 					.set({
@@ -814,7 +817,7 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 						expiryDate: input.expiryDate
 							? new Date(input.expiryDate)
 							: null,
-						status: "pending", // Re-submit for approval on edit
+						status: updateStatus,
 					})
 					.where(eq(products.id, productId));
 
