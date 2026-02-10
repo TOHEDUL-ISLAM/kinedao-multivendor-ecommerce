@@ -15,6 +15,9 @@ import { TestimonialsSection, TestimonialsSectionSkeleton } from "@/components/h
 import { InstagramGallery, InstagramGallerySkeleton } from "@/components/home/instagram-gallery";
 import { FeaturedCollections, FeaturedCollectionsSkeleton } from "@/components/home/featured-collections";
 import { NewsletterSection } from "@/components/home/newsletter-section";
+import { HeroBanners } from "@/components/homepage/hero-banners";
+import { PromotionalBanners } from "@/components/homepage/promotional-banners";
+import type { BannerDTO } from "@kineDao.com/api-types/catalog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -47,12 +50,42 @@ async function fetchHomeData(): Promise<HomePageResponse> {
   }
 }
 
+async function fetchBanners(placement: string): Promise<BannerDTO[]> {
+  try {
+    const response = await api.banners["/"].$get({
+      query: { placement },
+    });
+    if (!response.ok) {
+      console.error("[BANNERS] Failed to fetch banners:", response.status, response.statusText);
+      return [];
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("[BANNERS] Failed to fetch banners:", error);
+    return [];
+  }
+}
+
 function HomePage() {
   const { t } = useTranslation();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHomeData,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Fetch hero carousel banners
+  const { data: heroBanners = [] } = useQuery({
+    queryKey: ["banners", "hero_carousel"],
+    queryFn: () => fetchBanners("hero_carousel"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Fetch promotional card banners
+  const { data: promoBanners = [] } = useQuery({
+    queryKey: ["banners", "promotional_card"],
+    queryFn: () => fetchBanners("promotional_card"),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -72,8 +105,20 @@ function HomePage() {
 
   return (
     <div className="flex flex-col bg-background min-h-screen">
-      {/* Hero Section - New Design */}
-      <HeroSection />
+      {/* Hero Section - Banner Management System */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Hero Carousel - 2/3 width on desktop */}
+          <div className="lg:col-span-2">
+            <HeroBanners banners={heroBanners} />
+          </div>
+
+          {/* Promotional Cards - 1/3 width on desktop */}
+          <div className="lg:col-span-1">
+            <PromotionalBanners banners={promoBanners} />
+          </div>
+        </div>
+      </section>
 
       {/* Trust Badges - Slim Info Bar */}
       {isLoading ? <TrustBadgesSkeleton /> : <TrustBadges />}

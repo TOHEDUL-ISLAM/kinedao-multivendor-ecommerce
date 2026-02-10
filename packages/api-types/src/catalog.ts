@@ -450,3 +450,30 @@ export type CartRecommendationsQuery = z.infer<typeof cartRecommendationsQuerySc
 export interface CartRecommendationsResponse {
   products: ProductCardDTO[];
 }
+
+// =====================
+// Banner Types
+// =====================
+
+export interface BannerDTO {
+  id: string;
+  titleEn: string;
+  titleBn: string | null;
+  subtitleEn: string | null;
+  subtitleBn: string | null;
+  imageUrl: string;
+  linkUrl: string | null;
+  priceLabel: string | null;
+  badgeText: string | null;
+  badgeColor: string | null;
+  ctaText: string | null;
+  discountPercentage: number | null;
+  placement: string;
+  sortOrder: number;
+}
+
+export const getBannersQuerySchema = z.object({
+  placement: z.string().optional(), // Can be comma-separated: "hero_carousel,promotional_card"
+});
+
+export type GetBannersQuery = z.infer<typeof getBannersQuerySchema>;

@@ -29,4 +29,5 @@ export const api = {
   shippingAddresses: apiClient.api["shipping-addresses"],
   orders: apiClient.api.orders,
   vendorDashboard: apiClient.api["vendor-dashboard"],
+  admin: apiClient.api.admin,
 };

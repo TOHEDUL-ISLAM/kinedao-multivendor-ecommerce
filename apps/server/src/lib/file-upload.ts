@@ -19,7 +19,7 @@ const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB
 /**
  * Upload categories for organizing files in S3
  */
-export type UploadCategory = "vendor-documents" | "vendor-logos" | "product-images";
+export type UploadCategory = "vendor-documents" | "vendor-logos" | "product-images" | "banners";
 
 /**
  * Options for file upload

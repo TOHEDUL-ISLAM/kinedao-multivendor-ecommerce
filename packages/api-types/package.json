@@ -10,7 +10,8 @@
     "./cart": "./src/cart.ts",
     "./vendor": "./src/vendor.ts",
     "./checkout": "./src/checkout.ts",
-    "./vendor-dashboard": "./src/vendor-dashboard.ts"
+    "./vendor-dashboard": "./src/vendor-dashboard.ts",
+    "./admin": "./src/admin.ts"
   },
   "dependencies": {
     "zod": "catalog:"

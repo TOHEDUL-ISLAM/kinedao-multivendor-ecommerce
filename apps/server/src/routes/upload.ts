@@ -83,7 +83,7 @@ const uploadRouter = new Hono<AppEnv>()
       }
 
       // Get upload category from query param (default: vendor-documents)
-      const validCategories = ["vendor-documents", "vendor-logos", "product-images"] as const;
+      const validCategories = ["vendor-documents", "vendor-logos", "product-images", "banners"] as const;
       const categoryParam = c.req.query("category") || "vendor-documents";
       const category = (validCategories as readonly string[]).includes(categoryParam)
         ? (categoryParam as (typeof validCategories)[number])

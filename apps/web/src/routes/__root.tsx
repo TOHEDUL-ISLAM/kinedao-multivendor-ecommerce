@@ -85,7 +85,8 @@ function RootDocument() {
     location.pathname.startsWith("/vendor/orders") ||
     location.pathname.startsWith("/vendor/earnings") ||
     location.pathname.startsWith("/vendor/settings");
-  const hideMainChrome = isVendorForm || isVendorDashboard;
+  const isAdminPanel = location.pathname.startsWith("/admin");
+  const hideMainChrome = isVendorForm || isVendorDashboard || isAdminPanel;
 
   return (
     <html lang="en" suppressHydrationWarning>

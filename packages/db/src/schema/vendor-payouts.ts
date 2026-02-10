@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { vendors } from "./vendors";
+import { user } from "./auth";
 
 // Payout statuses
 export const PAYOUT_STATUSES = ["pending", "completed", "failed"] as const;
@@ -38,6 +39,9 @@ export const vendorPayouts = pgTable(
 			.default("pending")
 			.$type<PayoutStatus>(),
 		processedAt: timestamp("processed_at"),
+		processedBy: text("processed_by").references(() => user.id, {
+			onDelete: "set null",
+		}), // Admin who processed the payout
 
 		notes: text("notes"),
 

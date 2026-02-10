@@ -16,6 +16,11 @@
  * @returns Public URL to access the file
  */
 export function getS3Url(s3Key: string): string {
+  // If s3Key is already a full URL (for seed data with external images), return as-is
+  if (s3Key.startsWith("http://") || s3Key.startsWith("https://")) {
+    return s3Key;
+  }
+
   // Check environment
   const isProduction = process.env.NODE_ENV === "production";
   const cdnUrl = process.env.CDN_URL || process.env.S3_PUBLIC_URL;

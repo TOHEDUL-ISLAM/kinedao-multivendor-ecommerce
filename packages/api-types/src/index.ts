@@ -18,3 +18,6 @@ export * from "./checkout";
 
 // Re-export all types from vendor dashboard
 export * from "./vendor-dashboard";
+
+// Re-export all types from admin
+export * from "./admin";

@@ -785,14 +785,11 @@ async function seed() {
     for (const product of insertedProducts) {
       const images = faker.helpers.arrayElements(imageCollections[imageKey], 3);
       images.forEach((url, index) => {
-        // Convert external URL to mock s3Key for seeding
-        // Extract the photo ID from Unsplash URL and create a mock s3Key
-        const photoId = url.match(/photo-([^?]+)/)?.[1] || `seed-${index}`;
-        const s3Key = `seed/products/${photoId}.jpg`;
-
+        // For seed data, store the full Unsplash URL directly
+        // getS3Url() will detect and return external URLs as-is
         imageInserts.push({
           productId: product.id,
-          s3Key: s3Key,
+          s3Key: url, // Store full URL for seed data
           variant: "original",
           isPrimary: index === 0,
           alt: `${product.title} - Image ${index + 1}`,

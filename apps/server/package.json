@@ -8,7 +8,9 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",
     "start": "bun run dist/index.js",
-    "seed": "bun run src/seed.ts"
+    "seed": "bun run src/seed.ts",
+    "seed-admin": "bun run src/seed/seed-admin.ts",
+    "check-admin": "bun run src/check-admin.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^9.3.0",
