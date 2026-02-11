@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import {
   SimpleGrid,
+  Grid,
   Paper,
   Group,
   Text,
@@ -217,9 +218,9 @@ function DashboardOverviewPage() {
       </SimpleGrid>
 
       {/* Content Grid */}
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-        {/* Recent Orders - 50% width */}
-        <Box>
+      <Grid gutter="md" align="stretch">
+        {/* Recent Orders - wider on desktop */}
+        <Grid.Col span={{ base: 12, lg: 8 }}>
           <Card
             shadow="sm"
             radius="lg"
@@ -287,145 +288,262 @@ function DashboardOverviewPage() {
                 ))}
               </Stack>
             ) : data?.recentOrders && data.recentOrders.length > 0 ? (
-              <Table
-                highlightOnHover
+              <Box
                 style={{
                   borderRadius: "8px",
-                  overflow: "hidden",
+                  overflowX: "auto",
+                  overflowY: "hidden",
                 }}
               >
-                <Table.Thead
+                <Table
+                  highlightOnHover
                   style={{
-                    background: isDark
-                      ? "linear-gradient(135deg, oklch(0.25 0.02 260) 0%, oklch(0.23 0.02 250) 100%)"
-                      : "linear-gradient(135deg, oklch(0.97 0.02 175) 0%, oklch(0.98 0.01 165) 100%)",
+                    minWidth: 640,
                   }}
                 >
-                  <Table.Tr>
-                    <Table.Th
-                      style={{
-                        fontWeight: 700,
-                        color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
-                      }}
-                    >
-                      {t.orderNumber}
-                    </Table.Th>
-                    <Table.Th
-                      style={{
-                        fontWeight: 700,
-                        color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
-                      }}
-                    >
-                      {t.customer}
-                    </Table.Th>
-                    <Table.Th
-                      style={{
-                        fontWeight: 700,
-                        color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
-                      }}
-                    >
-                      {t.total}
-                    </Table.Th>
-                    <Table.Th
-                      style={{
-                        fontWeight: 700,
-                        color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
-                      }}
-                    >
-                      {t.status}
-                    </Table.Th>
-                    <Table.Th
-                      style={{
-                        fontWeight: 700,
-                        color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
-                      }}
-                    >
-                      {t.date}
-                    </Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {data.recentOrders.map((order) => (
-                    <Table.Tr key={order.id}>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {order.orderNumber}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{order.customerName}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {formatBDT(order.total)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
-                          size="sm"
-                          fw={600}
-                          style={{
-                            background: statusStyles[order.status]?.background || "oklch(0.9 0.01 260)",
-                            color: statusStyles[order.status]?.color || "oklch(0.5 0.02 260)",
-                            border: "none",
-                            textTransform: "capitalize",
-                          }}
-                        >
-                          {order.status}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c="dimmed">
-                          {new Date(order.createdAt).toLocaleDateString(
-                            language === "bn" ? "bn-BD" : "en-US",
-                            { month: "short", day: "numeric" }
-                          )}
-                        </Text>
-                      </Table.Td>
+                  <Table.Thead
+                    style={{
+                      background: isDark
+                        ? "linear-gradient(135deg, oklch(0.25 0.02 260) 0%, oklch(0.23 0.02 250) 100%)"
+                        : "linear-gradient(135deg, oklch(0.97 0.02 175) 0%, oklch(0.98 0.01 165) 100%)",
+                    }}
+                  >
+                    <Table.Tr>
+                      <Table.Th
+                        style={{
+                          fontWeight: 700,
+                          color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
+                        }}
+                      >
+                        {t.orderNumber}
+                      </Table.Th>
+                      <Table.Th
+                        style={{
+                          fontWeight: 700,
+                          color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
+                        }}
+                      >
+                        {t.customer}
+                      </Table.Th>
+                      <Table.Th
+                        style={{
+                          fontWeight: 700,
+                          color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
+                        }}
+                      >
+                        {t.total}
+                      </Table.Th>
+                      <Table.Th
+                        style={{
+                          fontWeight: 700,
+                          color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
+                        }}
+                      >
+                        {t.status}
+                      </Table.Th>
+                      <Table.Th
+                        style={{
+                          fontWeight: 700,
+                          color: isDark ? "oklch(0.8 0.02 260)" : "oklch(0.4 0.02 260)",
+                        }}
+                      >
+                        {t.date}
+                      </Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {data.recentOrders.map((order) => (
+                      <Table.Tr key={order.id}>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {order.orderNumber}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{order.customerName}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {formatBDT(order.total)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge
+                            size="sm"
+                            fw={600}
+                            style={{
+                              background: statusStyles[order.status]?.background || "oklch(0.9 0.01 260)",
+                              color: statusStyles[order.status]?.color || "oklch(0.5 0.02 260)",
+                              border: "none",
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {order.status}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="dimmed">
+                            {new Date(order.createdAt).toLocaleDateString(
+                              language === "bn" ? "bn-BD" : "en-US",
+                              { month: "short", day: "numeric" }
+                            )}
+                          </Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Box>
             ) : (
               <Text c="dimmed" ta="center" py="xl">
                 {t.noRecentOrders}
               </Text>
             )}
           </Card>
-        </Box>
+        </Grid.Col>
 
-        {/* Right Column - Low Stock + Quick Actions (50%) */}
-        <Stack gap="md">
-          {/* Low Stock Alerts */}
-          <Card
-            shadow="sm"
-            radius="lg"
-            p="lg"
-            style={{
-              background: isDark
-                ? "linear-gradient(135deg, oklch(0.22 0.02 260) 0%, oklch(0.2 0.02 250) 100%)"
-                : "linear-gradient(135deg, oklch(0.99 0.005 90) 0%, oklch(0.98 0.01 160) 100%)",
-              border: isDark
-                ? "1px solid oklch(0.3 0.02 260 / 0.3)"
-                : "1px solid oklch(0.92 0.01 260 / 0.2)",
-              boxShadow: isDark
-                ? "0 4px 20px oklch(0 0 0 / 0.3)"
-                : "0 4px 20px oklch(0.65 0.15 175 / 0.08)",
-            }}
-          >
-            <Group justify="space-between" mb="lg">
-              <Group gap="xs">
+        {/* Right Column - Low Stock + Quick Actions */}
+        <Grid.Col span={{ base: 12, lg: 4 }}>
+          <Stack gap="md">
+            {/* Low Stock Alerts */}
+            <Card
+              shadow="sm"
+              radius="lg"
+              p="lg"
+              style={{
+                background: isDark
+                  ? "linear-gradient(135deg, oklch(0.22 0.02 260) 0%, oklch(0.2 0.02 250) 100%)"
+                  : "linear-gradient(135deg, oklch(0.99 0.005 90) 0%, oklch(0.98 0.01 160) 100%)",
+                border: isDark
+                  ? "1px solid oklch(0.3 0.02 260 / 0.3)"
+                  : "1px solid oklch(0.92 0.01 260 / 0.2)",
+                boxShadow: isDark
+                  ? "0 4px 20px oklch(0 0 0 / 0.3)"
+                  : "0 4px 20px oklch(0.65 0.15 175 / 0.08)",
+              }}
+            >
+              <Group justify="space-between" mb="lg">
+                <Group gap="xs">
+                  <Box
+                    style={{
+                      padding: "8px",
+                      borderRadius: "8px",
+                      background: "linear-gradient(135deg, oklch(0.7 0.12 50) 0%, oklch(0.75 0.1 55) 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AlertTriangle size={18} style={{ color: "white" }} />
+                  </Box>
+                  <Text
+                    fw={700}
+                    size="md"
+                    style={{
+                      color: isDark ? "oklch(0.9 0.02 260)" : "oklch(0.3 0.02 260)",
+                    }}
+                  >
+                    {t.lowStockAlerts}
+                  </Text>
+                </Group>
+              </Group>
+
+              {isLoading ? (
+                <Stack gap="xs">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton key={i} height={36} radius="sm" />
+                  ))}
+                </Stack>
+              ) : data?.lowStockProducts && data.lowStockProducts.length > 0 ? (
+                <Stack gap="xs">
+                  {data.lowStockProducts.map((product) => (
+                    <Group
+                      key={product.id}
+                      justify="space-between"
+                      py={10}
+                      px={12}
+                      style={{
+                        borderRadius: "12px",
+                        background: isDark
+                          ? "linear-gradient(135deg, oklch(0.25 0.03 10) 0%, oklch(0.23 0.02 5) 100%)"
+                          : "linear-gradient(135deg, oklch(0.97 0.02 10) 0%, oklch(0.98 0.01 5) 100%)",
+                        border: isDark
+                          ? "1px solid oklch(0.75 0.15 10 / 0.2)"
+                          : "1px solid oklch(0.65 0.15 10 / 0.15)",
+                      }}
+                    >
+                      <Box style={{ flex: 1, minWidth: 0 }}>
+                        <Text
+                          size="sm"
+                          fw={600}
+                          lineClamp={1}
+                          style={{
+                            color: isDark ? "oklch(0.85 0.02 260)" : "oklch(0.3 0.02 260)",
+                          }}
+                        >
+                          {product.title}
+                        </Text>
+                        <Text
+                          size="xs"
+                          fw={500}
+                          style={{
+                            color: isDark ? "oklch(0.6 0.02 260)" : "oklch(0.5 0.02 260)",
+                          }}
+                        >
+                          {t.sku}: {product.sku}
+                        </Text>
+                      </Box>
+                      <Badge
+                        size="sm"
+                        fw={700}
+                        style={{
+                          background: "linear-gradient(135deg, oklch(0.65 0.15 10) 0%, oklch(0.7 0.13 5) 100%)",
+                          color: "white",
+                          border: "none",
+                          boxShadow: "0 2px 8px oklch(0.65 0.15 10 / 0.3)",
+                        }}
+                      >
+                        {product.stockQty} {t.stock}
+                      </Badge>
+                    </Group>
+                  ))}
+                </Stack>
+              ) : (
+                <Text c="dimmed" ta="center" py="md" size="sm">
+                  {t.noLowStock}
+                </Text>
+              )}
+            </Card>
+
+            {/* Quick Actions */}
+            <Card
+              shadow="sm"
+              radius="lg"
+              p="lg"
+              style={{
+                background: isDark
+                  ? "linear-gradient(135deg, oklch(0.22 0.02 260) 0%, oklch(0.2 0.02 250) 100%)"
+                  : "linear-gradient(135deg, oklch(0.99 0.005 90) 0%, oklch(0.98 0.01 160) 100%)",
+                border: isDark
+                  ? "1px solid oklch(0.3 0.02 260 / 0.3)"
+                  : "1px solid oklch(0.92 0.01 260 / 0.2)",
+                boxShadow: isDark
+                  ? "0 4px 20px oklch(0 0 0 / 0.3)"
+                  : "0 4px 20px oklch(0.65 0.15 175 / 0.08)",
+              }}
+            >
+              <Group gap="xs" mb="lg">
                 <Box
                   style={{
                     padding: "8px",
                     borderRadius: "8px",
-                    background: "linear-gradient(135deg, oklch(0.7 0.12 50) 0%, oklch(0.75 0.1 55) 100%)",
+                    background: "linear-gradient(135deg, oklch(0.65 0.15 175) 0%, oklch(0.7 0.13 165) 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <AlertTriangle size={18} style={{ color: "white" }} />
+                  <Package size={18} style={{ color: "white" }} />
                 </Box>
                 <Text
                   fw={700}
@@ -434,194 +552,86 @@ function DashboardOverviewPage() {
                     color: isDark ? "oklch(0.9 0.02 260)" : "oklch(0.3 0.02 260)",
                   }}
                 >
-                  {t.lowStockAlerts}
+                  {t.quickActions}
                 </Text>
               </Group>
-            </Group>
-
-            {isLoading ? (
-              <Stack gap="xs">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <Skeleton key={i} height={36} radius="sm" />
-                ))}
+              <Stack gap="sm">
+                <Button
+                  component={Link}
+                  to="/vendor/products/new"
+                  leftSection={<Plus size={16} />}
+                  fullWidth
+                  radius="md"
+                  size="sm"
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.65 0.15 175) 0%, oklch(0.7 0.13 165) 100%)",
+                    border: "none",
+                    boxShadow: "0 2px 10px oklch(0.65 0.15 175 / 0.25)",
+                    transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 4px 14px oklch(0.65 0.15 175 / 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 2px 10px oklch(0.65 0.15 175 / 0.25)";
+                  }}
+                >
+                  {t.addProduct}
+                </Button>
+                <Button
+                  component={Link}
+                  to="/vendor/orders"
+                  leftSection={<ShoppingBag size={16} />}
+                  fullWidth
+                  radius="md"
+                  size="sm"
+                  variant="light"
+                  style={{
+                    background: "oklch(0.96 0.03 175)",
+                    color: "oklch(0.65 0.15 175)",
+                    border: "1px solid oklch(0.65 0.15 175 / 0.2)",
+                    transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "oklch(0.94 0.04 175)";
+                    e.currentTarget.style.borderColor = "oklch(0.65 0.15 175 / 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "oklch(0.96 0.03 175)";
+                    e.currentTarget.style.borderColor = "oklch(0.65 0.15 175 / 0.2)";
+                  }}
+                >
+                  {t.viewAllOrders}
+                </Button>
+                <Button
+                  component={Link}
+                  to="/vendor/products"
+                  leftSection={<Package size={16} />}
+                  fullWidth
+                  radius="md"
+                  size="sm"
+                  variant="outline"
+                  style={{
+                    borderColor: "oklch(0.65 0.15 175)",
+                    color: "oklch(0.65 0.15 175)",
+                    transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "oklch(0.98 0.02 175)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {t.viewAllProducts}
+                </Button>
               </Stack>
-            ) : data?.lowStockProducts && data.lowStockProducts.length > 0 ? (
-              <Stack gap="xs">
-                {data.lowStockProducts.map((product) => (
-                  <Group
-                    key={product.id}
-                    justify="space-between"
-                    py={10}
-                    px={12}
-                    style={{
-                      borderRadius: "12px",
-                      background: isDark
-                        ? "linear-gradient(135deg, oklch(0.25 0.03 10) 0%, oklch(0.23 0.02 5) 100%)"
-                        : "linear-gradient(135deg, oklch(0.97 0.02 10) 0%, oklch(0.98 0.01 5) 100%)",
-                      border: isDark
-                        ? "1px solid oklch(0.75 0.15 10 / 0.2)"
-                        : "1px solid oklch(0.65 0.15 10 / 0.15)",
-                    }}
-                  >
-                    <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text
-                        size="sm"
-                        fw={600}
-                        lineClamp={1}
-                        style={{
-                          color: isDark ? "oklch(0.85 0.02 260)" : "oklch(0.3 0.02 260)",
-                        }}
-                      >
-                        {product.title}
-                      </Text>
-                      <Text
-                        size="xs"
-                        fw={500}
-                        style={{
-                          color: isDark ? "oklch(0.6 0.02 260)" : "oklch(0.5 0.02 260)",
-                        }}
-                      >
-                        {t.sku}: {product.sku}
-                      </Text>
-                    </Box>
-                    <Badge
-                      size="sm"
-                      fw={700}
-                      style={{
-                        background: "linear-gradient(135deg, oklch(0.65 0.15 10) 0%, oklch(0.7 0.13 5) 100%)",
-                        color: "white",
-                        border: "none",
-                        boxShadow: "0 2px 8px oklch(0.65 0.15 10 / 0.3)",
-                      }}
-                    >
-                      {product.stockQty} {t.stock}
-                    </Badge>
-                  </Group>
-                ))}
-              </Stack>
-            ) : (
-              <Text c="dimmed" ta="center" py="md" size="sm">
-                {t.noLowStock}
-              </Text>
-            )}
-          </Card>
-
-          {/* Quick Actions */}
-          <Card
-            shadow="sm"
-            radius="lg"
-            p="lg"
-            style={{
-              background: isDark
-                ? "linear-gradient(135deg, oklch(0.22 0.02 260) 0%, oklch(0.2 0.02 250) 100%)"
-                : "linear-gradient(135deg, oklch(0.99 0.005 90) 0%, oklch(0.98 0.01 160) 100%)",
-              border: isDark
-                ? "1px solid oklch(0.3 0.02 260 / 0.3)"
-                : "1px solid oklch(0.92 0.01 260 / 0.2)",
-              boxShadow: isDark
-                ? "0 4px 20px oklch(0 0 0 / 0.3)"
-                : "0 4px 20px oklch(0.65 0.15 175 / 0.08)",
-            }}
-          >
-            <Group gap="xs" mb="lg">
-              <Box
-                style={{
-                  padding: "8px",
-                  borderRadius: "8px",
-                  background: "linear-gradient(135deg, oklch(0.65 0.15 175) 0%, oklch(0.7 0.13 165) 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Package size={18} style={{ color: "white" }} />
-              </Box>
-              <Text
-                fw={700}
-                size="md"
-                style={{
-                  color: isDark ? "oklch(0.9 0.02 260)" : "oklch(0.3 0.02 260)",
-                }}
-              >
-                {t.quickActions}
-              </Text>
-            </Group>
-            <Stack gap="sm">
-              <Button
-                component={Link}
-                to="/vendor/products/new"
-                leftSection={<Plus size={18} />}
-                fullWidth
-                radius="md"
-                size="md"
-                style={{
-                  background: "linear-gradient(135deg, oklch(0.65 0.15 175) 0%, oklch(0.7 0.13 165) 100%)",
-                  border: "none",
-                  boxShadow: "0 4px 12px oklch(0.65 0.15 175 / 0.3)",
-                  transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 6px 20px oklch(0.65 0.15 175 / 0.4)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px oklch(0.65 0.15 175 / 0.3)";
-                }}
-              >
-                {t.addProduct}
-              </Button>
-              <Button
-                component={Link}
-                to="/vendor/orders"
-                leftSection={<ShoppingBag size={18} />}
-                fullWidth
-                radius="md"
-                size="md"
-                variant="light"
-                style={{
-                  background: "oklch(0.96 0.03 175)",
-                  color: "oklch(0.65 0.15 175)",
-                  border: "1px solid oklch(0.65 0.15 175 / 0.2)",
-                  transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "oklch(0.94 0.04 175)";
-                  e.currentTarget.style.borderColor = "oklch(0.65 0.15 175 / 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "oklch(0.96 0.03 175)";
-                  e.currentTarget.style.borderColor = "oklch(0.65 0.15 175 / 0.2)";
-                }}
-              >
-                {t.viewAllOrders}
-              </Button>
-              <Button
-                component={Link}
-                to="/vendor/products"
-                leftSection={<Package size={18} />}
-                fullWidth
-                radius="md"
-                size="md"
-                variant="outline"
-                style={{
-                  borderColor: "oklch(0.65 0.15 175)",
-                  color: "oklch(0.65 0.15 175)",
-                  transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "oklch(0.98 0.02 175)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                {t.viewAllProducts}
-              </Button>
-            </Stack>
-          </Card>
-        </Stack>
-      </SimpleGrid>
+            </Card>
+          </Stack>
+        </Grid.Col>
+      </Grid>
     </Stack>
   );
 }

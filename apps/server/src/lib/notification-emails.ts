@@ -1,4 +1,5 @@
 import { sendEmail } from "@kineDao.com/auth/email";
+import { env } from "@kineDao.com/env/server";
 
 // Helper to format price in BDT
 const formatPrice = (paisa: number) => {
@@ -67,7 +68,7 @@ export async function sendOrderConfirmedEmail(
         You'll receive another notification once your order is shipped with tracking details.
       </p>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/orders" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/account/orders" style="display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           View Order Details
         </a>
       </div>
@@ -124,7 +125,7 @@ export async function sendOrderShippedEmail(
         </p>
       </div>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/orders" style="display: inline-block; background: #10B981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/account/orders" style="display: inline-block; background: #10B981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           Track Your Order
         </a>
       </div>
@@ -167,7 +168,7 @@ export async function sendOrderDeliveredEmail(
         If you have any issues with your order, please contact us immediately.
       </p>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com" style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}" style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           Continue Shopping
         </a>
       </div>
@@ -220,7 +221,7 @@ export async function sendOrderCancelledEmail(
         If you have any questions, please contact our support team.
       </p>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com" style="display: inline-block; background: #EF4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}" style="display: inline-block; background: #EF4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           Continue Shopping
         </a>
       </div>
@@ -275,7 +276,7 @@ export async function sendNewOrderVendorEmail(
         </p>
       </div>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/vendor/orders" style="display: inline-block; background: #F59E0B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/vendor/orders" style="display: inline-block; background: #F59E0B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           View Order
         </a>
       </div>
@@ -313,7 +314,7 @@ export async function sendProductApprovedEmail(
         Customers can now browse and purchase this product from your store.
       </p>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/vendor/products" style="display: inline-block; background: #10B981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/vendor/products" style="display: inline-block; background: #10B981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           View Product
         </a>
       </div>
@@ -360,7 +361,7 @@ export async function sendProductRejectedEmail(
         Please make the necessary changes and resubmit your product for review.
       </p>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/vendor/products" style="display: inline-block; background: #EF4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/vendor/products" style="display: inline-block; background: #EF4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           Edit Product
         </a>
       </div>
@@ -404,7 +405,7 @@ export async function sendVendorApprovedEmail(
         </p>
       </div>
       <div style="margin: 30px 0; text-align: center;">
-        <a href="https://kinedao.com/vendor/dashboard" style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        <a href="${env.FRONTEND_URL}/vendor/dashboard" style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
           Go to Dashboard
         </a>
       </div>

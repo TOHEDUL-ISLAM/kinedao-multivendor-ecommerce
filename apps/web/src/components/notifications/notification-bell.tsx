@@ -3,9 +3,45 @@ import { Indicator, Popover, ScrollArea, ActionIcon, Text, Stack, Group, Badge, 
 import { useNotifications } from "@/hooks/use-notifications";
 import { formatDistanceToNow } from "date-fns";
 import type { NotificationDTO } from "@kineDao.com/api-types";
+import { useNavigate } from "@tanstack/react-router";
+
+// Helper to get navigation URL from notification
+function getNotificationUrl(notification: NotificationDTO): string {
+	const data = notification.data as Record<string, unknown> | null;
+	const type = notification.type;
+
+	// Customer notifications - go to orders page
+	if (["order_placed", "order_confirmed", "order_processing", "order_shipped", "order_delivered", "order_cancelled"].includes(type)) {
+		return data?.orderId ? `/account/orders/${data.orderId}` : "/account/orders";
+	}
+
+	// Vendor notifications - go to vendor orders
+	if (["new_order", "cod_verified"].includes(type)) {
+		return data?.orderId ? `/vendor/orders?orderId=${data.orderId}` : "/vendor/orders";
+	}
+
+	// Product notifications - go to vendor products
+	if (["product_approved", "product_rejected"].includes(type)) {
+		return data?.productId ? `/vendor/products/${data.productId}/edit` : "/vendor/products";
+	}
+
+	// Vendor application approved
+	if (type === "vendor_approved") {
+		return "/vendor/dashboard";
+	}
+
+	// Low stock - go to vendor products
+	if (type === "low_stock") {
+		return "/vendor/products";
+	}
+
+	// Default fallback
+	return "/";
+}
 
 export function NotificationBell() {
 	const { unreadCount, notifications, markAsRead, markAllAsRead, isMarkingAllAsRead } = useNotifications();
+	const navigate = useNavigate();
 
 	return (
 		<Popover width={360} position="bottom-end" shadow="md">
@@ -46,7 +82,15 @@ export function NotificationBell() {
 								{notifications.map((notification: NotificationDTO) => (
 									<button
 										key={notification.id}
-										onClick={() => !notification.isRead && markAsRead(notification.id)}
+										onClick={() => {
+											// Mark as read if unread
+											if (!notification.isRead) {
+												markAsRead(notification.id);
+											}
+											// Navigate to relevant page
+											const url = getNotificationUrl(notification);
+											navigate({ to: url });
+										}}
 										style={{
 											all: "unset",
 											cursor: "pointer",
