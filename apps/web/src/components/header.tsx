@@ -31,6 +31,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
 import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api-client";
 import { SearchBar } from "./search-bar";
 
 export default function Header() {
@@ -72,6 +73,12 @@ export default function Header() {
       void mergeGuestWishlist(session.user.id);
     }
   }, [mergeGuestWishlist, session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      void api.account.recover.$post();
+    }
+  }, [session?.user?.id]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");

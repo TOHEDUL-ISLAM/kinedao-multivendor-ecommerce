@@ -7,6 +7,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  recoverUntil: timestamp("recover_until", { withTimezone: true }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

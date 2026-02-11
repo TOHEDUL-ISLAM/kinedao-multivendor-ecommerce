@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/account/orders/$orderId")({
+export const Route = createFileRoute("/account/_layout/orders/$orderId")({
 	component: OrderDetailPage,
 	beforeLoad: async () => {
 		const session = await getUser();
@@ -23,17 +23,17 @@ export const Route = createFileRoute("/account/orders/$orderId")({
 		try {
 			const response = await api.orders[":orderId"].$get({
 				param: { orderId: params.orderId },
-			});
+			})
 
 			if (!response.ok) {
 				console.error("Order detail API error:", response.status, response.statusText);
 				if (response.status === 404) {
-					throw redirect({ to: "/account/orders", search: { error: "not-found" } });
+					throw redirect({ to: "/account/orders" });
 				}
 				if (response.status === 403) {
-					throw redirect({ to: "/account/orders", search: { error: "access-denied" } });
+					throw redirect({ to: "/account/orders" });
 				}
-				throw redirect({ to: "/account/orders", search: { error: "failed" } });
+				throw redirect({ to: "/account/orders" });
 			}
 
 			return response.json();
@@ -57,7 +57,7 @@ function OrderDetailPage() {
 		return language === "bn"
 			? `৳${amount.toLocaleString("bn-BD")}`
 			: `৳${amount.toLocaleString("en-BD")}`;
-	};
+	}
 
 	const handleCancelOrder = async () => {
 		setCancelling(true);
@@ -65,7 +65,7 @@ function OrderDetailPage() {
 			const response = await api.orders[":orderId"].cancel.$post({
 				param: { orderId: order.id },
 				json: { reason: cancelReason || undefined },
-			});
+			})
 
 			if (response.ok) {
 				toast.success(t("order.detail.cancelled"));
@@ -80,7 +80,7 @@ function OrderDetailPage() {
 		} finally {
 			setCancelling(false);
 		}
-	};
+	}
 
 	return (
 		<div className="container max-w-5xl mx-auto px-4 py-8">
@@ -285,5 +285,5 @@ function OrderDetailPage() {
 				</Stack>
 			</Modal>
 		</div>
-	);
+	)
 }

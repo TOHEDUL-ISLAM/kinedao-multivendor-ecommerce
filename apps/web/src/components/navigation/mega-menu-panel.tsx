@@ -139,8 +139,8 @@ function RecommendedProductCard({
 
   return (
     <Link
-      to="/catalog"
-      search={{ q: product.slug }}
+      to="/product/$slug"
+      params={{ slug: product.slug }}
       onClick={onLinkClick}
       className="flex flex-col items-center gap-2 w-[88px] shrink-0 group"
     >

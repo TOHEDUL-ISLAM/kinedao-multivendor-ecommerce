@@ -33,4 +33,5 @@ export const api = {
   banners: apiClient.api.banners,
   notifications: apiClient.api.notifications,
   wishlist: apiClient.api.wishlist,
+  account: apiClient.api.account,
 };

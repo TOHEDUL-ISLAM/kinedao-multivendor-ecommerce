@@ -412,8 +412,13 @@ export const translations = {
     "order.detail.orderPlaced": "Order Placed",
 
     // User Menu
+    "userMenu.welcome": "Welcome",
     "userMenu.myOrders": "My Orders",
     "userMenu.myAccount": "My Account",
+    "userMenu.wishlist": "Wishlist",
+    "userMenu.notifications": "Notifications",
+    "userMenu.continueShopping": "Continue Shopping",
+    "userMenu.settings": "Settings",
     "userMenu.signOut": "Sign Out",
 
     // Favorites
@@ -1195,8 +1200,13 @@ export const translations = {
     "order.detail.orderPlaced": "অর্ডার দেওয়া হয়েছে",
 
     // User Menu
+    "userMenu.welcome": "স্বাগতম",
     "userMenu.myOrders": "আমার অর্ডার",
     "userMenu.myAccount": "আমার অ্যাকাউন্ট",
+    "userMenu.wishlist": "উইশলিস্ট",
+    "userMenu.notifications": "নোটিফিকেশন",
+    "userMenu.continueShopping": "কেনাকাটা চালিয়ে যান",
+    "userMenu.settings": "সেটিংস",
     "userMenu.signOut": "সাইন আউট",
 
     // Favorites

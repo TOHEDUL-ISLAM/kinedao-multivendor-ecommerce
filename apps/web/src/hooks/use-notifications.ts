@@ -68,6 +68,36 @@ export function useNotifications() {
 		},
 	});
 
+	// Delete single notification
+	const deleteNotificationMutation = useMutation({
+		mutationFn: async (notificationId: string) => {
+			const response = await api.notifications[":id"].$delete({
+				param: { id: notificationId },
+			});
+			if (!response.ok) {
+				throw new Error("Failed to delete notification");
+			}
+			return response.json();
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+		},
+	});
+
+	// Delete all notifications
+	const deleteAllNotificationsMutation = useMutation({
+		mutationFn: async () => {
+			const response = await api.notifications.$delete();
+			if (!response.ok) {
+				throw new Error("Failed to delete notifications");
+			}
+			return response.json();
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+		},
+	});
+
 	// SSE connection setup
 	const connectSSE = useCallback(() => {
 		// Don't connect if already connected
@@ -77,7 +107,12 @@ export function useNotifications() {
 
 		try {
 			// Normalize URL by removing trailing slash if present
-			const baseUrl = import.meta.env.VITE_SERVER_URL.replace(/\/$/, "");
+			const serverUrl = import.meta.env.VITE_SERVER_URL;
+			if (!serverUrl) {
+				setIsConnected(false);
+				return;
+			}
+			const baseUrl = serverUrl.replace(/\/$/, "");
 			const eventSource = new EventSource(
 				`${baseUrl}/api/notifications/stream`,
 				{ withCredentials: true }
@@ -171,9 +206,14 @@ export function useNotifications() {
 		markAsRead: (notificationId: string) =>
 			markAsReadMutation.mutate(notificationId),
 		markAllAsRead: () => markAllAsReadMutation.mutate(),
+		deleteNotification: (notificationId: string) =>
+			deleteNotificationMutation.mutate(notificationId),
+		deleteAllNotifications: () => deleteAllNotificationsMutation.mutate(),
 
 		// Loading states
 		isMarkingAsRead: markAsReadMutation.isPending,
 		isMarkingAllAsRead: markAllAsReadMutation.isPending,
+		isDeletingNotification: deleteNotificationMutation.isPending,
+		isDeletingAllNotifications: deleteAllNotificationsMutation.isPending,
 	};
 }

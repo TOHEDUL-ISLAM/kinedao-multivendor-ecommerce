@@ -25,7 +25,11 @@ import { adminRouter } from "./routes/admin";
 import { bannersRouter } from "./routes/banners";
 import { notificationsRouter } from "./routes/notifications";
 import { wishlistRouter } from "./routes/wishlist";
+import { accountRouter } from "./routes/account";
 import { openAPIRouteHandler } from 'hono-openapi';
+import { db } from "@kineDao.com/db";
+import { user } from "@kineDao.com/db/schema/auth";
+import { and, eq, isNotNull, lt } from "drizzle-orm";
 
 export type AppEnv = {
   Variables: {
@@ -37,8 +41,60 @@ const app = new Hono<AppEnv>()
   .use(logger())
   .use("*", async (c, next) => {
     try {
+      const now = new Date();
+      await db
+        .delete(user)
+        .where(
+          and(
+            isNotNull(user.deletedAt),
+            isNotNull(user.recoverUntil),
+            lt(user.recoverUntil, now),
+          ),
+        );
+
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       if (session) {
+        const dbUser = await db
+          .select({
+            id: user.id,
+            deletedAt: user.deletedAt,
+            recoverUntil: user.recoverUntil,
+          })
+          .from(user)
+          .where(eq(user.id, session.user.id))
+          .limit(1);
+
+        const currentUser = dbUser[0];
+        if (!currentUser) {
+          c.set("user", null);
+          await next();
+          return;
+        }
+
+        // Recover account automatically if user signs in again within 14-day window.
+        if (
+          currentUser.deletedAt &&
+          currentUser.recoverUntil &&
+          currentUser.recoverUntil >= now
+        ) {
+          await db
+            .update(user)
+            .set({ deletedAt: null, recoverUntil: null, updatedAt: now })
+            .where(eq(user.id, currentUser.id));
+        }
+
+        // Purge account lazily after recovery window expires.
+        if (
+          currentUser.deletedAt &&
+          currentUser.recoverUntil &&
+          currentUser.recoverUntil < now
+        ) {
+          await db.delete(user).where(eq(user.id, currentUser.id));
+          c.set("user", null);
+          await next();
+          return;
+        }
+
         console.log(`[Session] Found session for user: ${session.user.email}`);
       } else {
         console.log("[Session] No session found for request");
@@ -80,6 +136,7 @@ const app = new Hono<AppEnv>()
   .route("/api/banners", bannersRouter)
   .route("/api/notifications", notificationsRouter)
   .route("/api/wishlist", wishlistRouter)
+  .route("/api/account", accountRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))

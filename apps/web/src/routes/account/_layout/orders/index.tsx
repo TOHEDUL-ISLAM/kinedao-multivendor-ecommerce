@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { getUser } from "@/functions/get-user";
 import { useTranslation } from "@/hooks/use-translation";
 import { api } from "@/lib/api-client";
@@ -15,7 +15,7 @@ const ordersSearchSchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 });
 
-export const Route = createFileRoute("/account/orders/")({
+export const Route = createFileRoute("/account/_layout/orders/")({
 	component: OrderHistoryPage,
 	validateSearch: ordersSearchSchema,
 	beforeLoad: async () => {
@@ -32,10 +32,10 @@ export const Route = createFileRoute("/account/orders/")({
 				query: {
 					status: deps.status || "all",
 					dateRange: deps.dateRange || "all",
-					page: deps.page || 1,
-					limit: 10,
+					page: String(deps.page || 1),
+					limit: "10",
 				},
-			});
+			})
 
 			if (!response.ok) {
 				console.error("Orders API error:", response.status, response.statusText);
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/account/orders/")({
 					total: 0,
 					page: deps.page || 1,
 					totalPages: 0,
-				};
+				}
 			}
 
 			const data = await response.json();
@@ -56,14 +56,14 @@ export const Route = createFileRoute("/account/orders/")({
 				total: 0,
 				page: deps.page || 1,
 				totalPages: 0,
-			};
+			}
 		}
 	},
 });
 
 function OrderHistoryPage() {
 	const { t, language } = useTranslation();
-	const navigate = useNavigate();
+	const navigate = Route.useNavigate();
 	const search = Route.useSearch();
 	const data = Route.useLoaderData();
 
@@ -72,7 +72,7 @@ function OrderHistoryPage() {
 			<div className="container max-w-6xl mx-auto px-4 py-8">
 				<div className="text-center">Loading...</div>
 			</div>
-		);
+		)
 	}
 
 	const formatPrice = (paisa: number) => {
@@ -80,29 +80,29 @@ function OrderHistoryPage() {
 		return language === "bn"
 			? `৳ ${amount.toLocaleString("bn-BD")}`
 			: `৳ ${amount.toLocaleString("en-BD")}`;
-	};
+	}
 
 	const handleStatusChange = (value: string | null) => {
 		if (value) {
 			navigate({
 				search: { ...search, status: value as any, page: 1 },
-			});
+			})
 		}
-	};
+	}
 
 	const handleDateRangeChange = (value: string | null) => {
 		if (value) {
 			navigate({
 				search: { ...search, dateRange: value as any, page: 1 },
-			});
+			})
 		}
-	};
+	}
 
 	const handlePageChange = (page: number) => {
 		navigate({
 			search: { ...search, page },
-		});
-	};
+		})
+	}
 
 	const getStatusBadge = (status: string) => {
 		const badges: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -112,10 +112,10 @@ function OrderHistoryPage() {
 			shipped: { label: t("order.detail.status.shipped"), variant: "default" },
 			delivered: { label: t("order.detail.status.delivered"), variant: "default" },
 			cancelled: { label: t("order.detail.status.cancelled"), variant: "destructive" },
-		};
+		}
 		const badge = badges[status] || badges.pending;
 		return <Badge variant={badge.variant}>{badge.label}</Badge>;
-	};
+	}
 
 	return (
 		<div className="bg-gray-50 min-h-screen">
@@ -191,9 +191,9 @@ function OrderHistoryPage() {
 										<div className="flex items-center gap-3">
 											<span className="text-xs text-gray-500">
 												{new Date(order.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
-													year: 'numeric',
-													month: 'short',
-													day: 'numeric'
+													year: "numeric",
+													month: "short",
+													day: "numeric"
 												})}
 											</span>
 											{getStatusBadge(order.status)}
@@ -297,5 +297,5 @@ function OrderHistoryPage() {
 				)}
 			</div>
 		</div>
-	);
+	)
 }

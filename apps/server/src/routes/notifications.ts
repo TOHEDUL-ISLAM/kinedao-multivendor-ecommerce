@@ -301,6 +301,90 @@ const notificationsRouter = new Hono<AppEnv>()
 		},
 	)
 
+	// Delete single notification
+	.delete(
+		"/:id",
+		describeRoute({
+			tags: ["Notifications"],
+			summary: "Delete notification",
+			description: "Deletes a single notification for the current user",
+			responses: {
+				200: {
+					description: "Notification deleted",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ success: z.boolean() })),
+						},
+					},
+				},
+				404: {
+					description: "Notification not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const userId = c.var.user?.id;
+			if (!userId) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
+			const notificationId = c.req.param("id");
+
+			const result = await db
+				.delete(notifications)
+				.where(
+					and(
+						eq(notifications.id, notificationId),
+						eq(notifications.userId, userId),
+					),
+				)
+				.returning({ id: notifications.id });
+
+			if (!result[0]) {
+				return c.json({ error: "Notification not found" }, 404);
+			}
+
+			return c.json({ success: true }, 200);
+		},
+	)
+
+	// Delete all notifications
+	.delete(
+		"/",
+		describeRoute({
+			tags: ["Notifications"],
+			summary: "Delete all notifications",
+			description: "Deletes all notifications for the current user",
+			responses: {
+				200: {
+					description: "All notifications deleted",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ count: z.number() })),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const userId = c.var.user?.id;
+			if (!userId) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
+
+			const result = await db
+				.delete(notifications)
+				.where(eq(notifications.userId, userId))
+				.returning({ id: notifications.id });
+
+			return c.json({ count: result.length }, 200);
+		},
+	)
+
 	// Get notification preferences
 	.get(
 		"/preferences",
