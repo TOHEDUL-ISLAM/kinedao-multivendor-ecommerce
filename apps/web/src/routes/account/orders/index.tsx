@@ -3,8 +3,8 @@ import { getUser } from "@/functions/get-user";
 import { useTranslation } from "@/hooks/use-translation";
 import { api } from "@/lib/api-client";
 import { z } from "zod";
-import { Button, Pagination, Tabs } from "@mantine/core";
-import { Package2, ShoppingBag, Store } from "lucide-react";
+import { Button, Pagination, Tabs, Select, Group } from "@mantine/core";
+import { Package2, ShoppingBag, Store, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/account/orders/")({
 				return {
 					orders: [],
 					total: 0,
-					page: 1,
+					page: deps.page || 1,
 					totalPages: 0,
 				};
 			}
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/account/orders/")({
 			return {
 				orders: [],
 				total: 0,
-				page: 1,
+				page: deps.page || 1,
 				totalPages: 0,
 			};
 		}
@@ -90,6 +90,14 @@ function OrderHistoryPage() {
 		}
 	};
 
+	const handleDateRangeChange = (value: string | null) => {
+		if (value) {
+			navigate({
+				search: { ...search, dateRange: value as any, page: 1 },
+			});
+		}
+	};
+
 	const handlePageChange = (page: number) => {
 		navigate({
 			search: { ...search, page },
@@ -113,14 +121,29 @@ function OrderHistoryPage() {
 		<div className="bg-gray-50 min-h-screen">
 			<div className="container max-w-7xl mx-auto px-4 py-6">
 				{/* Header */}
-				<div className="mb-6">
-					<h1 className="text-2xl font-bold mb-2">{t("orders.title")}</h1>
+				<div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+					<h1 className="text-2xl font-bold">{t("orders.title")}</h1>
+					
+					<Group>
+						<Select
+							leftSection={<Calendar size={16} />}
+							placeholder="Date Range"
+							value={search.dateRange || "all"}
+							onChange={handleDateRangeChange}
+							data={[
+								{ value: "all", label: t("orders.filter.date.all") },
+								{ value: "30d", label: t("orders.filter.date.30d") },
+								{ value: "6mo", label: t("orders.filter.date.6mo") },
+							]}
+							className="w-48"
+						/>
+					</Group>
 				</div>
 
 				{/* Tabs */}
 				<div className="mb-6">
 					<Tabs value={search.status || "all"} onChange={handleStatusChange}>
-						<Tabs.List className="bg-white border-b">
+						<Tabs.List className="bg-white border-b overflow-x-auto flex-nowrap">
 							<Tabs.Tab value="all">{t("orders.filter.all")}</Tabs.Tab>
 							<Tabs.Tab value="pending">{t("orders.filter.pending")}</Tabs.Tab>
 							<Tabs.Tab value="shipped">{t("orders.filter.shipped")}</Tabs.Tab>
@@ -156,16 +179,25 @@ function OrderHistoryPage() {
 				) : (
 					<>
 						{/* Order Cards - Daraz Style */}
-						<div className="space-y-4 mb-6">
+						<div className="space-y-4 mb-8">
 							{data.orders.map((order) => (
-								<Card key={order.id} className="bg-white p-0 overflow-hidden hover:shadow-lg transition-shadow">
+								<Card key={order.id} className="bg-white p-0 overflow-hidden hover:shadow-lg transition-shadow border border-gray-200">
 									{/* Vendor Header */}
 									<div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
 										<div className="flex items-center gap-2">
 											<Store className="w-4 h-4 text-gray-600" />
 											<span className="font-semibold text-sm">{order.vendorName}</span>
 										</div>
-										{getStatusBadge(order.status)}
+										<div className="flex items-center gap-3">
+											<span className="text-xs text-gray-500">
+												{new Date(order.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
+													year: 'numeric',
+													month: 'short',
+													day: 'numeric'
+												})}
+											</span>
+											{getStatusBadge(order.status)}
+										</div>
 									</div>
 
 									{/* Order Items */}
@@ -217,7 +249,7 @@ function OrderHistoryPage() {
 											))}
 
 											{/* Show more items indicator */}
-											{order.items && order.itemCount > order.items.length && (
+											{order.itemCount > order.items.length && (
 												<div className="px-5 py-2 text-sm text-gray-500 text-center border-t bg-gray-50">
 													+{order.itemCount - order.items.length} {t("common.items")}
 												</div>
@@ -249,11 +281,15 @@ function OrderHistoryPage() {
 
 						{/* Pagination */}
 						{data.totalPages > 1 && (
-							<div className="flex justify-center">
+							<div className="flex justify-center pb-10">
 								<Pagination
 									total={data.totalPages}
 									value={search.page || 1}
 									onChange={handlePageChange}
+									color="teal"
+									size="lg"
+									radius="xl"
+									withEdges
 								/>
 							</div>
 						)}

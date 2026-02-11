@@ -37,8 +37,14 @@ const app = new Hono<AppEnv>()
   .use("*", async (c, next) => {
     try {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (session) {
+        console.log(`[Session] Found session for user: ${session.user.email}`);
+      } else {
+        console.log("[Session] No session found for request");
+      }
       c.set("user", session?.user ?? null);
-    } catch {
+    } catch (error) {
+      console.error("[Session] Error retrieving session:", error);
       c.set("user", null);
     }
     await next();

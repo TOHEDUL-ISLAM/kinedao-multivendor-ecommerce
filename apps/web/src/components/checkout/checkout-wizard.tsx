@@ -87,8 +87,6 @@ export function CheckoutWizard() {
 				to: "/order-confirmation",
 				search: { groupId: data.groupId },
 			});
-
-			toast.success(t("checkout.orderPlaced"));
 		} catch (error) {
 			console.error("Order placement error:", error);
 			toast.error(t("checkout.orderFailed"));

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -62,7 +62,7 @@ async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promi
 }
 
 function CatalogPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   // const isMobile = useIsMobile();
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -181,14 +181,29 @@ function CatalogPage() {
   const selectedBrands = search.brand?.split(",").filter(Boolean) ?? [];
   const selectedAgeRanges = search.ageRange?.split(",").filter(Boolean) ?? [];
 
+  const selectedCategoryNames = useMemo(() => {
+    if (!facets?.categories || selectedCategories.length === 0) return [];
+    const nameBySlug = new Map(
+      facets.categories.map((category) => [
+        category.slug,
+        language === "bn" && category.nameBn ? category.nameBn : category.name,
+      ])
+    );
+    return selectedCategories.map((slug) => nameBySlug.get(slug) ?? slug);
+  }, [facets?.categories, language, selectedCategories]);
+
+  const pageTitle = search.q
+    ? `"${search.q}"`
+    : selectedCategoryNames.length > 0
+      ? selectedCategoryNames.join(", ")
+      : t("catalog.title");
+
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
         {/* Page Header */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
-            {search.q ? `"${search.q}"` : t("catalog.title")}
-          </h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{pageTitle}</h1>
           {search.q && (
             <p className="text-sm text-muted-foreground mt-1">
               Search results for "{search.q}"

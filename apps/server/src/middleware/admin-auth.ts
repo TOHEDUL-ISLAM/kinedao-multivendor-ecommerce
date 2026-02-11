@@ -23,8 +23,11 @@ export type AdminEnv = {
  */
 export const adminAuthMiddleware = createMiddleware<AdminEnv>(
 	async (c, next) => {
-		const userId = c.var.user?.id;
-		if (!userId) {
+		const user = c.var.user;
+		console.log(`[AdminAuth] Checking access for User: ${user?.email || "NONE"} (ID: ${user?.id || "NONE"})`);
+
+		if (!user?.id) {
+			console.log("[AdminAuth] No user ID in context, returning 401");
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
@@ -34,14 +37,16 @@ export const adminAuthMiddleware = createMiddleware<AdminEnv>(
 				userId: adminUsers.userId,
 			})
 			.from(adminUsers)
-			.where(eq(adminUsers.userId, userId))
+			.where(eq(adminUsers.userId, user.id))
 			.limit(1);
 
 		if (!adminUser) {
+			console.log(`[AdminAuth] User ${user.email} (ID: ${user.id}) not found in adminUsers table, returning 403`);
 			return c.json({ error: "Not an admin user" }, 403);
 		}
 
-		c.set("adminUserId", userId);
+		console.log(`[AdminAuth] Access GRANTED for Admin ${user.email}`);
+		c.set("adminUserId", user.id);
 		await next();
 	},
 );

@@ -76,8 +76,10 @@ export function useNotifications() {
 		}
 
 		try {
+			// Normalize URL by removing trailing slash if present
+			const baseUrl = import.meta.env.VITE_SERVER_URL.replace(/\/$/, "");
 			const eventSource = new EventSource(
-				`${import.meta.env.VITE_SERVER_URL}/api/notifications/stream`,
+				`${baseUrl}/api/notifications/stream`,
 				{ withCredentials: true }
 			);
 

@@ -21,6 +21,7 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -33,7 +34,13 @@ const ADMIN_DASHBOARD_OVERVIEW_QUERY_KEY = ["admin-dashboard-overview"] as const
 async function fetchAdminDashboardOverview(): Promise<AdminOverviewDTO> {
   const response = await api.admin.overview.$get();
   if (!response.ok) {
-    throw new Error("Failed to fetch admin dashboard overview");
+    const errorBody = await response.json().catch(() => ({}));
+    console.error("[AdminDashboard] Fetch error details:", {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody
+    });
+    throw new Error(errorBody.error || `Failed to fetch admin dashboard overview (${response.status})`);
   }
   return response.json();
 }
@@ -65,6 +72,9 @@ const labels = {
     pendingPayouts: "Pending Payouts",
     noRecentOrders: "No orders yet",
     growth: "vs last month",
+    errorTitle: "Dashboard Error",
+    errorDescription: "We couldn't load the dashboard data. Please check your admin permissions.",
+    retry: "Retry",
   },
   bn: {
     welcome: "প্রশাসক ড্যাশবোর্ড",
@@ -84,6 +94,9 @@ const labels = {
     pendingPayouts: "অপেক্ষমাণ পেআউট",
     noRecentOrders: "এখনো কোনো অর্ডার নেই",
     growth: "গত মাসের তুলনায়",
+    errorTitle: "ড্যাশবোর্ড ত্রুটি",
+    errorDescription: "আমরা ড্যাশবোর্ড ডেটা লোড করতে পারিনি। আপনার অ্যাডমিন অনুমতি চেক করুন।",
+    retry: "পুনরায় চেষ্টা করুন",
   },
 } as const;
 
@@ -231,7 +244,7 @@ function AdminDashboardPage() {
 
   const isDark = mounted ? resolvedTheme === "dark" : false;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, isError, refetch } = useQuery({
     queryKey: ADMIN_DASHBOARD_OVERVIEW_QUERY_KEY,
     queryFn: fetchAdminDashboardOverview,
     staleTime: 1000 * 60, // 1 minute
@@ -251,6 +264,40 @@ function AdminDashboardPage() {
           <Skeleton height={400} radius="lg" />
         </SimpleGrid>
       </Stack>
+    );
+  }
+
+  if (isError) {
+    const isForbidden = error instanceof Error && error.message.includes("403");
+    
+    return (
+      <Paper p="xl" radius="md" withBorder mt="xl">
+        <Stack align="center" gap="md">
+          <Box style={{ color: "var(--mantine-color-red-filled)" }}>
+            <X size={48} />
+          </Box>
+          <Title order={3}>{isForbidden ? "Access Denied" : t.errorTitle}</Title>
+          <Text ta="center" maw={500}>
+            {isForbidden 
+              ? "You are logged in, but you don't have administrator permissions. Please ensure you are using the correct account." 
+              : (error instanceof Error ? error.message : t.errorDescription)}
+          </Text>
+          <Group>
+            <Button variant="light" color="blue" onClick={() => refetch()}>
+              {t.retry}
+            </Button>
+            {isForbidden && (
+              <Button variant="outline" color="red" onClick={async () => {
+                const { authClient } = await import("@/lib/auth-client");
+                await authClient.signOut();
+                window.location.href = "/login?redirect=/admin/dashboard";
+              }}>
+                Sign Out & Try Again
+              </Button>
+            )}
+          </Group>
+        </Stack>
+      </Paper>
     );
   }
 

@@ -189,7 +189,7 @@ function DashboardOverviewPage() {
       </Box>
 
       {/* Stat Cards */}
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="md">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
         <StatCard
           icon={ShoppingCart}
           label={t.totalOrders}
@@ -199,34 +199,10 @@ function DashboardOverviewPage() {
           isDark={isDark}
         />
         <StatCard
-          icon={Clock}
-          label={t.pendingOrders}
-          value={data?.stats.pendingOrders}
-          color="orange"
-          loading={isLoading}
-          isDark={isDark}
-        />
-        <StatCard
           icon={DollarSign}
           label={t.totalEarnings}
           value={data?.stats.totalEarnings != null ? formatBDT(data.stats.totalEarnings) : undefined}
           color="green"
-          loading={isLoading}
-          isDark={isDark}
-        />
-        <StatCard
-          icon={Wallet}
-          label={t.pendingPayout}
-          value={data?.stats.pendingPayout != null ? formatBDT(data.stats.pendingPayout) : undefined}
-          color="teal"
-          loading={isLoading}
-          isDark={isDark}
-        />
-        <StatCard
-          icon={Package}
-          label={t.productsListed}
-          value={data?.stats.productsListed}
-          color="violet"
           loading={isLoading}
           isDark={isDark}
         />
@@ -241,9 +217,9 @@ function DashboardOverviewPage() {
       </SimpleGrid>
 
       {/* Content Grid */}
-      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-        {/* Recent Orders - 2/3 width */}
-        <Box style={{ gridColumn: "span 1 / span 1" }} className="lg:col-span-2">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+        {/* Recent Orders - 50% width */}
+        <Box>
           <Card
             shadow="sm"
             radius="lg"
@@ -418,7 +394,7 @@ function DashboardOverviewPage() {
           </Card>
         </Box>
 
-        {/* Right Column - Low Stock + Quick Actions */}
+        {/* Right Column - Low Stock + Quick Actions (50%) */}
         <Stack gap="md">
           {/* Low Stock Alerts */}
           <Card
@@ -805,12 +781,17 @@ function StatCard({ icon: Icon, label, value, color, loading, isDark = false }: 
         <Text
           fw={700}
           size="32px"
-          lh={1}
+          lh={1.1}
           mb={6}
           style={{
             color: isDark ? "oklch(0.9 0.02 260)" : "oklch(0.3 0.02 260)",
             letterSpacing: "-0.5px",
+            fontSize: "clamp(16px, 2.2vw, 32px)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
+          title={String(value ?? 0)}
         >
           {value ?? 0}
         </Text>

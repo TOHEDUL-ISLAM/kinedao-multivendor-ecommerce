@@ -87,6 +87,32 @@ export const adminRouter = new Hono<AdminEnv>()
 	.use("*", adminAuthMiddleware)
 
 	// =====================
+	// Debug Endpoint
+	// =====================
+	.get(
+		"/me",
+		describeRoute({
+			tags: ["Admin Dashboard"],
+			summary: "Get current admin session info",
+			description: "Returns info about the currently authenticated admin",
+			responses: {
+				200: {
+					description: "Admin session info",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+			},
+		}),
+		async (c) => {
+			return c.json({
+				user: c.var.user,
+				adminUserId: c.var.adminUserId,
+			}, 200);
+		}
+	)
+
+	// =====================
 	// GET /overview - Dashboard stats
 	// =====================
 	.get(

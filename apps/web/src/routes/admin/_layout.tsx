@@ -5,7 +5,7 @@ import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout"
 
 export const Route = createFileRoute("/admin/_layout")({
   component: AdminDashboardLayoutRoute,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     console.log("[Admin beforeLoad] Starting...");
     const session = await getUser();
 
@@ -15,8 +15,15 @@ export const Route = createFileRoute("/admin/_layout")({
       console.log("[Admin beforeLoad] No session, redirecting to login");
       throw redirect({
         to: "/login",
-        search: { redirect: "/admin/dashboard" },
+        search: { redirect: location.href },
       });
+    }
+
+    console.log("[Admin beforeLoad] Session OK, user ID:", session.user.id, "email:", session.user.email);
+    
+    if (location.pathname === "/admin" || location.pathname === "/admin/") {
+      console.log("[Admin beforeLoad] At root /admin, redirecting to dashboard");
+      throw redirect({ to: "/admin/dashboard" });
     }
 
     console.log("[Admin beforeLoad] Session OK, user:", session.user.email);
