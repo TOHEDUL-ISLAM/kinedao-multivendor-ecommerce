@@ -32,6 +32,7 @@ import { Route as VendorDashboardRouteImport } from './routes/vendor/_dashboard'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
+import { Route as AccountNotificationsRouteImport } from './routes/account/notifications'
 import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
 import { Route as AccountOrdersIndexRouteImport } from './routes/account/orders/index'
 import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
@@ -168,6 +169,11 @@ const AdminLayoutRoute = AdminLayoutRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountNotificationsRoute = AccountNotificationsRouteImport.update({
+  id: '/account/notifications',
+  path: '/account/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendorApplyIndexRoute = VendorApplyIndexRouteImport.update({
   id: '/vendor/apply/',
   path: '/vendor/apply/',
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/notifications': typeof AccountNotificationsRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/notifications': typeof AccountNotificationsRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/notifications': typeof AccountNotificationsRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -432,6 +441,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/account/notifications'
     | '/admin'
     | '/category/$slug'
     | '/product/$slug'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/account/notifications'
     | '/admin'
     | '/category/$slug'
     | '/product/$slug'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/account/notifications'
     | '/admin/_layout'
     | '/category/$slug'
     | '/product/$slug'
@@ -568,6 +580,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TrackOrderRoute: typeof TrackOrderRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AccountNotificationsRoute: typeof AccountNotificationsRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
@@ -740,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/notifications': {
+      id: '/account/notifications'
+      path: '/account/notifications'
+      fullPath: '/account/notifications'
+      preLoaderRoute: typeof AccountNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendor/apply/': {
@@ -956,6 +976,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TrackOrderRoute: TrackOrderRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AccountNotificationsRoute: AccountNotificationsRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,

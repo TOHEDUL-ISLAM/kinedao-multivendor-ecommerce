@@ -34,6 +34,7 @@ import {
 } from "@kineDao.com/api-types/checkout";
 import type { AppEnv } from "../index";
 import { sendOrderConfirmationEmail } from "../lib/order-email";
+import { notify, notifyVendor } from "../lib/notification-service";
 
 // Helper function to calculate shipping cost
 function calculateShippingCost(district: string): ShippingCostDTO {
@@ -141,6 +142,7 @@ export const ordersRouter = new Hono<AppEnv>()
 				.select({
 					itemId: cartItems.id,
 					productId: cartItems.productId,
+					skuId: cartItems.skuId,
 					quantity: cartItems.quantity,
 					unitPrice: cartItems.unitPrice,
 				})
@@ -162,38 +164,55 @@ export const ordersRouter = new Hono<AppEnv>()
 				const skuLockRows = await tx.execute<{
 					id: string;
 					product_id: string;
+					sku: string | null;
 					price_amount: number;
 					stock_qty: number;
 					is_available: boolean;
+					option_values: Record<string, string> | null;
 				}>(
-					sql.raw(`SELECT ps.id, ps.product_id, ps.price_amount, ps.stock_qty, ps.is_available
+					sql.raw(`SELECT ps.id, ps.product_id, ps.sku, ps.price_amount, ps.stock_qty, ps.is_available, ps.option_values
             FROM product_skus ps
             WHERE ps.product_id = ANY(ARRAY[${productIds.map((id) => `'${id}'`).join(", ")}]::uuid[])
             ORDER BY ps.product_id, ps.price_amount ASC
             FOR UPDATE`),
 				);
 
-				// Build stock map: productId -> { skuId, stockQty, priceAmount }
+				// Build SKU map by ID for direct lookup + fallback stock map
+				const allSkuMap = new Map<
+					string,
+					{ skuId: string; skuCode: string | null; stockQty: number; priceAmount: number; optionValues: Record<string, string> | null }
+				>();
 				const stockMap = new Map<
 					string,
-					{ skuId: string; stockQty: number; priceAmount: number }
+					{ skuId: string; skuCode: string | null; stockQty: number; priceAmount: number; optionValues: Record<string, string> | null }
 				>();
 				for (const row of skuLockRows.rows) {
+					allSkuMap.set(row.id, {
+						skuId: row.id,
+						skuCode: row.sku,
+						stockQty: row.stock_qty,
+						priceAmount: row.price_amount,
+						optionValues: row.option_values,
+					});
 					const pid = row.product_id;
 					if (!stockMap.has(pid) && row.is_available && row.stock_qty > 0) {
 						stockMap.set(pid, {
 							skuId: row.id,
+							skuCode: row.sku,
 							stockQty: row.stock_qty,
 							priceAmount: row.price_amount,
+							optionValues: row.option_values,
 						});
 					}
 				}
 
-				// 3b. Validate stock for each cart item
+				// 3b. Resolve which SKU each cart item uses (prefer cart's skuId, fallback to cheapest available)
+				const resolvedSkuMap = new Map<string, typeof stockMap extends Map<string, infer V> ? V : never>();
 				for (const item of cartItemRows) {
-					const stock = stockMap.get(item.productId);
-					if (!stock || stock.stockQty < item.quantity) {
-						// Get product name for error message
+					const specific = item.skuId ? allSkuMap.get(item.skuId) : null;
+					const fallback = stockMap.get(item.productId);
+					const resolved = (specific && specific.stockQty > 0) ? specific : fallback;
+					if (!resolved || resolved.stockQty < item.quantity) {
 						const [prod] = await tx
 							.select({ title: products.title })
 							.from(products)
@@ -203,6 +222,7 @@ export const ordersRouter = new Hono<AppEnv>()
 							`Insufficient stock for product: ${prod?.title ?? item.productId}`,
 						);
 					}
+					resolvedSkuMap.set(item.itemId, resolved);
 				}
 
 				// 3c. Fetch product details for snapshots
@@ -344,6 +364,7 @@ export const ordersRouter = new Hono<AppEnv>()
 					for (const item of items) {
 						const product = productDetailsMap.get(item.productId)!;
 						const image = imageMap.get(item.productId) ?? null;
+						const resolvedSku = resolvedSkuMap.get(item.itemId)!;
 
 						const productSnapshot: OrderItemProductSnapshot = {
 							title: product.title,
@@ -354,6 +375,8 @@ export const ordersRouter = new Hono<AppEnv>()
 							isBpaFree: product.isBpaFree,
 							isOrganic: product.isOrganic,
 							isHypoallergenic: product.isHypoallergenic,
+							selectedOptions: resolvedSku.optionValues ?? null,
+							skuCode: resolvedSku.skuCode ?? null,
 						};
 
 						const [orderItem] = await tx
@@ -379,12 +402,11 @@ export const ordersRouter = new Hono<AppEnv>()
 							productSnapshot,
 						});
 
-						// 3j. Decrement stock
-						const stock = stockMap.get(item.productId)!;
+						// 3j. Decrement stock from the resolved SKU
 						await tx.execute(
 							sql`UPDATE product_skus
                 SET stock_qty = stock_qty - ${item.quantity}
-                WHERE id = ${stock.skuId} AND stock_qty >= ${item.quantity}`,
+                WHERE id = ${resolvedSku.skuId} AND stock_qty >= ${item.quantity}`,
 						);
 					}
 
@@ -429,6 +451,48 @@ export const ordersRouter = new Hono<AppEnv>()
 			).catch((error) => {
 				console.error("[ORDER] Failed to send confirmation email:", error);
 			});
+
+			// 5. Send notifications to customer and vendors (fire-and-forget)
+			// Customer notification (order_placed email already sent above)
+			notify({
+				userId,
+				type: "order_placed",
+				title: "Order Placed Successfully",
+				titleBn: "অর্ডার সফলভাবে সম্পন্ন হয়েছে",
+				body: `Your order ${result.orders.map(o => o.orderNumber).join(", ")} has been placed`,
+				bodyBn: `আপনার অর্ডার ${result.orders.map(o => o.orderNumber).join(", ")} সম্পন্ন হয়েছে`,
+				data: { groupId: result.groupId, orderNumbers: result.orders.map(o => o.orderNumber) },
+				channel: "customer",
+				// Email already sent by sendOrderConfirmationEmail above
+			}).catch((error) => {
+				console.error("[ORDER] Failed to send customer notification:", error);
+			});
+
+			// Vendor notifications - one per order/vendor
+			for (const order of result.orders) {
+				notifyVendor(order.vendorId, {
+					type: "new_order",
+					title: `New COD Order ${order.orderNumber}`,
+					titleBn: `নতুন COD অর্ডার ${order.orderNumber}`,
+					body: `You have received a new order worth ৳${(order.total / 100).toFixed(2)}`,
+					bodyBn: `আপনি ${(order.total / 100).toFixed(2)} টাকার একটি নতুন অর্ডার পেয়েছেন`,
+					data: {
+						orderId: order.id,
+						orderNumber: order.orderNumber,
+						total: order.total,
+						itemCount: order.items.length,
+					},
+					emailData: {
+						userEmail: c.var.user.email,
+						userName: order.vendorName,
+						orderNumber: order.orderNumber,
+						total: order.total,
+						itemCount: order.items.length,
+					},
+				}).catch((error) => {
+					console.error(`[ORDER] Failed to send vendor notification for ${order.vendorId}:`, error);
+				});
+			}
 
 			const response: PlaceOrderResponseDTO = {
 				success: true,
@@ -689,6 +753,7 @@ export const ordersRouter = new Hono<AppEnv>()
 							titleBn: snapshot.titleBn,
 							image: snapshot.image,
 							ageRange: snapshot.ageRange,
+							selectedOptions: snapshot.selectedOptions ?? null,
 						},
 					};
 				});
@@ -834,6 +899,7 @@ export const ordersRouter = new Hono<AppEnv>()
 				shippedAt: order.shippedAt?.toISOString() ?? null,
 				deliveredAt: order.deliveredAt?.toISOString() ?? null,
 				cancelledAt: order.cancelledAt?.toISOString() ?? null,
+				codVerifiedAt: order.codVerifiedAt?.toISOString() ?? null,
 				estimatedDelivery: `${shippingCostInfo.estimatedDays} days`,
 			};
 
@@ -1023,10 +1089,103 @@ export const ordersRouter = new Hono<AppEnv>()
 				shippedAt: updatedOrder!.shippedAt?.toISOString() ?? null,
 				deliveredAt: updatedOrder!.deliveredAt?.toISOString() ?? null,
 				cancelledAt: updatedOrder!.cancelledAt?.toISOString() ?? null,
+				codVerifiedAt: updatedOrder!.codVerifiedAt?.toISOString() ?? null,
 				estimatedDelivery: `${shippingCostInfo.estimatedDays} days`,
 			};
 
 			return c.json(orderDetail, 200);
+		},
+	)
+
+	// Verify COD
+	.patch(
+		"/:orderId/verify-cod",
+		describeRoute({
+			tags: ["Orders"],
+			summary: "Verify COD readiness",
+			description: "Customer confirms they have cash ready for COD order",
+			responses: {
+				200: {
+					description: "COD verified",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ success: z.boolean() })),
+						},
+					},
+				},
+				401: {
+					description: "Unauthorized",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				403: {
+					description: "Forbidden",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Order not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("param", z.object({ orderId: z.string().uuid() })),
+		async (c) => {
+			const userId = c.var.user?.id;
+			if (!userId) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
+
+			const { orderId } = c.req.valid("param");
+
+			// Fetch order
+			const [order] = await db
+				.select()
+				.from(orders)
+				.where(eq(orders.id, orderId))
+				.limit(1);
+
+			if (!order) {
+				return c.json({ error: "Order not found" }, 404);
+			}
+
+			// Check if order belongs to current user
+			if (order.userId !== userId) {
+				return c.json({ error: "Forbidden" }, 403);
+			}
+
+			// Set COD verification timestamp
+			await db
+				.update(orders)
+				.set({ codVerifiedAt: new Date() })
+				.where(eq(orders.id, orderId));
+
+			// Notify vendor that customer verified COD (fire-and-forget)
+			notifyVendor(order.vendorId, {
+				type: "cod_verified",
+				title: "Customer Verified COD",
+				titleBn: "গ্রাহক COD যাচাই করেছে",
+				body: `Customer confirmed cash readiness for order ${order.orderNumber}`,
+				bodyBn: `গ্রাহক অর্ডার ${order.orderNumber} এর জন্য নগদ প্রস্তুতি নিশ্চিত করেছে`,
+				data: {
+					orderId: order.id,
+					orderNumber: order.orderNumber,
+				},
+			}).catch((error) => {
+				console.error(`[ORDER] Failed to send COD verification notification:`, error);
+			});
+
+			return c.json({ success: true }, 200);
 		},
 	);
 

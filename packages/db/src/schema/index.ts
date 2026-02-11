@@ -34,3 +34,6 @@ export * from "./admin";
 
 // Banners schema
 export * from "./banners";
+
+// Notifications schema
+export * from "./notifications";

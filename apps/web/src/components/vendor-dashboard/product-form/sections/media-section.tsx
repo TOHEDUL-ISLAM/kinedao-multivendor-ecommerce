@@ -1,14 +1,16 @@
+import { useEffect, useState } from "react";
 import { Group, Text, Paper, Image, CloseButton, Badge, Stack, Box } from "@mantine/core";
 import { ImageIcon, Upload } from "lucide-react";
 import { FormSectionCard } from "../form-section-card";
 import { vendorColors } from "@/lib/vendor-theme";
-import type { FormImage } from "../form-types";
+import type { FormImage, FormErrorMap } from "../form-types";
 
 interface MediaSectionProps {
   images: FormImage[];
   handleImageUpload: (files: FileList | null) => void;
   removeImage: (index: number) => void;
   isDark: boolean;
+  errors?: FormErrorMap;
   t: {
     images: string;
     coverPhoto: string;
@@ -17,7 +19,39 @@ interface MediaSectionProps {
     uploadProductPhoto: string;
     maxImages: string;
     primary: string;
+    requiredForSubmit: string;
   };
+}
+
+interface PreviewImageProps {
+  image: FormImage;
+  alt: string;
+  width: number | string;
+  height: number | string;
+}
+
+function PreviewImage({ image, alt, width, height }: PreviewImageProps) {
+  const [src, setSrc] = useState(image.url);
+
+  useEffect(() => {
+    setSrc(image.url);
+  }, [image.url]);
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      w={width}
+      h={height}
+      radius="sm"
+      fit="cover"
+      onError={() => {
+        if (image.fallbackUrl && src !== image.fallbackUrl) {
+          setSrc(image.fallbackUrl);
+        }
+      }}
+    />
+  );
 }
 
 export function MediaSection({
@@ -25,6 +59,7 @@ export function MediaSection({
   handleImageUpload,
   removeImage,
   isDark,
+  errors,
   t,
 }: MediaSectionProps) {
   const triggerUpload = (multiple: boolean = true) => {
@@ -41,9 +76,17 @@ export function MediaSection({
 
   return (
     <FormSectionCard title={t.images} icon={<ImageIcon size={20} />}>
-      <Text size="sm" c="dimmed">
+      <Text size="sm" c="dimmed" data-field-key="images">
         {t.maxImages}
       </Text>
+      <Text size="sm" c="dimmed">
+        {t.requiredForSubmit}
+      </Text>
+      {errors?.images && (
+        <Text size="sm" c="red" data-field-key="images">
+          {errors.images}
+        </Text>
+      )}
 
       <Stack gap="md">
         {/* Cover Photo (Primary) */}
@@ -63,14 +106,7 @@ export function MediaSection({
                 borderColor: isDark ? "oklch(0.4 0.02 260 / 0.5)" : undefined,
               }}
             >
-              <Image
-                src={coverImage.url}
-                alt="Cover"
-                w="100%"
-                h={192}
-                radius="sm"
-                fit="cover"
-              />
+              <PreviewImage image={coverImage} alt="Cover" width="100%" height={192} />
               <CloseButton
                 size="sm"
                 pos="absolute"
@@ -151,13 +187,11 @@ export function MediaSection({
                   borderColor: isDark ? "oklch(0.4 0.02 260 / 0.5)" : undefined,
                 }}
               >
-                <Image
-                  src={img.url}
+                <PreviewImage
+                  image={img}
                   alt={`Product ${index + 2}`}
-                  w={152}
-                  h={152}
-                  radius="sm"
-                  fit="cover"
+                  width={152}
+                  height={152}
                 />
                 <CloseButton
                   size="xs"

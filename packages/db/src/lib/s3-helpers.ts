@@ -5,6 +5,14 @@
  * This allows switching CDN providers, changing storage backends, etc.
  */
 
+function normalizeStorageBaseUrl(inputUrl: string): string {
+  const trimmed = inputUrl.replace(/\/+$/, "");
+  return trimmed
+    .replace(/\/rest\/v1$/i, "")
+    .replace(/\/storage\/v1\/s3$/i, "")
+    .replace(/\/storage\/v1$/i, "");
+}
+
 /**
  * Generate a public URL from an S3 key
  *
@@ -16,19 +24,29 @@
  * @returns Public URL to access the file
  */
 export function getS3Url(s3Key: string): string {
+  if (!s3Key) {
+    return "";
+  }
+
   // If s3Key is already a full URL (for seed data with external images), return as-is
   if (s3Key.startsWith("http://") || s3Key.startsWith("https://")) {
     return s3Key;
   }
 
+  const normalizedKey = s3Key.replace(/^\/+/, "");
+  const explicitPublicBase = process.env.S3_PUBLIC_URL || process.env.CDN_URL;
+  if (explicitPublicBase) {
+    return `${explicitPublicBase.replace(/\/+$/, "")}/${normalizedKey}`;
+  }
+
   // Check environment
   const isProduction = process.env.NODE_ENV === "production";
-  const cdnUrl = process.env.CDN_URL || process.env.S3_PUBLIC_URL;
+  const cdnUrl = process.env.CDN_URL;
 
   if (isProduction && cdnUrl) {
     // Production: Use CDN (permanent URL, no expiry)
     // Example: https://cdn.kinedao.com/products/123/images/original/uuid.jpg
-    return `${cdnUrl}/${s3Key}`;
+    return `${cdnUrl.replace(/\/+$/, "")}/${normalizedKey}`;
   }
 
   // Development/fallback: Use Supabase public URL
@@ -38,8 +56,8 @@ export function getS3Url(s3Key: string): string {
   if (supabaseUrl && bucket) {
     // Supabase public storage URL pattern
     // Example: http://127.0.0.1:54321/storage/v1/object/public/kinedao-assets/products/...
-    const baseUrl = supabaseUrl.replace("/rest/v1", "");
-    return `${baseUrl}/storage/v1/object/public/${bucket}/${s3Key}`;
+    const baseUrl = normalizeStorageBaseUrl(supabaseUrl);
+    return `${baseUrl}/storage/v1/object/public/${bucket}/${normalizedKey}`;
   }
 
   // Ultimate fallback: return key as-is (will be invalid but shows the issue)

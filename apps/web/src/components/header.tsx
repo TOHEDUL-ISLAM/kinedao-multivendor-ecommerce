@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
 import { ensureGuestId } from "@/lib/cart-session";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -132,6 +133,9 @@ export default function Header() {
                   <Heart className="w-5 h-5" />
                 </Button>
               </Link>
+
+              {/* Notifications */}
+              {isLoggedIn && <NotificationBell />}
 
               {/* Cart */}
               <Link to="/cart"> 

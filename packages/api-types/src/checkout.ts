@@ -139,6 +139,8 @@ export interface OrderItemDTO {
 		isBpaFree: boolean;
 		isOrganic: boolean;
 		isHypoallergenic: boolean;
+		selectedOptions: Record<string, string> | null;
+		skuCode: string | null;
 	};
 }
 
@@ -241,6 +243,7 @@ export interface OrderListItemDTO {
 			titleBn: string | null;
 			image: string | null;
 			ageRange: string | null;
+			selectedOptions: Record<string, string> | null;
 		};
 	}>;
 	createdAt: string;
@@ -258,5 +261,6 @@ export interface OrderDetailDTO extends OrderDTO {
 	shippedAt: string | null;
 	deliveredAt: string | null;
 	cancelledAt: string | null;
+	codVerifiedAt: string | null;
 	estimatedDelivery: string; // e.g. "1-2 days"
 }

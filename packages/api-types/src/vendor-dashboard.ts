@@ -86,6 +86,7 @@ export const vendorProductListQuerySchema = z.object({
 	status: z
 		.enum(["all", "draft", "pending", "approved", "rejected"])
 		.default("all"),
+	active: z.enum(["all", "active", "inactive"]).default("all"),
 	search: z.string().optional(),
 	categoryId: z.string().uuid().optional(),
 	sort: z
@@ -98,9 +99,33 @@ export type VendorProductListQuery = z.infer<
 >;
 
 // Product form schema for create/edit
+const vendorProductImageSchema = z.object({
+	s3Key: z.string().min(1),
+	variant: z
+		.enum(["original", "medium", "thumbnail"])
+		.default("original"),
+	sortOrder: z.number().int().min(0),
+});
+
+const vendorProductOptionSchema = z.object({
+	name: z.string().min(1).max(50),
+	nameBn: z.string().max(50).optional(),
+	values: z.array(z.string().min(1)).min(1),
+	valuesBn: z.array(z.string()).optional(),
+});
+
+const vendorProductSkuSchema = z.object({
+	sku: z.string().max(50).default(""),
+	optionValues: z.record(z.string(), z.string()).optional(),
+	priceAmount: z.coerce.number().int().min(0).default(0),
+	compareAtAmount: z.coerce.number().int().min(0).optional(),
+	stockQty: z.coerce.number().int().min(0).default(0),
+	isAvailable: z.boolean().default(true),
+});
+
 export const vendorProductFormSchema = z.object({
 	// Basic Info
-	title: z.string().min(3, "Title must be at least 3 characters").max(300),
+	title: z.string().trim().min(1, "Title is required").max(300),
 	titleBn: z.string().max(300).optional(),
 	categoryId: z.string().uuid("Please select a category"),
 	brand: z.string().max(100).optional(),
@@ -129,46 +154,85 @@ export const vendorProductFormSchema = z.object({
 
 	// Images (array of S3 keys)
 	images: z
-		.array(
-			z.object({
-				s3Key: z.string().min(1),
-				variant: z
-					.enum(["original", "medium", "thumbnail"])
-					.default("original"),
-				sortOrder: z.number().int().min(0),
-			}),
-		)
-		.min(1, "At least one image is required")
-		.max(5, "Maximum 5 images allowed"),
+		.array(vendorProductImageSchema)
+		.max(5, "Maximum 5 images allowed")
+		.default([]),
 
 	// Options (for variants: Size, Color, etc.)
-	options: z
-		.array(
-			z.object({
-				name: z.string().min(1).max(50),
-				nameBn: z.string().max(50).optional(),
-				values: z.array(z.string().min(1)).min(1),
-				valuesBn: z.array(z.string()).optional(),
-			}),
-		)
-		.optional(),
+	options: z.array(vendorProductOptionSchema).optional(),
 
 	// SKUs (pricing + inventory per variant)
-	skus: z
-		.array(
-			z.object({
-				sku: z.string().min(1).max(50),
-				optionValues: z.record(z.string(), z.string()).optional(),
-				priceAmount: z.coerce.number().int().min(100), // min 1 BDT = 100 paisa
-				compareAtAmount: z.coerce.number().int().optional(),
-				stockQty: z.coerce.number().int().min(0),
-				isAvailable: z.boolean().default(true),
-			}),
-		)
-		.min(1, "At least one SKU is required"),
+	skus: z.array(vendorProductSkuSchema).default([]),
 
 	// Publish action
 	isDraft: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+	if (data.ageRangeMin != null && data.ageRangeMax != null && data.ageRangeMin > data.ageRangeMax) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["ageRangeMax"],
+			message: "Age range max must be greater than or equal to age range min",
+		});
+	}
+
+	if (data.isDraft) {
+		return;
+	}
+
+	if (data.title.trim().length < 3) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["title"],
+			message: "Title must be at least 3 characters",
+		});
+	}
+
+	if (data.images.length < 1) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["images"],
+			message: "At least one image is required",
+		});
+	}
+
+	if (data.skus.length < 1) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["skus"],
+			message: "At least one SKU is required",
+		});
+		return;
+	}
+
+	data.skus.forEach((sku, index) => {
+		if (!sku.sku.trim()) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["skus", index, "sku"],
+				message: "SKU is required",
+			});
+		}
+
+		if (sku.priceAmount < 100) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["skus", index, "priceAmount"],
+				message: "Price must be at least 1 BDT",
+			});
+		}
+
+		if (
+			sku.compareAtAmount != null &&
+			sku.compareAtAmount > 0 &&
+			sku.compareAtAmount < sku.priceAmount
+		) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["skus", index, "compareAtAmount"],
+				message: "Compare-at price should be greater than or equal to price",
+			});
+		}
+	});
 });
 
 export type VendorProductFormInput = z.infer<typeof vendorProductFormSchema>;
@@ -305,6 +369,8 @@ export interface VendorOrderDetailDTO {
 			titleBn: string | null;
 			slug: string;
 			image: string | null;
+			selectedOptions: Record<string, string> | null;
+			skuCode: string | null;
 		};
 	}>;
 	createdAt: string;

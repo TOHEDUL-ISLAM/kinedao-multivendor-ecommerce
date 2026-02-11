@@ -28,6 +28,7 @@ import {
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/lib/i18n/use-language";
 import type { Language } from "@/lib/i18n/translations";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { LanguageToggle } from "@/components/language-toggle";
 
 interface NavItem {
@@ -202,6 +203,7 @@ export function AdminDashboardLayout({
           </Group>
 
           <Group gap="md">
+            <NotificationBell />
             <Box visibleFrom="sm">
               <LanguageToggle />
             </Box>

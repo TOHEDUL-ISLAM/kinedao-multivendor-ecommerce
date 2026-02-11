@@ -95,6 +95,9 @@ export const orders = pgTable(
 		trackingNumber: varchar("tracking_number", { length: 100 }),
 		trackingCarrier: varchar("tracking_carrier", { length: 100 }),
 
+		// COD Verification
+		codVerifiedAt: timestamp("cod_verified_at"),
+
 		// Timestamps
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -126,6 +129,8 @@ export interface OrderItemProductSnapshot {
 	isBpaFree: boolean;
 	isOrganic: boolean;
 	isHypoallergenic: boolean;
+	selectedOptions: Record<string, string> | null; // e.g. {"Color": "Blue", "Size": "M"}
+	skuCode: string | null; // SKU code for reference
 }
 
 export const orderItems = pgTable(

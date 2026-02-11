@@ -21,3 +21,6 @@ export * from "./vendor-dashboard";
 
 // Re-export all types from admin
 export * from "./admin";
+
+// Re-export all types from notifications
+export * from "./notifications";

@@ -19,7 +19,7 @@ import {
   Skeleton,
 } from "@mantine/core";
 import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
-import { Search, Eye, Check, X } from "lucide-react";
+import { Search, Eye, Check, X, Ban, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -75,6 +75,10 @@ const labels = {
     stock: "Stock",
     available: "Available",
     comparePrice: "Compare Price",
+    submittedOn: "Submitted On",
+    updatedOn: "Last Updated",
+    updatedSubmission: "Updated",
+    reviewNotes: "Review Notes",
     approveConfirm: "Approve Product",
     approveMessage: "Are you sure you want to approve this product? It will be visible to customers.",
     rejectConfirm: "Reject Product",
@@ -83,6 +87,14 @@ const labels = {
     rejectionPlaceholder: "Explain why this product is being rejected...",
     approveSuccess: "Product approved successfully",
     rejectSuccess: "Product rejected",
+    deactivate: "Deactivate",
+    reactivate: "Reactivate",
+    active: "Active",
+    inactive: "Inactive",
+    deactivateConfirm: "Are you sure you want to deactivate this product?",
+    reactivateConfirm: "Are you sure you want to reactivate this product?",
+    deactivateSuccess: "Product deactivated",
+    reactivateSuccess: "Product reactivated",
     error: "Failed to update product status",
   },
   bn: {
@@ -124,6 +136,10 @@ const labels = {
     stock: "স্টক",
     available: "উপলব্ধ",
     comparePrice: "তুলনা মূল্য",
+    submittedOn: "জমা দেওয়ার তারিখ",
+    updatedOn: "সর্বশেষ আপডেট",
+    updatedSubmission: "আপডেটেড",
+    reviewNotes: "রিভিউ নোট",
     approveConfirm: "পণ্য অনুমোদন করুন",
     approveMessage: "আপনি কি নিশ্চিত যে আপনি এই পণ্য অনুমোদন করতে চান? এটি গ্রাহকদের কাছে দৃশ্যমান হবে।",
     rejectConfirm: "পণ্য প্রত্যাখ্যান করুন",
@@ -132,12 +148,30 @@ const labels = {
     rejectionPlaceholder: "ব্যাখ্যা করুন কেন এই পণ্য প্রত্যাখ্যান করা হচ্ছে...",
     approveSuccess: "পণ্য সফলভাবে অনুমোদিত হয়েছে",
     rejectSuccess: "পণ্য প্রত্যাখ্যাত হয়েছে",
+    deactivate: "নিষ্ক্রিয়",
+    reactivate: "সক্রিয় করুন",
+    active: "সক্রিয়",
+    inactive: "নিষ্ক্রিয়",
+    deactivateConfirm: "আপনি কি নিশ্চিত যে আপনি এই পণ্যটি নিষ্ক্রিয় করতে চান?",
+    reactivateConfirm: "আপনি কি নিশ্চিত যে আপনি এই পণ্যটি সক্রিয় করতে চান?",
+    deactivateSuccess: "পণ্যটি নিষ্ক্রিয় হয়েছে",
+    reactivateSuccess: "পণ্যটি সক্রিয় হয়েছে",
     error: "পণ্যের স্ট্যাটাস আপডেট করতে ব্যর্থ",
   },
 };
 
 function formatBDT(paisa: number): string {
   return `৳${(paisa / 100).toLocaleString("en-BD", { minimumFractionDigits: 0 })}`;
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString();
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "-";
+  return new Date(value).toLocaleString();
 }
 
 function AdminProductsPage() {
@@ -245,6 +279,28 @@ function AdminProductsPage() {
     },
   });
 
+  // Active toggle mutation
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const response = await api.admin.products[":productId"].active.$patch({
+        param: { productId: id },
+        json: { isActive },
+      });
+      if (!response.ok) throw new Error("Failed to toggle product active state");
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(variables.isActive ? t.reactivateSuccess : t.deactivateSuccess);
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-product-detail"] });
+      queryClient.invalidateQueries({ queryKey: PRODUCT_COUNTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-overview"] });
+    },
+    onError: () => {
+      toast.error(t.error);
+    },
+  });
+
   const handleViewDetails = (product: AdminProductListItemDTO) => {
     setSelectedProduct(product.id);
     openDrawer();
@@ -258,6 +314,12 @@ function AdminProductsPage() {
   const handleRejectClick = (id: string) => {
     setActionProductId(id);
     openRejectModal();
+  };
+
+  const handleToggleActive = (id: string, isCurrentlyActive: boolean) => {
+    const confirmMessage = isCurrentlyActive ? t.deactivateConfirm : t.reactivateConfirm;
+    if (!window.confirm(confirmMessage)) return;
+    toggleActiveMutation.mutate({ id, isActive: !isCurrentlyActive });
   };
 
   return (
@@ -349,10 +411,20 @@ function AdminProductsPage() {
                           </Text>
                         </Table.Td>
                         <Table.Td>
-                          <StatusBadge status={product.status} />
+                          <Group gap="xs">
+                            <StatusBadge status={product.status} />
+                            <Badge size="sm" color={product.isActive ? "green" : "gray"} variant="light">
+                              {product.isActive ? t.active : t.inactive}
+                            </Badge>
+                            {product.hasVendorUpdate && (
+                              <Badge size="sm" color="violet" variant="light">
+                                {t.updatedSubmission}
+                              </Badge>
+                            )}
+                          </Group>
                         </Table.Td>
                         <Table.Td>
-                          <Text size="sm">{new Date(product.createdAt).toLocaleDateString()}</Text>
+                          <Text size="sm">{formatDate(product.submittedAt || product.createdAt)}</Text>
                         </Table.Td>
                         <Table.Td>
                           <Group gap="xs">
@@ -384,6 +456,15 @@ function AdminProductsPage() {
                                 </ActionIcon>
                               </>
                             )}
+                            <ActionIcon
+                              variant="subtle"
+                              color={product.isActive ? "red" : "teal"}
+                              onClick={() => handleToggleActive(product.id, product.isActive)}
+                              title={product.isActive ? t.deactivate : t.reactivate}
+                              loading={toggleActiveMutation.isPending}
+                            >
+                              {product.isActive ? <Ban size={18} /> : <RotateCcw size={18} />}
+                            </ActionIcon>
                           </Group>
                         </Table.Td>
                       </Table.Tr>
@@ -407,30 +488,58 @@ function AdminProductsPage() {
         title={t.productDetails}
         position="right"
         size="xl"
+        styles={{
+          body: {
+            maxHeight: "calc(100vh - 72px)",
+            overflowY: "auto",
+            paddingBottom: 24,
+          },
+        }}
       >
         {productDetail && (
-          <Stack gap="lg">
+          <Stack gap="lg" data-lenis-prevent onWheelCapture={(event) => event.stopPropagation()}>
             {/* Status and Actions */}
             <Group justify="space-between">
-              <StatusBadge status={productDetail.status} size="lg" />
-              {productDetail.status === "pending" && (
-                <Group gap="xs">
-                  <Button
-                    leftSection={<Check size={18} />}
-                    color="green"
-                    onClick={() => handleApproveClick(productDetail.id)}
-                  >
-                    {t.approve}
-                  </Button>
-                  <Button
-                    leftSection={<X size={18} />}
-                    color="red"
-                    onClick={() => handleRejectClick(productDetail.id)}
-                  >
-                    {t.reject}
-                  </Button>
-                </Group>
-              )}
+              <Group gap="xs">
+                <StatusBadge status={productDetail.status} size="lg" />
+                <Badge size="lg" color={productDetail.isActive ? "green" : "gray"} variant="light">
+                  {productDetail.isActive ? t.active : t.inactive}
+                </Badge>
+                {productDetail.hasVendorUpdate && (
+                  <Badge size="lg" color="violet" variant="light">
+                    {t.updatedSubmission}
+                  </Badge>
+                )}
+              </Group>
+              <Group gap="xs">
+                {productDetail.status === "pending" && (
+                  <>
+                    <Button
+                      leftSection={<Check size={18} />}
+                      color="green"
+                      onClick={() => handleApproveClick(productDetail.id)}
+                    >
+                      {t.approve}
+                    </Button>
+                    <Button
+                      leftSection={<X size={18} />}
+                      color="red"
+                      onClick={() => handleRejectClick(productDetail.id)}
+                    >
+                      {t.reject}
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="light"
+                  color={productDetail.isActive ? "red" : "teal"}
+                  leftSection={productDetail.isActive ? <Ban size={16} /> : <RotateCcw size={16} />}
+                  onClick={() => handleToggleActive(productDetail.id, productDetail.isActive)}
+                  loading={toggleActiveMutation.isPending}
+                >
+                  {productDetail.isActive ? t.deactivate : t.reactivate}
+                </Button>
+              </Group>
             </Group>
 
             {/* Images */}
@@ -485,6 +594,20 @@ function AdminProductsPage() {
                     <Text size="sm">{productDetail.description}</Text>
                   </div>
                 )}
+                <div>
+                  <Text size="xs" c="dimmed">{t.submittedOn}</Text>
+                  <Text size="sm">{formatDateTime(productDetail.submittedAt || productDetail.createdAt)}</Text>
+                </div>
+                <div>
+                  <Text size="xs" c="dimmed">{t.updatedOn}</Text>
+                  <Text size="sm">{formatDateTime(productDetail.updatedAt)}</Text>
+                </div>
+                {productDetail.reviewNotes && (
+                  <div>
+                    <Text size="xs" c="dimmed">{t.reviewNotes}</Text>
+                    <Text size="sm">{productDetail.reviewNotes}</Text>
+                  </div>
+                )}
               </Stack>
             </Paper>
 
@@ -510,6 +633,12 @@ function AdminProductsPage() {
                   <Text size="xs" c="dimmed">{t.hypoallergenic}</Text>
                   <Text size="sm">{productDetail.isHypoallergenic ? "Yes" : "No"}</Text>
                 </div>
+                {productDetail.expiryDate && (
+                  <div>
+                    <Text size="xs" c="dimmed">{t.expiryDate}</Text>
+                    <Text size="sm">{formatDate(productDetail.expiryDate)}</Text>
+                  </div>
+                )}
               </SimpleGrid>
               {productDetail.safetyWarningEn && (
                 <div>

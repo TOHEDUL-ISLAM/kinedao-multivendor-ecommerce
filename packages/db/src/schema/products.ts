@@ -57,6 +57,13 @@ export const products = pgTable(
       .default("pending")
       .$type<"draft" | "pending" | "approved" | "rejected">()
       .notNull(),
+    pendingReason: varchar("pending_reason", { length: 32 })
+      .$type<"new_submission" | "vendor_update" | null>()
+      .default("new_submission"),
+    submittedAt: timestamp("submitted_at"),
+    reviewNotes: text("review_notes"),
+    lastReviewedAt: timestamp("last_reviewed_at"),
+    lastReviewedBy: text("last_reviewed_by"),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

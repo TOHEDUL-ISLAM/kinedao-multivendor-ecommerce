@@ -48,6 +48,8 @@ export interface CartProductDTO {
 
 export interface CartItem {
   id: string;
+  skuId: string | null;
+  selectedOptions: Record<string, string> | null;
   product: CartProductDTO;
   quantity: number;
   unitPrice: number;

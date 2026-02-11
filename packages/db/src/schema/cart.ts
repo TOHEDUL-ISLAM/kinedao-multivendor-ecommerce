@@ -10,7 +10,7 @@ import {
   check,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { products } from "./products";
+import { products, productSkus } from "./products";
 
 export const carts = pgTable(
   "carts",
@@ -44,6 +44,8 @@ export const cartItems = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "restrict" }),
+    skuId: uuid("sku_id")
+      .references(() => productSkus.id, { onDelete: "set null" }),
     quantity: integer("quantity").notNull().default(1),
     unitPrice: integer("unit_price").notNull(), // snapshot price in paisa
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -53,9 +55,10 @@ export const cartItems = pgTable(
       .notNull(),
   },
   (table) => ({
-    cartProductUnique: uniqueIndex("cart_items_cart_product_unique").on(
+    cartProductSkuUnique: uniqueIndex("cart_items_cart_product_sku_unique").on(
       table.cartId,
-      table.productId
+      table.productId,
+      table.skuId
     ),
     cartIdx: index("cart_items_cart_idx").on(table.cartId),
     productIdx: index("cart_items_product_idx").on(table.productId),

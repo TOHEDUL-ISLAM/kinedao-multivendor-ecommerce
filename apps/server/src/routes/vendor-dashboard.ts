@@ -4,6 +4,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import { db, getS3Url } from "@kineDao.com/db";
 import {
+	user,
 	vendors,
 	products,
 	productImages,
@@ -17,6 +18,7 @@ import {
 	type OrderItemProductSnapshot,
 } from "@kineDao.com/db/schema";
 import { and, asc, desc, eq, sql, inArray, ilike } from "drizzle-orm";
+import { notify } from "../lib/notification-service";
 import {
 	vendorProductListQuerySchema,
 	vendorProductFormSchema,
@@ -306,14 +308,17 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 		zValidator("query", vendorProductListQuerySchema),
 		async (c) => {
 			const vendorId = c.var.vendorId;
-			const { page, limit, status, search, categoryId, sort } =
+			const { page, limit, status, active, search, categoryId, sort } =
 				c.req.valid("query");
 
 			// Build conditions
-			const conditions = [
-				eq(products.vendorId, vendorId),
-				eq(products.isActive, true),
-			];
+			const conditions = [eq(products.vendorId, vendorId)];
+
+			if (active === "active") {
+				conditions.push(eq(products.isActive, true));
+			} else if (active === "inactive") {
+				conditions.push(eq(products.isActive, false));
+			}
 
 			if (status !== "all") {
 				conditions.push(eq(products.status, status));
@@ -634,6 +639,11 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 		async (c) => {
 			const vendorId = c.var.vendorId;
 			const input = c.req.valid("json");
+			const normalizedImages = input.images ?? [];
+			const normalizedOptions = input.options ?? [];
+			const normalizedSkus = input.isDraft
+				? input.skus.filter((sku) => sku.sku.trim().length > 0)
+				: input.skus;
 
 			// Generate unique slug
 			let slug = generateSlug(input.title);
@@ -681,6 +691,10 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 							? new Date(input.expiryDate)
 							: null,
 						status: productStatus,
+						pendingReason: input.isDraft
+							? null
+							: "new_submission",
+						submittedAt: input.isDraft ? null : new Date(),
 						isActive: true,
 					})
 					.returning();
@@ -688,9 +702,9 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				if (!product) throw new Error("Failed to create product");
 
 				// Insert images
-				if (input.images.length > 0) {
+				if (normalizedImages.length > 0) {
 					await tx.insert(productImages).values(
-						input.images.map((img, idx) => ({
+						normalizedImages.map((img, idx) => ({
 							productId: product.id,
 							s3Key: img.s3Key,
 							variant: img.variant || "original",
@@ -701,9 +715,9 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				}
 
 				// Insert options
-				if (input.options && input.options.length > 0) {
+				if (normalizedOptions.length > 0) {
 					await tx.insert(productOptions).values(
-						input.options.map((opt, idx) => ({
+						normalizedOptions.map((opt, idx) => ({
 							productId: product.id,
 							name: opt.name,
 							nameBn: opt.nameBn || null,
@@ -715,17 +729,19 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				}
 
 				// Insert SKUs
-				await tx.insert(productSkus).values(
-					input.skus.map((sku) => ({
-						productId: product.id,
-						sku: sku.sku,
-						optionValues: sku.optionValues || null,
-						priceAmount: sku.priceAmount,
-						compareAtAmount: sku.compareAtAmount ?? null,
-						stockQty: sku.stockQty,
-						isAvailable: sku.isAvailable,
-					})),
-				);
+				if (normalizedSkus.length > 0) {
+					await tx.insert(productSkus).values(
+						normalizedSkus.map((sku) => ({
+							productId: product.id,
+							sku: sku.sku.trim(),
+							optionValues: sku.optionValues || null,
+							priceAmount: sku.priceAmount,
+							compareAtAmount: sku.compareAtAmount ?? null,
+							stockQty: sku.stockQty,
+							isAvailable: sku.isAvailable,
+						})),
+					);
+				}
 
 				return product;
 			});
@@ -770,6 +786,11 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 			const vendorId = c.var.vendorId;
 			const { productId } = c.req.valid("param");
 			const input = c.req.valid("json");
+			const normalizedImages = input.images ?? [];
+			const normalizedOptions = input.options ?? [];
+			const normalizedSkus = input.isDraft
+				? input.skus.filter((sku) => sku.sku.trim().length > 0)
+				: input.skus;
 
 			// Verify ownership
 			const [existing] = await db
@@ -818,6 +839,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 							? new Date(input.expiryDate)
 							: null,
 						status: updateStatus,
+						pendingReason: input.isDraft ? null : "vendor_update",
+						submittedAt: input.isDraft ? null : new Date(),
 					})
 					.where(eq(products.id, productId));
 
@@ -825,9 +848,9 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				await tx
 					.delete(productImages)
 					.where(eq(productImages.productId, productId));
-				if (input.images.length > 0) {
+				if (normalizedImages.length > 0) {
 					await tx.insert(productImages).values(
-						input.images.map((img, idx) => ({
+						normalizedImages.map((img, idx) => ({
 							productId,
 							s3Key: img.s3Key,
 							variant: img.variant || "original",
@@ -841,9 +864,9 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				await tx
 					.delete(productOptions)
 					.where(eq(productOptions.productId, productId));
-				if (input.options && input.options.length > 0) {
+				if (normalizedOptions.length > 0) {
 					await tx.insert(productOptions).values(
-						input.options.map((opt, idx) => ({
+						normalizedOptions.map((opt, idx) => ({
 							productId,
 							name: opt.name,
 							nameBn: opt.nameBn || null,
@@ -858,20 +881,22 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				await tx
 					.delete(productSkus)
 					.where(eq(productSkus.productId, productId));
-				await tx.insert(productSkus).values(
-					input.skus.map((sku) => ({
-						productId,
-						sku: sku.sku,
-						optionValues: sku.optionValues || null,
-						priceAmount: sku.priceAmount,
-						compareAtAmount: sku.compareAtAmount ?? null,
-						stockQty: sku.stockQty,
-						isAvailable: sku.isAvailable,
-					})),
-				);
+				if (normalizedSkus.length > 0) {
+					await tx.insert(productSkus).values(
+						normalizedSkus.map((sku) => ({
+							productId,
+							sku: sku.sku.trim(),
+							optionValues: sku.optionValues || null,
+							priceAmount: sku.priceAmount,
+							compareAtAmount: sku.compareAtAmount ?? null,
+							stockQty: sku.stockQty,
+							isAvailable: sku.isAvailable,
+						})),
+					);
+				}
 			});
 
-			return c.json({ id: productId, status: "pending" }, 200);
+			return c.json({ id: productId, status: updateStatus }, 200);
 		},
 	)
 
@@ -926,7 +951,62 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				.set({ isActive: false })
 				.where(eq(products.id, productId));
 
-			return c.json({ success: true }, 200);
+			return c.json({ id: productId, isActive: false }, 200);
+		},
+	)
+
+	// =====================
+	// PATCH /products/:productId/reactivate - Reactivate product
+	// =====================
+	.patch(
+		"/products/:productId/reactivate",
+		describeRoute({
+			tags: ["Vendor Dashboard"],
+			summary: "Reactivate a product",
+			description: "Sets isActive to true for a vendor-owned product",
+			responses: {
+				200: {
+					description: "Product reactivated",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+				404: {
+					description: "Product not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("param", z.object({ productId: z.string().uuid() })),
+		async (c) => {
+			const vendorId = c.var.vendorId;
+			const { productId } = c.req.valid("param");
+
+			const [existing] = await db
+				.select({ id: products.id })
+				.from(products)
+				.where(
+					and(
+						eq(products.id, productId),
+						eq(products.vendorId, vendorId),
+					),
+				)
+				.limit(1);
+
+			if (!existing) {
+				return c.json({ error: "Product not found" }, 404);
+			}
+
+			await db
+				.update(products)
+				.set({ isActive: true })
+				.where(eq(products.id, productId));
+
+			return c.json({ id: productId, isActive: true }, 200);
 		},
 	)
 
@@ -1121,6 +1201,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 							titleBn: snapshot.titleBn,
 							slug: snapshot.slug,
 							image: snapshot.image,
+							selectedOptions: snapshot.selectedOptions ?? null,
+							skuCode: snapshot.skuCode ?? null,
 						},
 					};
 				}),
@@ -1181,7 +1263,11 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 			const [order] = await db
 				.select({
 					id: orders.id,
+					orderNumber: orders.orderNumber,
 					status: orders.status,
+					userId: orders.userId,
+					trackingNumber: orders.trackingNumber,
+					trackingCarrier: orders.trackingCarrier,
 				})
 				.from(orders)
 				.where(
@@ -1234,6 +1320,91 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 						eq(orders.status, order.status), // Optimistic lock
 					),
 				);
+
+			// Send customer notification (fire-and-forget)
+			const [customer] = await db
+				.select({ email: user.email, name: user.name })
+				.from(user)
+				.where(eq(user.id, order.userId))
+				.limit(1);
+
+			if (customer) {
+				const notificationMap: Record<string, {
+					type: "order_confirmed" | "order_processing" | "order_shipped" | "order_delivered" | "order_cancelled";
+					title: string;
+					titleBn: string;
+					body: string;
+					bodyBn: string;
+				}> = {
+					confirmed: {
+						type: "order_confirmed",
+						title: "Order Confirmed",
+						titleBn: "অর্ডার নিশ্চিত করা হয়েছে",
+						body: `Your order ${order.orderNumber} has been confirmed`,
+						bodyBn: `আপনার অর্ডার ${order.orderNumber} নিশ্চিত করা হয়েছে`,
+					},
+					processing: {
+						type: "order_processing",
+						title: "Order is Being Prepared",
+						titleBn: "অর্ডার প্রস্তুত করা হচ্ছে",
+						body: `Your order ${order.orderNumber} is being prepared`,
+						bodyBn: `আপনার অর্ডার ${order.orderNumber} প্রস্তুত করা হচ্ছে`,
+					},
+					shipped: {
+						type: "order_shipped",
+						title: "Order Shipped",
+						titleBn: "অর্ডার পাঠানো হয়েছে",
+						body: trackingNumber
+							? `Your order ${order.orderNumber} is on the way (Tracking: ${trackingNumber})`
+							: `Your order ${order.orderNumber} is on the way`,
+						bodyBn: trackingNumber
+							? `আপনার অর্ডার ${order.orderNumber} পথে আছে (ট্র্যাকিং: ${trackingNumber})`
+							: `আপনার অর্ডার ${order.orderNumber} পথে আছে`,
+					},
+					delivered: {
+						type: "order_delivered",
+						title: "Order Delivered",
+						titleBn: "অর্ডার সরবরাহ করা হয়েছে",
+						body: `Your order ${order.orderNumber} has been delivered`,
+						bodyBn: `আপনার অর্ডার ${order.orderNumber} সরবরাহ করা হয়েছে`,
+					},
+					cancelled: {
+						type: "order_cancelled",
+						title: "Order Cancelled",
+						titleBn: "অর্ডার বাতিল করা হয়েছে",
+						body: `Your order ${order.orderNumber} has been cancelled`,
+						bodyBn: `আপনার অর্ডার ${order.orderNumber} বাতিল করা হয়েছে`,
+					},
+				};
+
+				const notificationData = notificationMap[newStatus];
+				if (notificationData) {
+					notify({
+						userId: order.userId,
+						type: notificationData.type,
+						title: notificationData.title,
+						titleBn: notificationData.titleBn,
+						body: notificationData.body,
+						bodyBn: notificationData.bodyBn,
+						data: {
+							orderId: order.id,
+							orderNumber: order.orderNumber,
+							trackingNumber: trackingNumber ?? order.trackingNumber,
+							trackingCarrier: trackingCarrier ?? order.trackingCarrier,
+						},
+						channel: "customer",
+						emailData: {
+							userEmail: customer.email,
+							userName: customer.name,
+							orderNumber: order.orderNumber,
+							trackingNumber: trackingNumber ?? order.trackingNumber,
+							trackingCarrier: trackingCarrier ?? order.trackingCarrier,
+						},
+					}).catch((error) => {
+						console.error(`[VENDOR] Failed to send notification for ${order.orderNumber}:`, error);
+					});
+				}
+			}
 
 			return c.json({ id: orderId, status: newStatus }, 200);
 		},

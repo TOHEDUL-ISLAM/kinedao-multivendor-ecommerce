@@ -126,6 +126,8 @@ export const adminProductListQuerySchema = z.object({
 
 export type AdminProductListQuery = z.infer<typeof adminProductListQuerySchema>;
 
+export type ProductPendingReason = "new_submission" | "vendor_update";
+
 export interface AdminProductListItemDTO {
 	id: string;
 	title: string;
@@ -139,6 +141,10 @@ export interface AdminProductListItemDTO {
 	priceAmount: number; // lowest SKU price in paisa
 	isActive: boolean;
 	createdAt: string;
+	updatedAt: string;
+	submittedAt: string | null;
+	pendingReason: ProductPendingReason | null;
+	hasVendorUpdate: boolean;
 }
 
 export interface AdminProductListResponseDTO {
@@ -181,6 +187,12 @@ export interface AdminProductDetailDTO {
 	expiryDate: string | null;
 	status: string;
 	isActive: boolean;
+	submittedAt: string | null;
+	pendingReason: ProductPendingReason | null;
+	hasVendorUpdate: boolean;
+	reviewNotes: string | null;
+	lastReviewedAt: string | null;
+	lastReviewedBy: string | null;
 	vendorId: string;
 	vendorName: string;
 	images: Array<{
@@ -218,6 +230,15 @@ export const adminProductStatusUpdateSchema = z.object({
 
 export type AdminProductStatusUpdateInput = z.infer<
 	typeof adminProductStatusUpdateSchema
+>;
+
+export const adminProductActiveUpdateSchema = z.object({
+	isActive: z.boolean(),
+	reason: z.string().max(1000).optional(),
+});
+
+export type AdminProductActiveUpdateInput = z.infer<
+	typeof adminProductActiveUpdateSchema
 >;
 
 // =====================
@@ -304,6 +325,8 @@ export interface AdminOrderDetailDTO {
 			titleBn: string | null;
 			slug: string;
 			image: string | null;
+			selectedOptions: Record<string, string> | null;
+			skuCode: string | null;
 		};
 	}>;
 	createdAt: string;

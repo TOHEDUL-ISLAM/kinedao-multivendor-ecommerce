@@ -15,6 +15,13 @@
       "when": 1769961433940,
       "tag": "0001_grey_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770748800000,
+      "tag": "0002_product_submission_metadata",
+      "breakpoints": true
     }
   ]
 }

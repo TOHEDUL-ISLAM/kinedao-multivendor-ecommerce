@@ -18,6 +18,9 @@ import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { NextStepsCard } from "@/components/orders/next-steps-card";
 import { SHIPPING_ZONES } from "@kineDao.com/api-types/checkout";
+import { CODVerificationModal } from "@/components/checkout/cod-verification-modal";
+import { PushNotificationPrompt } from "@/components/notifications/push-notification-prompt";
+import { useState, useEffect } from "react";
 
 const orderConfirmationSearchSchema = z.object({
 	groupId: z.string().uuid(),
@@ -48,6 +51,12 @@ export const Route = createFileRoute("/order-confirmation")({
 function OrderConfirmationPage() {
 	const { t, language } = useTranslation();
 	const orderGroup = Route.useLoaderData();
+	const [showCODModal, setShowCODModal] = useState(false);
+
+	// Show COD verification modal on page load
+	useEffect(() => {
+		setShowCODModal(true);
+	}, []);
 
 	const formatPrice = (paisa: number) => {
 		const amount = paisa / 100;
@@ -109,6 +118,18 @@ function OrderConfirmationPage() {
 
 	return (
 		<div className="container max-w-4xl mx-auto px-4 py-8">
+			{/* COD Verification Modal */}
+			<CODVerificationModal
+				opened={showCODModal}
+				onClose={() => setShowCODModal(false)}
+				orderIds={orderGroup.orders.map((o) => o.id)}
+				totalAmount={orderGroup.grandTotal}
+				language={language}
+			/>
+
+			{/* Push Notification Prompt (shown after first successful order) */}
+			<PushNotificationPrompt context="customer" language={language} />
+
 			{/* Success header */}
 			<div className="text-center mb-8">
 				<div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">

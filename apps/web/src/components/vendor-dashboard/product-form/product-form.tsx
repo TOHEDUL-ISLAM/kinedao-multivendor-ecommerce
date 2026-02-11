@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Stack, Title, Group, Button } from "@mantine/core";
+import { Stack, Title, Group, Button, Alert } from "@mantine/core";
 import { ArrowLeft, Save, Send } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { toast } from "sonner";
 import { useVendorTheme } from "@/lib/vendor-theme";
+import { getS3Url } from "@/lib/s3-helpers";
 
 // Import types and helpers
 import {
@@ -14,9 +15,17 @@ import {
   type FormState,
   type FormOption,
   type FormSku,
+  type FormErrorMap,
   labels,
   buildInitialState,
+  buildLeafCategoryOptionGroups,
   normalizeCategoryResponse,
+  sanitizeFormOptions,
+  normalizeSkuOptionValues,
+  validateProductForm,
+  getValidationSummary,
+  getFirstInvalidField,
+  parseApiErrorPayload,
 } from "./form-types";
 
 // Import section components
@@ -42,12 +51,14 @@ export function ProductForm({
   const [form, setForm] = useState<FormState>(() =>
     buildInitialState(initialData)
   );
+  const [fieldErrors, setFieldErrors] = useState<FormErrorMap>({});
+  const [formErrors, setFormErrors] = useState<string[]>([]);
 
   // Fetch categories if not provided
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await api.categories.$get();
+      const res = await api.categories.$get({ query: {} });
       if (!res.ok) throw new Error("Failed to fetch categories");
       return res.json();
     },
@@ -55,18 +66,67 @@ export function ProductForm({
     staleTime: 1000 * 60 * 10,
   });
 
-  const categories = initialCategories || (categoriesData ? normalizeCategoryResponse(categoriesData) : []);
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name,
-  }));
+  const categories =
+    initialCategories || (categoriesData ? normalizeCategoryResponse(categoriesData) : []);
+  const categoryOptions = useMemo(
+    () => buildLeafCategoryOptionGroups(categories),
+    [categories]
+  );
+
+  const clearErrorsForKeys = useCallback((keys: string[]) => {
+    setFieldErrors((prev) => {
+      if (keys.length === 0) return prev;
+      const next = { ...prev };
+      let changed = false;
+      for (const key of keys) {
+        if (!key) continue;
+        for (const errorKey of Object.keys(next)) {
+          if (errorKey === key || errorKey.startsWith(`${key}.`)) {
+            delete next[errorKey];
+            changed = true;
+          }
+        }
+      }
+      return changed ? next : prev;
+    });
+    setFormErrors([]);
+  }, []);
+
+  const focusFirstInvalidField = useCallback((fieldKey: string | null) => {
+    if (!fieldKey || typeof document === "undefined") return;
+
+    requestAnimationFrame(() => {
+      const selector = `[data-field-key="${fieldKey}"] input, [data-field-key="${fieldKey}"] textarea, [data-field-key="${fieldKey}"] button`;
+      const target = document.querySelector(selector) as HTMLElement | null;
+      const container = document.querySelector(
+        `[data-field-key="${fieldKey}"]`
+      ) as HTMLElement | null;
+      const elementToScroll = target || container;
+
+      if (elementToScroll) {
+        elementToScroll.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      if (target) {
+        target.focus();
+      }
+    });
+  }, []);
 
   // Generic field updater
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }));
+      const keys = [String(field)];
+      if (field === "ageRangeMin" || field === "ageRangeMax") {
+        keys.push("ageRangeMax");
+      }
+      if (field === "categoryId" || field === "expiryDate") {
+        keys.push("expiryDate");
+      }
+      clearErrorsForKeys(keys);
     },
-    []
+    [clearErrorsForKeys]
   );
 
   // Image upload handler
@@ -95,28 +155,51 @@ export function ProductForm({
           );
 
           if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()) as {
+              s3Key?: string;
+              url?: string;
+              variant?: "original" | "medium" | "thumbnail";
+            };
+
+            if (!data.s3Key) {
+              toast.error("Image upload response is missing file key");
+              continue;
+            }
+
+            const stableUrl = getS3Url(data.s3Key);
+
             setForm((prev) => ({
               ...prev,
               images: [
                 ...prev.images,
                 {
                   s3Key: data.s3Key,
-                  url: data.url,
+                  url: stableUrl,
+                  fallbackUrl: data.url,
                   variant: data.variant || "original",
                   sortOrder: prev.images.length,
                 },
               ],
             }));
+            clearErrorsForKeys(["images"]);
           } else {
-            toast.error("Failed to upload image");
+            const errorPayload = await response.json().catch(() => null);
+            const parsed = parseApiErrorPayload(
+              errorPayload,
+              "Failed to upload image"
+            );
+            toast.error(parsed.messages[0] || "Failed to upload image");
           }
-        } catch {
-          toast.error("Failed to upload image");
+        } catch (error) {
+          toast.error(
+            error instanceof Error && error.message
+              ? error.message
+              : "Failed to upload image"
+          );
         }
       }
     },
-    [form.images.length]
+    [form.images.length, clearErrorsForKeys]
   );
 
   const removeImage = useCallback((index: number) => {
@@ -124,50 +207,34 @@ export function ProductForm({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
-  }, []);
+    clearErrorsForKeys(["images"]);
+  }, [clearErrorsForKeys]);
 
   // Options management
-  const addOption = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      options: [
-        ...prev.options,
-        { name: "", nameBn: "", values: [], valuesBn: [] },
-      ],
-    }));
-  }, []);
-
-  const removeOption = useCallback((index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      options: prev.options.filter((_, i) => i !== index),
-    }));
-  }, []);
-
-  const updateOption = useCallback(
-    <K extends keyof FormOption>(index: number, field: K, value: FormOption[K]) => {
+  const setOptions = useCallback(
+    (options: FormOption[]) => {
       setForm((prev) => ({
         ...prev,
-        options: prev.options.map((opt, i) =>
-          i === index ? { ...opt, [field]: value } : opt
-        ),
+        options,
       }));
+      clearErrorsForKeys(["options", "skus"]);
     },
-    []
+    [clearErrorsForKeys]
   );
 
   // Generate SKU combinations from options
   const generateSkus = useCallback(() => {
-    const validOptions = form.options.filter(
-      (o) => o.name && o.values.length > 0
-    );
+    const sanitizedOptions = sanitizeFormOptions(form.options);
+    const validOptions = sanitizedOptions.filter((o) => o.name && o.values.length > 0);
+    const validOptionNames = validOptions.map((option) => option.name);
 
     if (validOptions.length === 0) {
       setForm((prev) => ({
         ...prev,
+        options: sanitizedOptions,
         skus: [
           {
-            sku: "",
+            sku: prev.skus[0]?.sku?.trim() || "",
             optionValues: {},
             priceAmount: prev.skus[0]?.priceAmount || 0,
             compareAtAmount: prev.skus[0]?.compareAtAmount || null,
@@ -176,6 +243,7 @@ export function ProductForm({
           },
         ],
       }));
+      clearErrorsForKeys(["options", "skus"]);
       return;
     }
 
@@ -196,14 +264,20 @@ export function ProductForm({
       []
     );
 
+    const normalizedExistingSkus = form.skus.map((sku) => ({
+      ...sku,
+      optionValues: normalizeSkuOptionValues(sku.optionValues, validOptionNames),
+    }));
+
     setForm((prev) => ({
       ...prev,
+      options: sanitizedOptions,
       skus: combinations.map((combo) => {
-        const existing = prev.skus.find((s) =>
-          Object.entries(combo).every(([k, v]) => s.optionValues[k] === v)
+        const existing = normalizedExistingSkus.find((s) =>
+          validOptionNames.every((optionName) => s.optionValues[optionName] === combo[optionName])
         );
         return {
-          sku: existing?.sku || Object.values(combo).join("-"),
+          sku: existing?.sku?.trim() || Object.values(combo).join("-").replace(/\s+/g, "-"),
           optionValues: combo,
           priceAmount: existing?.priceAmount || 0,
           compareAtAmount: existing?.compareAtAmount || null,
@@ -212,7 +286,8 @@ export function ProductForm({
         };
       }),
     }));
-  }, [form.options]);
+    clearErrorsForKeys(["options", "skus"]);
+  }, [form.options, form.skus, clearErrorsForKeys]);
 
   const updateSku = useCallback(
     <K extends keyof FormSku>(index: number, field: K, value: FormSku[K]) => {
@@ -222,55 +297,75 @@ export function ProductForm({
           i === index ? { ...s, [field]: value } : s
         ),
       }));
+      clearErrorsForKeys([
+        `skus.${index}.${String(field)}`,
+        `skus.${index}.optionValues`,
+      ]);
     },
-    []
+    [clearErrorsForKeys]
+  );
+
+  const replaceSkus = useCallback(
+    (nextSkus: FormSku[]) => {
+      setForm((prev) => ({
+        ...prev,
+        skus: nextSkus,
+      }));
+      clearErrorsForKeys(["skus"]);
+    },
+    [clearErrorsForKeys]
   );
 
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (status: "draft" | "pending") => {
+      const sanitizedOptions = sanitizeFormOptions(form.options);
+      const validOptions = sanitizedOptions.filter(
+        (option) => option.name && option.values.length > 0
+      );
+      const validOptionNames = validOptions.map((option) => option.name);
+
       const payload = {
-        title: form.title,
-        titleBn: form.titleBn || undefined,
+        title: form.title.trim(),
+        titleBn: form.titleBn.trim() || undefined,
         categoryId: form.categoryId,
-        brand: form.brand || undefined,
-        shortDescription: form.shortDescription || undefined,
-        shortDescriptionBn: form.shortDescriptionBn || undefined,
-        description: form.description || undefined,
-        descriptionBn: form.descriptionBn || undefined,
+        brand: form.brand.trim() || undefined,
+        shortDescription: form.shortDescription.trim() || undefined,
+        shortDescriptionBn: form.shortDescriptionBn.trim() || undefined,
+        description: form.description.trim() || undefined,
+        descriptionBn: form.descriptionBn.trim() || undefined,
         ageRangeMin: form.ageRangeMin ?? undefined,
         ageRangeMax: form.ageRangeMax ?? undefined,
         isBpaFree: form.isBpaFree,
         isOrganic: form.isOrganic,
         isHypoallergenic: form.isHypoallergenic,
         hasSmallParts: form.hasSmallParts,
-        safetyWarningEn: form.safetyWarningEn || undefined,
-        safetyWarningBn: form.safetyWarningBn || undefined,
+        safetyWarningEn: form.safetyWarningEn.trim() || undefined,
+        safetyWarningBn: form.safetyWarningBn.trim() || undefined,
         safetyCertifications:
           form.safetyCertifications.length > 0
             ? form.safetyCertifications
             : undefined,
         weightLimitKg: form.weightLimitKg ?? undefined,
-        expiryDate: form.expiryDate || undefined,
+        expiryDate: form.expiryDate.trim() || undefined,
         images: form.images.map((img, i) => ({
-          s3Key: img.s3Key || "",
+          s3Key: img.s3Key?.trim() || "",
           variant: img.variant || "original",
           sortOrder: i,
         })),
-        options: form.options
-          .filter((o) => o.name && o.values.length > 0)
+        options: validOptions
           .map((o, i) => ({
             name: o.name,
-            nameBn: o.nameBn || undefined,
+            nameBn: o.nameBn.trim() || undefined,
             values: o.values,
             valuesBn: o.valuesBn.length > 0 ? o.valuesBn : undefined,
             sortOrder: i,
           })),
         skus: form.skus.map((s) => ({
-          sku: s.sku,
+          sku: s.sku.trim(),
           optionValues:
-            Object.keys(s.optionValues).length > 0
-              ? s.optionValues
+            Object.keys(normalizeSkuOptionValues(s.optionValues, validOptionNames)).length > 0
+              ? normalizeSkuOptionValues(s.optionValues, validOptionNames)
               : undefined,
           priceAmount: s.priceAmount,
           compareAtAmount: s.compareAtAmount ?? undefined,
@@ -287,9 +382,17 @@ export function ProductForm({
         });
         if (!res.ok) {
           const errorBody = await res.json().catch(() => null);
-          throw new Error(
-            (errorBody as any)?.error || "Failed to update product"
+          const parsed = parseApiErrorPayload(
+            errorBody,
+            "Failed to update product"
           );
+          const error = new Error(parsed.messages[0] || "Failed to update product") as Error & {
+            messages?: string[];
+            fieldErrors?: FormErrorMap;
+          };
+          error.messages = parsed.messages;
+          error.fieldErrors = parsed.fieldErrors;
+          throw error;
         }
         return res.json();
       } else {
@@ -298,14 +401,24 @@ export function ProductForm({
         });
         if (!res.ok) {
           const errorBody = await res.json().catch(() => null);
-          throw new Error(
-            (errorBody as any)?.error || "Failed to create product"
+          const parsed = parseApiErrorPayload(
+            errorBody,
+            "Failed to create product"
           );
+          const error = new Error(parsed.messages[0] || "Failed to create product") as Error & {
+            messages?: string[];
+            fieldErrors?: FormErrorMap;
+          };
+          error.messages = parsed.messages;
+          error.fieldErrors = parsed.fieldErrors;
+          throw error;
         }
         return res.json();
       }
     },
     onSuccess: () => {
+      setFieldErrors({});
+      setFormErrors([]);
       toast.success(t.saveSuccess);
       queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
       queryClient.invalidateQueries({
@@ -313,10 +426,40 @@ export function ProductForm({
       });
       navigate({ to: "/vendor/products" });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || t.saveFailed);
+    onError: (error: Error & { messages?: string[]; fieldErrors?: FormErrorMap }) => {
+      if (error.fieldErrors && Object.keys(error.fieldErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      }
+
+      const parsedMessages = error.messages && error.messages.length > 0
+        ? error.messages
+        : [error.message || t.saveFailed];
+
+      setFormErrors(parsedMessages);
+      toast.error(parsedMessages[0] || t.saveFailed);
+      focusFirstInvalidField(getFirstInvalidField(error.fieldErrors || {}));
     },
   });
+
+  const handleSubmit = useCallback(
+    (status: "draft" | "pending") => {
+      const validation = validateProductForm(form, status, categories);
+
+      if (!validation.isValid) {
+        setFieldErrors(validation.fieldErrors);
+        setFormErrors(validation.formErrors);
+        const summary = validation.formErrors[0] || getValidationSummary(validation.fieldErrors);
+        toast.error(summary);
+        focusFirstInvalidField(getFirstInvalidField(validation.fieldErrors));
+        return;
+      }
+
+      setFieldErrors({});
+      setFormErrors([]);
+      saveMutation.mutate(status);
+    },
+    [categories, form, focusFirstInvalidField, saveMutation]
+  );
 
   return (
     <Stack gap="xl">
@@ -339,7 +482,7 @@ export function ProductForm({
           <Button
             variant="default"
             leftSection={<Save size={16} />}
-            onClick={() => saveMutation.mutate("draft")}
+            onClick={() => handleSubmit("draft")}
             loading={saveMutation.isPending}
           >
             {t.saveDraft}
@@ -347,7 +490,7 @@ export function ProductForm({
           <Button
             color="teal"
             leftSection={<Send size={16} />}
-            onClick={() => saveMutation.mutate("pending")}
+            onClick={() => handleSubmit("pending")}
             loading={saveMutation.isPending}
           >
             {t.publish}
@@ -355,12 +498,23 @@ export function ProductForm({
         </Group>
       </Group>
 
+      <Alert color="blue" variant="light" title={t.submitGuideTitle}>
+        {t.submitGuideBody}
+      </Alert>
+
+      {formErrors.length > 0 && (
+        <Alert color="red" variant="light" title="Submission issues">
+          {formErrors[0]}
+        </Alert>
+      )}
+
       {/* Form Sections - All Visible (No Accordion) */}
       <BasicInfoSection
         form={form}
         updateField={updateField}
         categoryOptions={categoryOptions}
         isDark={isDark}
+        errors={fieldErrors}
         t={t}
       />
 
@@ -376,17 +530,17 @@ export function ProductForm({
         handleImageUpload={handleImageUpload}
         removeImage={removeImage}
         isDark={isDark}
+        errors={fieldErrors}
         t={t}
       />
 
       <VariantsSection
         options={form.options}
         skusCount={form.skus.length}
-        addOption={addOption}
-        removeOption={removeOption}
-        updateOption={updateOption}
+        setOptions={setOptions}
         generateSkus={generateSkus}
         isDark={isDark}
+        errors={fieldErrors}
         t={t}
       />
 
@@ -394,7 +548,9 @@ export function ProductForm({
         options={form.options}
         skus={form.skus}
         updateSku={updateSku}
+        replaceSkus={replaceSkus}
         isDark={isDark}
+        errors={fieldErrors}
         t={t}
       />
 
@@ -402,6 +558,7 @@ export function ProductForm({
         form={form}
         updateField={updateField}
         isDark={isDark}
+        errors={fieldErrors}
         t={t}
       />
 
@@ -432,7 +589,7 @@ export function ProductForm({
         <Button
           variant="default"
           leftSection={<Save size={16} />}
-          onClick={() => saveMutation.mutate("draft")}
+          onClick={() => handleSubmit("draft")}
           loading={saveMutation.isPending}
         >
           {t.saveDraft}
@@ -440,7 +597,7 @@ export function ProductForm({
         <Button
           color="teal"
           leftSection={<Send size={16} />}
-          onClick={() => saveMutation.mutate("pending")}
+          onClick={() => handleSubmit("pending")}
           loading={saveMutation.isPending}
         >
           {t.publish}

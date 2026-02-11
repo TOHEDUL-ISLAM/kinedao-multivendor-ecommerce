@@ -27,6 +27,7 @@ import { useTheme } from "next-themes";
 import { useLanguage } from "@/lib/i18n/use-language";
 import type { Language } from "@/lib/i18n/translations";
 import { LanguageToggle } from "@/components/language-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface NavItem {
   icon: LucideIcon;
@@ -187,6 +188,7 @@ export function VendorDashboardLayout({
           </Group>
 
           <Group gap="md">
+            <NotificationBell />
             <Box visibleFrom="sm">
               <LanguageToggle />
             </Box>

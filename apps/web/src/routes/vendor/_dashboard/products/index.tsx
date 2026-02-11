@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Group,
@@ -27,11 +27,13 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  RotateCcw,
   Package,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useVendorTheme, vendorColors } from "@/lib/vendor-theme";
+import { toast } from "sonner";
 import type { VendorProductListResponseDTO } from "@kineDao.com/api-types/vendor-dashboard";
 
 export const Route = createFileRoute("/vendor/_dashboard/products/")({
@@ -44,6 +46,10 @@ const labels = {
     addProduct: "Add Product",
     searchPlaceholder: "Search products...",
     allStatuses: "All Statuses",
+    visibility: "Visibility",
+    allVisibility: "All Products",
+    activeOnly: "Active Only",
+    inactiveOnly: "Inactive Only",
     allCategories: "All Categories",
     sortBy: "Sort by",
     newest: "Newest",
@@ -60,6 +66,14 @@ const labels = {
     actions: "Actions",
     edit: "Edit",
     deactivate: "Deactivate",
+    reactivate: "Reactivate",
+    active: "Active",
+    inactive: "Inactive",
+    confirmDeactivate: "Deactivate this product?",
+    confirmReactivate: "Reactivate this product?",
+    deactivatedSuccess: "Product deactivated",
+    reactivatedSuccess: "Product reactivated",
+    actionFailed: "Failed to update product state",
     noProducts: "No products found",
     addFirstProduct: "Add your first product to start selling",
     approved: "Approved",
@@ -75,6 +89,10 @@ const labels = {
     addProduct: "পণ্য যোগ করুন",
     searchPlaceholder: "পণ্য খুঁজুন...",
     allStatuses: "সকল স্ট্যাটাস",
+    visibility: "ভিজিবিলিটি",
+    allVisibility: "সব পণ্য",
+    activeOnly: "সক্রিয়",
+    inactiveOnly: "নিষ্ক্রিয়",
     allCategories: "সকল ক্যাটেগরি",
     sortBy: "সাজান",
     newest: "নতুন",
@@ -91,6 +109,14 @@ const labels = {
     actions: "অ্যাকশন",
     edit: "এডিট",
     deactivate: "নিষ্ক্রিয়",
+    reactivate: "সক্রিয় করুন",
+    active: "সক্রিয়",
+    inactive: "নিষ্ক্রিয়",
+    confirmDeactivate: "এই পণ্যটি নিষ্ক্রিয় করতে চান?",
+    confirmReactivate: "এই পণ্যটি আবার সক্রিয় করতে চান?",
+    deactivatedSuccess: "পণ্যটি নিষ্ক্রিয় করা হয়েছে",
+    reactivatedSuccess: "পণ্যটি সক্রিয় করা হয়েছে",
+    actionFailed: "পণ্যের অবস্থা আপডেট করা যায়নি",
     noProducts: "কোনো পণ্য পাওয়া যায়নি",
     addFirstProduct: "বিক্রয় শুরু করতে আপনার প্রথম পণ্য যোগ করুন",
     approved: "অনুমোদিত",
@@ -111,6 +137,7 @@ async function fetchVendorProducts(params: {
   page: number;
   limit: number;
   sort: string;
+  active: string;
   search?: string;
   status?: string;
 }): Promise<VendorProductListResponseDTO> {
@@ -122,6 +149,7 @@ async function fetchVendorProducts(params: {
 
   if (params.search) query.search = params.search;
   if (params.status) query.status = params.status;
+  if (params.active && params.active !== "all") query.active = params.active;
 
   const response = await api.vendorDashboard.products.$get({ query });
   if (!response.ok) {
@@ -139,25 +167,70 @@ function ProductListPage() {
   const { language } = useLanguage();
   const t = labels[language];
   const { isDark } = useVendorTheme();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>("active");
   const [sort, setSort] = useState<string>(DEFAULT_SORT);
   const [page, setPage] = useState(DEFAULT_PAGE);
   const limit = DEFAULT_LIMIT;
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      activate,
+    }: {
+      productId: string;
+      activate: boolean;
+    }) => {
+      if (activate) {
+        const response = await api.vendorDashboard.products[
+          ":productId"
+        ].reactivate.$patch({
+          param: { productId },
+        });
+        if (!response.ok) throw new Error("Failed to reactivate product");
+        return response.json();
+      }
+
+      const response = await api.vendorDashboard.products[":productId"].$delete({
+        param: { productId },
+      });
+      if (!response.ok) throw new Error("Failed to deactivate product");
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(variables.activate ? t.reactivatedSuccess : t.deactivatedSuccess);
+      queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-overview"] });
+    },
+    onError: () => {
+      toast.error(t.actionFailed);
+    },
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ["vendor-products", debouncedSearch, status, sort, page, limit],
+    queryKey: ["vendor-products", debouncedSearch, status, activeFilter, sort, page, limit],
     queryFn: () =>
       fetchVendorProducts({
         page,
         limit,
         sort,
+        active: activeFilter,
         search: debouncedSearch || undefined,
         status: status || undefined,
       }),
   });
+
+  const handleToggleActive = (productId: string, activate: boolean) => {
+    const confirmed = window.confirm(
+      activate ? t.confirmReactivate : t.confirmDeactivate
+    );
+    if (!confirmed) return;
+    toggleActiveMutation.mutate({ productId, activate });
+  };
 
   const totalPages = data ? Math.ceil(data.total / limit) : 1;
 
@@ -244,6 +317,28 @@ function ProductListPage() {
               setPage(1);
             }}
             clearable
+            style={{ minWidth: 150, flex: 1 }}
+            styles={{
+              input: {
+                backgroundColor: vendorColors.input(isDark).background,
+                borderColor: isDark ? "oklch(0.3 0.02 260 / 0.4)" : undefined,
+                color: vendorColors.input(isDark).color,
+              },
+            }}
+          />
+          <Select
+            placeholder={t.visibility}
+            data={[
+              { value: "all", label: t.allVisibility },
+              { value: "active", label: t.activeOnly },
+              { value: "inactive", label: t.inactiveOnly },
+            ]}
+            value={activeFilter}
+            onChange={(val) => {
+              setActiveFilter(val || "all");
+              setPage(1);
+            }}
+            allowDeselect={false}
             style={{ minWidth: 150, flex: 1 }}
             styles={{
               input: {
@@ -402,13 +497,22 @@ function ProductListPage() {
                         </Badge>
                       </Table.Td>
                       <Table.Td>
-                        <Badge
-                          size="sm"
-                          fw={600}
-                          style={vendorColors.statusBadge(product.status, isDark)}
-                        >
-                          {product.status}
-                        </Badge>
+                        <Group gap={6}>
+                          <Badge
+                            size="sm"
+                            fw={600}
+                            style={vendorColors.statusBadge(product.status, isDark)}
+                          >
+                            {product.status}
+                          </Badge>
+                          <Badge
+                            size="sm"
+                            color={product.isActive ? "green" : "gray"}
+                            variant="light"
+                          >
+                            {product.isActive ? t.active : t.inactive}
+                          </Badge>
+                        </Group>
                       </Table.Td>
                       <Table.Td>
                         <Menu shadow="md" position="bottom-end">
@@ -428,8 +532,18 @@ function ProductListPage() {
                             <Menu.Item
                               leftSection={<Trash2 size={14} />}
                               color="red"
+                              onClick={() => handleToggleActive(product.id, false)}
+                              disabled={toggleActiveMutation.isPending || !product.isActive}
                             >
                               {t.deactivate}
+                            </Menu.Item>
+                            <Menu.Item
+                              leftSection={<RotateCcw size={14} />}
+                              color="teal"
+                              onClick={() => handleToggleActive(product.id, true)}
+                              disabled={toggleActiveMutation.isPending || product.isActive}
+                            >
+                              {t.reactivate}
                             </Menu.Item>
                           </Menu.Dropdown>
                         </Menu>
@@ -483,6 +597,13 @@ function ProductListPage() {
                             {product.status}
                           </Badge>
                           <Badge
+                            size="xs"
+                            color={product.isActive ? "green" : "gray"}
+                            variant="light"
+                          >
+                            {product.isActive ? t.active : t.inactive}
+                          </Badge>
+                          <Badge
                             color={product.totalStock <= 5 ? "red" : "green"}
                             variant="light"
                             size="xs"
@@ -508,8 +629,18 @@ function ProductListPage() {
                           <Menu.Item
                             leftSection={<Trash2 size={14} />}
                             color="red"
+                            onClick={() => handleToggleActive(product.id, false)}
+                            disabled={toggleActiveMutation.isPending || !product.isActive}
                           >
                             {t.deactivate}
+                          </Menu.Item>
+                          <Menu.Item
+                            leftSection={<RotateCcw size={14} />}
+                            color="teal"
+                            onClick={() => handleToggleActive(product.id, true)}
+                            disabled={toggleActiveMutation.isPending || product.isActive}
+                          >
+                            {t.reactivate}
                           </Menu.Item>
                         </Menu.Dropdown>
                       </Menu>

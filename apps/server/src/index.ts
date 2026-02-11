@@ -23,6 +23,7 @@ import { ordersRouter } from "./routes/orders";
 import { vendorDashboardRouter } from "./routes/vendor-dashboard";
 import { adminRouter } from "./routes/admin";
 import { bannersRouter } from "./routes/banners";
+import { notificationsRouter } from "./routes/notifications";
 import { openAPIRouteHandler } from 'hono-openapi';
 
 export type AppEnv = {
@@ -70,6 +71,7 @@ const app = new Hono<AppEnv>()
   .route("/api/vendor-dashboard", vendorDashboardRouter)
   .route("/api/admin", adminRouter)
   .route("/api/banners", bannersRouter)
+  .route("/api/notifications", notificationsRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))

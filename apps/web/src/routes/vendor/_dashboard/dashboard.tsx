@@ -34,6 +34,7 @@ import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
 import type { VendorDashboardOverviewDTO } from "@kineDao.com/api-types/vendor-dashboard";
+import { PushNotificationPrompt } from "@/components/notifications/push-notification-prompt";
 
 const VENDOR_DASHBOARD_OVERVIEW_QUERY_KEY = ["vendor-dashboard-overview"] as const;
 
@@ -154,6 +155,9 @@ function DashboardOverviewPage() {
 
   return (
     <Stack gap="xl">
+      {/* Push Notification Prompt (shown after first login) */}
+      <PushNotificationPrompt context="vendor" language={language} />
+
       {/* Welcome */}
       <Box>
         <Title

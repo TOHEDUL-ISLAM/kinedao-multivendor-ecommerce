@@ -26,6 +26,7 @@ import {
 	adminVendorStatusUpdateSchema,
 	adminProductListQuerySchema,
 	adminProductStatusUpdateSchema,
+	adminProductActiveUpdateSchema,
 	adminOrderListQuerySchema,
 	adminUserListQuerySchema,
 	adminPayoutProcessSchema,
@@ -52,6 +53,7 @@ import {
 	adminAuthMiddleware,
 	type AdminEnv,
 } from "../middleware/admin-auth";
+import { notify } from "../lib/notification-service";
 
 // Helper: generate slug from name
 function generateSlug(name: string): string {
@@ -576,6 +578,37 @@ export const adminRouter = new Hono<AdminEnv>()
 					applicationId,
 					{ vendorId, reviewNotes },
 				);
+
+				// Send notification to vendor
+				const [vendorUser] = await db
+					.select({ email: user.email, name: user.name })
+					.from(user)
+					.where(eq(user.id, application.userId))
+					.limit(1);
+
+				if (vendorUser) {
+					notify({
+						userId: application.userId,
+						type: "vendor_approved",
+						title: "Vendor Application Approved",
+						titleBn: "বিক্রেতার আবেদন অনুমোদিত",
+						body: `Congratulations! Your vendor application for ${application.shopNameEn} has been approved`,
+						bodyBn: `অভিনন্দন! ${application.shopNameEn} এর জন্য আপনার বিক্রেতার আবেদন অনুমোদিত হয়েছে`,
+						data: {
+							applicationId,
+							vendorId,
+							shopName: application.shopNameEn,
+						},
+						channel: "vendor",
+						emailData: {
+							userEmail: vendorUser.email,
+							userName: application.ownerName,
+							shopName: application.shopNameEn,
+						},
+					}).catch((error) => {
+						console.error(`[ADMIN] Failed to send vendor approval notification:`, error);
+					});
+				}
 			} else {
 				// Rejected
 				await db
@@ -654,8 +687,11 @@ export const adminRouter = new Hono<AdminEnv>()
 						titleBn: products.titleBn,
 						slug: products.slug,
 						status: products.status,
+						pendingReason: products.pendingReason,
+						submittedAt: products.submittedAt,
 						isActive: products.isActive,
 						createdAt: products.createdAt,
+						updatedAt: products.updatedAt,
 						vendorId: vendors.id,
 						vendorName: vendors.name,
 						categoryId: categories.id,
@@ -705,6 +741,10 @@ export const adminRouter = new Hono<AdminEnv>()
 					priceAmount: item.minPrice,
 					isActive: item.isActive ?? true,
 					createdAt: item.createdAt.toISOString(),
+					updatedAt: item.updatedAt.toISOString(),
+					submittedAt: item.submittedAt?.toISOString() ?? null,
+					pendingReason: item.pendingReason ?? null,
+					hasVendorUpdate: item.pendingReason === "vendor_update",
 				})),
 				total,
 				page: query.page,
@@ -811,6 +851,11 @@ export const adminRouter = new Hono<AdminEnv>()
 					weightLimitKg: products.weightLimitKg,
 					expiryDate: products.expiryDate,
 					status: products.status,
+					pendingReason: products.pendingReason,
+					submittedAt: products.submittedAt,
+					reviewNotes: products.reviewNotes,
+					lastReviewedAt: products.lastReviewedAt,
+					lastReviewedBy: products.lastReviewedBy,
 					isActive: products.isActive,
 					vendorId: vendors.id,
 					vendorName: vendors.name,
@@ -871,6 +916,12 @@ export const adminRouter = new Hono<AdminEnv>()
 				expiryDate: productRow.expiryDate?.toISOString() || null,
 				status: productRow.status,
 				isActive: productRow.isActive ?? true,
+				submittedAt: productRow.submittedAt?.toISOString() ?? null,
+				pendingReason: productRow.pendingReason ?? null,
+				hasVendorUpdate: productRow.pendingReason === "vendor_update",
+				reviewNotes: productRow.reviewNotes ?? null,
+				lastReviewedAt: productRow.lastReviewedAt?.toISOString() ?? null,
+				lastReviewedBy: productRow.lastReviewedBy ?? null,
 				vendorId: productRow.vendorId || "",
 				vendorName: productRow.vendorName || "Unknown",
 				images: imageRows.map((img) => ({
@@ -949,7 +1000,13 @@ export const adminRouter = new Hono<AdminEnv>()
 
 			await db
 				.update(products)
-				.set({ status })
+				.set({
+					status,
+					pendingReason: null,
+					lastReviewedAt: new Date(),
+					lastReviewedBy: adminUserId,
+					reviewNotes: reviewNotes || null,
+				})
 				.where(eq(products.id, productId));
 
 			// Log action
@@ -961,7 +1018,138 @@ export const adminRouter = new Hono<AdminEnv>()
 				{ reviewNotes },
 			);
 
+			// Send notification to vendor
+			const [vendorApp] = await db
+				.select({ userId: vendorApplications.userId })
+				.from(vendorApplications)
+				.where(eq(vendorApplications.vendorId, product.vendorId))
+				.limit(1);
+
+			if (vendorApp) {
+				const [vendorUser] = await db
+					.select({ email: user.email, name: user.name })
+					.from(user)
+					.where(eq(user.id, vendorApp.userId))
+					.limit(1);
+
+				if (vendorUser) {
+					if (status === "approved") {
+						notify({
+							userId: vendorApp.userId,
+							type: "product_approved",
+							title: "Product Approved",
+							titleBn: "পণ্য অনুমোদিত",
+							body: `Your product "${product.title}" has been approved`,
+							bodyBn: `আপনার পণ্য "${product.title}" অনুমোদিত হয়েছে`,
+							data: {
+								productId,
+								productTitle: product.title,
+							},
+							channel: "vendor",
+							emailData: {
+								userEmail: vendorUser.email,
+								userName: vendorUser.name,
+								productTitle: product.title,
+							},
+						}).catch((error) => {
+							console.error(`[ADMIN] Failed to send product approval notification:`, error);
+						});
+					} else {
+						notify({
+							userId: vendorApp.userId,
+							type: "product_rejected",
+							title: "Product Needs Changes",
+							titleBn: "পণ্যে পরিবর্তন প্রয়োজন",
+							body: `Your product "${product.title}" requires changes`,
+							bodyBn: `আপনার পণ্য "${product.title}" পরিবর্তন প্রয়োজন`,
+							data: {
+								productId,
+								productTitle: product.title,
+								reviewNotes: reviewNotes || null,
+							},
+							channel: "vendor",
+							emailData: {
+								userEmail: vendorUser.email,
+								userName: vendorUser.name,
+								productTitle: product.title,
+								reviewNotes: reviewNotes || "",
+							},
+						}).catch((error) => {
+							console.error(`[ADMIN] Failed to send product rejection notification:`, error);
+						});
+					}
+				}
+			}
+
 			return c.json({ message: "Status updated successfully" }, 200);
+		},
+	)
+
+	// PATCH /products/:productId/active - Activate or deactivate product
+	.patch(
+		"/products/:productId/active",
+		describeRoute({
+			tags: ["Admin - Products"],
+			summary: "Update product active state",
+			description: "Force activate or deactivate a product",
+			responses: {
+				200: {
+					description: "Active state updated successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ message: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Product not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminProductActiveUpdateSchema),
+		async (c) => {
+			const productId = c.req.param("productId");
+			const adminUserId = c.var.adminUserId;
+			const { isActive, reason } = c.req.valid("json");
+
+			const [product] = await db
+				.select({ id: products.id })
+				.from(products)
+				.where(eq(products.id, productId))
+				.limit(1);
+
+			if (!product) {
+				return c.json({ error: "Product not found" }, 404);
+			}
+
+			await db
+				.update(products)
+				.set({ isActive })
+				.where(eq(products.id, productId));
+
+			await logAdminAction(
+				adminUserId,
+				isActive ? "reactivate_product" : "deactivate_product",
+				"product",
+				productId,
+				{ reason: reason || null },
+			);
+
+			return c.json(
+				{
+					message: isActive
+						? "Product reactivated successfully"
+						: "Product deactivated successfully",
+					id: productId,
+					isActive,
+				},
+				200,
+			);
 		},
 	)
 
@@ -1186,6 +1374,8 @@ export const adminRouter = new Hono<AdminEnv>()
 							titleBn: snapshot.titleBn,
 							slug: snapshot.slug,
 							image: snapshot.image,
+							selectedOptions: snapshot.selectedOptions ?? null,
+							skuCode: snapshot.skuCode ?? null,
 						},
 					};
 				}),
