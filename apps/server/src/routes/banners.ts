@@ -5,6 +5,7 @@ import { db } from "@kineDao.com/db";
 import { banners } from "@kineDao.com/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { getBannersQuerySchema, type BannerDTO } from "@kineDao.com/api-types/catalog";
+import { getS3Url } from "@kineDao.com/db/lib/s3-helpers";
 import { z } from "zod";
 
 const bannersRouter = new Hono()
@@ -62,6 +63,7 @@ const bannersRouter = new Hono()
 					subtitleEn: banners.subtitleEn,
 					subtitleBn: banners.subtitleBn,
 					imageUrl: banners.imageUrl,
+					s3Key: banners.s3Key,
 					linkUrl: banners.linkUrl,
 					priceLabel: banners.priceLabel,
 					badgeText: banners.badgeText,
@@ -84,8 +86,11 @@ const bannersRouter = new Hono()
 				return true;
 			});
 
-			// Remove scheduling fields from response (internal only)
-			const response: BannerDTO[] = activeBanners.map(({ startsAt, endsAt, ...banner }) => banner);
+			// Remove scheduling/internal fields, generate fresh URL from s3Key
+			const response: BannerDTO[] = activeBanners.map(({ startsAt, endsAt, s3Key, ...banner }) => ({
+				...banner,
+				imageUrl: s3Key ? getS3Url(s3Key) : banner.imageUrl,
+			}));
 
 			return c.json(response, 200);
 		}

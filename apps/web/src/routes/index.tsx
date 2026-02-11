@@ -7,7 +7,7 @@ import type { HomePageResponse } from "@kineDao.com/api-types/catalog";
 // Components
 import { CategoriesSection, CategoriesSectionSkeleton } from "@/components/home/categories-section";
 import { ProductBlock, ProductBlockSkeleton } from "@/components/home/product-block";
-import { PopularBrands, PopularBrandsSkeleton } from "@/components/home/popular-brands";
+
 import { TrustBadges, TrustBadgesSkeleton } from "@/components/home/trust-badges";
 import { AgeGroupSection, AgeGroupSectionSkeleton } from "@/components/home/age-group-section";
 import { TestimonialsSection, TestimonialsSectionSkeleton } from "@/components/home/testimonials-section";
@@ -52,7 +52,7 @@ async function fetchHomeData(): Promise<HomePageResponse> {
 
 async function fetchBanners(placement: string): Promise<BannerDTO[]> {
   try {
-    const response = await api.banners["/"].$get({
+    const response = await api.banners.$get({
       query: { placement },
     });
     if (!response.ok) {

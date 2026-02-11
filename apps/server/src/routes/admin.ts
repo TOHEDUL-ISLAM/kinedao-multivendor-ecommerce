@@ -54,6 +54,7 @@ import {
 	type AdminEnv,
 } from "../middleware/admin-auth";
 import { notify } from "../lib/notification-service";
+import { deleteFile } from "../lib/file-upload";
 
 // Helper: generate slug from name
 function generateSlug(name: string): string {
@@ -1793,7 +1794,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				badgeColor: item.badgeColor,
 				ctaText: item.ctaText,
 				discountPercentage: item.discountPercentage,
-				imageUrl: item.imageUrl,
+				imageUrl: item.s3Key ? getS3Url(item.s3Key) : item.imageUrl,
 				s3Key: item.s3Key,
 				linkUrl: item.linkUrl,
 				placement: item.placement,
@@ -1852,7 +1853,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					badgeColor: input.badgeColor || null,
 					ctaText: input.ctaText || null,
 					discountPercentage: input.discountPercentage || null,
-					imageUrl: input.imageUrl,
+					imageUrl: getS3Url(input.s3Key),
 					s3Key: input.s3Key,
 					linkUrl: input.linkUrl || null,
 					placement: input.placement,
@@ -1931,6 +1932,13 @@ export const adminRouter = new Hono<AdminEnv>()
 				}
 			}
 
+			// If image changed, delete old S3 file
+			if (banner.s3Key && input.s3Key !== banner.s3Key) {
+				deleteFile(banner.s3Key).catch((err) =>
+					console.error("Failed to delete old banner image:", err),
+				);
+			}
+
 			await db
 				.update(banners)
 				.set({
@@ -1943,7 +1951,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					badgeColor: input.badgeColor || null,
 					ctaText: input.ctaText || null,
 					discountPercentage: input.discountPercentage || null,
-					imageUrl: input.imageUrl,
+					imageUrl: getS3Url(input.s3Key),
 					s3Key: input.s3Key,
 					linkUrl: input.linkUrl || null,
 					placement: input.placement,
@@ -1998,13 +2006,20 @@ export const adminRouter = new Hono<AdminEnv>()
 			const adminUserId = c.var.adminUserId;
 
 			const [banner] = await db
-				.select()
+				.select({ id: banners.id, s3Key: banners.s3Key, titleEn: banners.titleEn })
 				.from(banners)
 				.where(eq(banners.id, bannerId))
 				.limit(1);
 
 			if (!banner) {
 				return c.json({ error: "Banner not found" }, 404);
+			}
+
+			// Delete S3 file (fire-and-forget, don't block response)
+			if (banner.s3Key) {
+				deleteFile(banner.s3Key).catch((err) =>
+					console.error("Failed to delete banner S3 file:", err),
+				);
 			}
 
 			await db.delete(banners).where(eq(banners.id, bannerId));

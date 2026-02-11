@@ -30,6 +30,7 @@ export const api = {
   orders: apiClient.api.orders,
   vendorDashboard: apiClient.api["vendor-dashboard"],
   admin: apiClient.api.admin,
+  banners: apiClient.api.banners,
   notifications: apiClient.api.notifications,
   wishlist: apiClient.api.wishlist,
 };

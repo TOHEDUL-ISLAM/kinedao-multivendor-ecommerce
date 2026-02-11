@@ -120,6 +120,11 @@ export async function uploadFile(
       s3Key = `vendors/${vendorDocId}/documents/${uuid}.${ext}`;
       break;
 
+    case "banners":
+      // Banners: banners/{uuid}.{ext}
+      s3Key = `banners/${uuid}.${ext}`;
+      break;
+
     default:
       // Fallback (shouldn't happen)
       s3Key = `uploads/${options.userId}/${uuid}.${ext}`;
