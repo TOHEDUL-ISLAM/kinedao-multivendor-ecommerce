@@ -147,6 +147,8 @@ export const translations = {
     "home.featuredCollections": "Featured Collections",
     "home.shopCollection": "Shop Collection",
     "home.trendingBrands": "Trending Brands",
+    "home.topTrends": "New Arrivals",
+    "home.viewAllTrends": "View All",
 
     // Trust Badges
     "trust.fastDelivery": "Fast Delivery",
@@ -928,6 +930,8 @@ export const translations = {
     "home.featuredCollections": "ফিচার্ড কালেকশন",
     "home.shopCollection": "কালেকশন দেখুন",
     "home.trendingBrands": "ট্রেন্ডিং ব্র্যান্ড",
+    "home.topTrends": "নতুন আগমন",
+    "home.viewAllTrends": "সব দেখুন",
 
     // Trust Badges
     "trust.fastDelivery": "দ্রুত ডেলিভারি",

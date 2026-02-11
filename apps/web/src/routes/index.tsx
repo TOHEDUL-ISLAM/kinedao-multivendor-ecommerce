@@ -5,7 +5,6 @@ import { useTranslation } from "@/hooks/use-translation";
 import type { HomePageResponse } from "@kineDao.com/api-types/catalog";
 
 // Components
-import { HeroSection } from "@/components/home/hero-section";
 import { CategoriesSection, CategoriesSectionSkeleton } from "@/components/home/categories-section";
 import { ProductBlock, ProductBlockSkeleton } from "@/components/home/product-block";
 import { PopularBrands, PopularBrandsSkeleton } from "@/components/home/popular-brands";
@@ -17,6 +16,7 @@ import { FeaturedCollections, FeaturedCollectionsSkeleton } from "@/components/h
 import { NewsletterSection } from "@/components/home/newsletter-section";
 import { HeroBanners } from "@/components/homepage/hero-banners";
 import { PromotionalBanners } from "@/components/homepage/promotional-banners";
+import { TopTrendsPanel } from "@/components/homepage/top-trends-panel";
 import type { BannerDTO } from "@kineDao.com/api-types/catalog";
 
 export const Route = createFileRoute("/")({
@@ -105,18 +105,28 @@ function HomePage() {
 
   return (
     <div className="flex flex-col bg-background min-h-screen">
-      {/* Hero Section - Banner Management System */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Hero Carousel - 2/3 width on desktop */}
-          <div className="lg:col-span-2">
+      {/* Hero Section — SHEAN-style 3-column layout */}
+      <section className="container mx-auto px-4 pt-6 pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
+          {/* Left: Promotional side banners (desktop only) */}
+          <div className="hidden lg:flex lg:col-span-3 flex-col">
+            <PromotionalBanners banners={promoBanners} layout="vertical" />
+          </div>
+
+          {/* Center: Hero carousel */}
+          <div className="lg:col-span-6">
             <HeroBanners banners={heroBanners} />
           </div>
 
-          {/* Promotional Cards - 1/3 width on desktop */}
-          <div className="lg:col-span-1">
-            <PromotionalBanners banners={promoBanners} />
+          {/* Right: New Arrivals / Top Trends (desktop only) */}
+          <div className="hidden lg:block lg:col-span-3">
+            <TopTrendsPanel products={data?.newArrivals || []} />
           </div>
+        </div>
+
+        {/* Mobile: Promo cards as horizontal row */}
+        <div className="lg:hidden mt-4 grid grid-cols-3 gap-3">
+          <PromotionalBanners banners={promoBanners} layout="horizontal" />
         </div>
       </section>
 
