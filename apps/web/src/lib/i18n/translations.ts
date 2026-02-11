@@ -16,6 +16,7 @@ export const translations = {
     "header.helpCenter": "Help Center",
     "header.account": "Account",
     "header.choice": "KineDao Choice",
+    "header.wishlist": "Wishlist",
 
     // Navigation
     "nav.home": "Home",
@@ -417,6 +418,23 @@ export const translations = {
     "favorites.added": "Added to favorites",
     "favorites.removed": "Removed from favorites",
 
+    // Wishlist
+    "wishlist.title": "My Wishlist",
+    "wishlist.empty": "Your wishlist is empty",
+    "wishlist.emptyDesc": "Save products you love and come back anytime.",
+    "wishlist.continueShopping": "Continue Shopping",
+    "wishlist.added": "Item added to your wishlist",
+    "wishlist.removed": "Item removed from your wishlist",
+    "wishlist.addFailed": "Couldn't update wishlist. Please try again.",
+    "wishlist.loading": "Loading your wishlist...",
+    "wishlist.remove": "Remove",
+    "wishlist.removeAll": "Remove All",
+    "wishlist.removedAll": "All wishlist items removed",
+    "wishlist.removeAllFailed": "Couldn't remove all wishlist items.",
+    "wishlist.addToCart": "Add to Cart",
+    "wishlist.addToCartSuccess": "Added to cart",
+    "wishlist.addToCartFailed": "Couldn't add item to cart.",
+
     // Common
     "common.loading": "Loading...",
     "common.error": "Something went wrong",
@@ -779,6 +797,7 @@ export const translations = {
     "header.helpCenter": "সহায়তা কেন্দ্র",
     "header.account": "অ্যাকাউন্ট",
     "header.choice": "কিনেদাও চয়েস",
+    "header.wishlist": "উইশলিস্ট",
 
     // Navigation
     "nav.home": "হোম",
@@ -1179,6 +1198,23 @@ export const translations = {
     // Favorites
     "favorites.added": "পছন্দে যোগ হয়েছে",
     "favorites.removed": "পছন্দ থেকে সরানো হয়েছে",
+
+    // Wishlist
+    "wishlist.title": "আমার উইশলিস্ট",
+    "wishlist.empty": "আপনার উইশলিস্ট খালি",
+    "wishlist.emptyDesc": "পছন্দের পণ্য সংরক্ষণ করুন এবং পরে ফিরে আসুন।",
+    "wishlist.continueShopping": "কেনাকাটা চালিয়ে যান",
+    "wishlist.added": "পণ্যটি উইশলিস্টে যোগ হয়েছে",
+    "wishlist.removed": "পণ্যটি উইশলিস্ট থেকে সরানো হয়েছে",
+    "wishlist.addFailed": "উইশলিস্ট আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+    "wishlist.loading": "উইশলিস্ট লোড হচ্ছে...",
+    "wishlist.remove": "সরান",
+    "wishlist.removeAll": "সব সরান",
+    "wishlist.removedAll": "সব উইশলিস্ট আইটেম সরানো হয়েছে",
+    "wishlist.removeAllFailed": "সব উইশলিস্ট আইটেম সরানো যায়নি।",
+    "wishlist.addToCart": "কার্টে যোগ করুন",
+    "wishlist.addToCartSuccess": "কার্টে যোগ হয়েছে",
+    "wishlist.addToCartFailed": "কার্টে যোগ করা যায়নি।",
 
     // Common
     "common.loading": "লোড হচ্ছে...",

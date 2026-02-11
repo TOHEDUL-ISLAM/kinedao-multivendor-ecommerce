@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, Star, ShoppingCart, Check, Eye, Loader2 } from "lucide-react";
+import { Heart, Star, ShoppingCart, Check, Eye, Loader2, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { useFavoritesStore } from "@/stores/favorites-store";
 import { useQuickViewStore } from "@/stores/quick-view-store";
 import { api } from "@/lib/api-client";
 import { formatPrice, calculateDiscountPercent, formatRating } from "@/lib/format";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export interface ProductCardData {
@@ -49,14 +50,16 @@ interface ProductCardProps {
   product: ProductCardData;
   className?: string;
   index?: number;
+  onRemove?: () => void;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onRemove }: ProductCardProps) {
   const { t, language } = useTranslation();
   const addToCart = useCartStore((state) => state.addItem);
-  const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
   const openQuickView = useQuickViewStore((state) => state.open);
   const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
   const [loadingAction, setLoadingAction] = useState<"buyNow" | "addToCart" | null>(null);
   const addTimeoutRef = useRef<number | null>(null);
 
@@ -179,10 +182,22 @@ export function ProductCard({ product }: ProductCardProps) {
     openQuickView(product.id);
   };
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    const added = toggleFavorite(product.id);
-    toast.success(added ? t("favorites.added") : t("favorites.removed"));
+    const previous = isFav;
+    const next = await toggleFavorite(product.id, !!session);
+
+    if (next === previous) {
+      toast.error(t("wishlist.addFailed"), {
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    toast.success(next ? t("wishlist.added") : t("wishlist.removed"), {
+      position: "bottom-right",
+    });
   };
 
   return (
@@ -212,13 +227,14 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         
         {/* Wishlist button */}
-        <button 
+        <button
           className={cn(
-            "absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-sm transition-all duration-300",
-            "opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0",
+            "absolute top-3 right-3 rounded-full bg-white/90 shadow-sm transition-colors duration-200",
+            "h-10 w-10 flex items-center justify-center touch-manipulation",
             isFav ? "text-red-500" : "text-gray-500 hover:text-red-500"
           )}
           onClick={handleToggleFavorite}
+          aria-label={isFav ? t("wishlist.remove") : t("header.wishlist")}
         >
           <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
         </button>
@@ -323,6 +339,21 @@ export function ProductCard({ product }: ProductCardProps) {
               ) : (
                 <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               )}
+            </Button>
+          )}
+          {onRemove && (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full h-8 w-8 sm:h-10 sm:w-10 p-0 shrink-0 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove();
+              }}
+              aria-label={t("wishlist.remove")}
+            >
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Button>
           )}
         </div>

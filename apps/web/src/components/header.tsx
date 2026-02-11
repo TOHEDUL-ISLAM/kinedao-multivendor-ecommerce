@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavoritesStore } from "@/stores/favorites-store";
 import { ensureGuestId } from "@/lib/cart-session";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useTheme } from "next-themes";
@@ -39,8 +40,10 @@ export default function Header() {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const cartCount = useCartStore((state) => state.itemCount);
+  const favoriteCount = useFavoritesStore((state) => state.productIds.length);
   const fetchCart = useCartStore((state) => state.fetchCart);
   const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
+  const mergeGuestWishlist = useFavoritesStore((state) => state.mergeGuestToServer);
 
   const { data: session, isPending } = authClient.useSession();
   const isLoggedIn = !!session;
@@ -63,6 +66,12 @@ export default function Header() {
       void mergeGuestCart(session.user.id);
     }
   }, [mergeGuestCart, session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      void mergeGuestWishlist(session.user.id);
+    }
+  }, [mergeGuestWishlist, session?.user?.id]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -128,9 +137,19 @@ export default function Header() {
               </Button>
 
               {/* Wishlist */}
-              <Link to="/catalog">
-                <Button variant="ghost" size="icon" className="rounded-full hidden sm:flex">
+              <Link to="/wishlist">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full relative"
+                  aria-label={t("header.wishlist")}
+                >
                   <Heart className="w-5 h-5" />
+                  {favoriteCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground rounded-full">
+                      {favoriteCount > 9 ? "9+" : favoriteCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
 

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -54,6 +55,11 @@ import { Route as VendorDashboardOrdersIndexRouteImport } from './routes/vendor/
 import { Route as VendorDashboardProductsNewRouteImport } from './routes/vendor/_dashboard/products/new'
 import { Route as VendorDashboardProductsProductIdEditRouteImport } from './routes/vendor/_dashboard/products/$productId.edit'
 
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/wishlist': typeof WishlistRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
@@ -346,6 +353,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/wishlist': typeof WishlistRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
@@ -393,6 +401,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/track-order': typeof TrackOrderRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/wishlist': typeof WishlistRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/category/$slug': typeof CategorySlugRoute
@@ -441,6 +450,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/wishlist'
     | '/account/notifications'
     | '/admin'
     | '/category/$slug'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/wishlist'
     | '/account/notifications'
     | '/admin'
     | '/category/$slug'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/track-order'
     | '/verify-email'
+    | '/wishlist'
     | '/account/notifications'
     | '/admin/_layout'
     | '/category/$slug'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TrackOrderRoute: typeof TrackOrderRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  WishlistRoute: typeof WishlistRoute
   AccountNotificationsRoute: typeof AccountNotificationsRoute
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   CategorySlugRoute: typeof CategorySlugRoute
@@ -594,6 +607,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -976,6 +996,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TrackOrderRoute: TrackOrderRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  WishlistRoute: WishlistRoute,
   AccountNotificationsRoute: AccountNotificationsRoute,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   CategorySlugRoute: CategorySlugRoute,

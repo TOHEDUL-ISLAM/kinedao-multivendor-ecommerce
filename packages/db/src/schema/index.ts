@@ -17,6 +17,9 @@ export * from "./home";
 // Cart schemas
 export * from "./cart";
 
+// Wishlist schemas
+export * from "./wishlist";
+
 // Vendor applications schema
 export * from "./vendor-applications";
 

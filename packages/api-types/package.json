@@ -11,7 +11,8 @@
     "./vendor": "./src/vendor.ts",
     "./checkout": "./src/checkout.ts",
     "./vendor-dashboard": "./src/vendor-dashboard.ts",
-    "./admin": "./src/admin.ts"
+    "./admin": "./src/admin.ts",
+    "./wishlist": "./src/wishlist.ts"
   },
   "dependencies": {
     "zod": "catalog:"

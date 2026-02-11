@@ -24,3 +24,6 @@ export * from "./admin";
 
 // Re-export all types from notifications
 export * from "./notifications";
+
+// Re-export all types from wishlist
+export * from "./wishlist";

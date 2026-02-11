@@ -31,4 +31,5 @@ export const api = {
   vendorDashboard: apiClient.api["vendor-dashboard"],
   admin: apiClient.api.admin,
   notifications: apiClient.api.notifications,
+  wishlist: apiClient.api.wishlist,
 };
