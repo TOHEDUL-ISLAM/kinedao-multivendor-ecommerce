@@ -14,6 +14,7 @@ import { useTranslation } from "@/hooks/use-translation";
 
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { User } from "lucide-react";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -34,8 +35,18 @@ export default function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {session.user.name}
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-10 w-10 p-0"
+          />
+        }
+      >
+        <div className="h-9 w-9 rounded-full border border-primary/30 bg-primary/10 text-primary flex items-center justify-center transition-colors transition-transform duration-200 hover:bg-primary/20 hover:border-primary/50 hover:-translate-y-0.5">
+          <User className="h-5 w-5 text-primary" />
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>

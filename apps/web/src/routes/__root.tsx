@@ -1,7 +1,7 @@
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { MantineProvider } from "@mantine/core";
 
@@ -77,6 +77,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootDocument,
 });
 
+function MantineThemeBridge({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme } = useTheme();
+  const forceColorScheme = resolvedTheme === "dark" ? "dark" : "light";
+
+  return <MantineProvider forceColorScheme={forceColorScheme}>{children}</MantineProvider>;
+}
+
 function RootDocument() {
   const location = useLocation();
   const isVendorForm = location.pathname === "/vendor/apply/form";
@@ -94,13 +101,13 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body>
-        <MantineProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <MantineThemeBridge>
             <QueryClientProvider client={queryClient}>
               <ClientOnly
                 fallback={
@@ -129,8 +136,8 @@ function RootDocument() {
                 </ReactLenis>
               </ClientOnly>
             </QueryClientProvider>
-          </ThemeProvider>
-        </MantineProvider>
+          </MantineThemeBridge>
+        </ThemeProvider>
 
         <TanStackRouterDevtools position="bottom-left" />
         <Scripts />

@@ -267,6 +267,7 @@ export const catalogQuerySchema = z.object({
   max: z.coerce.number().int().min(0).optional(),
   rating: z.coerce.number().min(0).max(5).optional(),
   sort: z.enum(["price_asc", "price_desc", "newest", "bestseller", "rating"]).optional(),
+  page: z.coerce.number().int().min(1).optional(),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

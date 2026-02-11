@@ -127,7 +127,7 @@ const catalogRouter = new Hono().get(
   }),
   zValidator("query", catalogQuerySchema),
   async (c) => {
-  const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit } = c.req.valid("query");
+  const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit, page } = c.req.valid("query");
 
   // Build base conditions (exclude cursor for total count)
   const conditions = [eq(products.isActive, true), eq(products.status, "approved")];
@@ -275,8 +275,8 @@ const catalogRouter = new Hono().get(
     );
   }
 
-  // Cursor-based pagination
-  if (cursor) {
+  // Cursor-based pagination (ignored when page is provided)
+  if (!page && cursor) {
     try {
       const [cursorId, cursorValue] = cursor.split("_");
       if (!cursorId) throw new Error("Invalid cursor");
@@ -332,8 +332,13 @@ const catalogRouter = new Hono().get(
       queryBuilder = queryBuilder.orderBy(asc(products.id)) as any;
   }
 
-  // Limit + 1 to check for more
-  const rows = await (queryBuilder as any).limit(limit + 1);
+  // Apply limit/offset
+  const pageOffset = page ? (Math.max(1, page) - 1) * limit : 0;
+
+  // Limit + 1 to check for more (cursor-based only)
+  const rows = await (queryBuilder as any)
+    .limit(page ? limit : limit + 1)
+    .offset(page ? pageOffset : 0);
 
   // Format products
   let formattedProducts = await Promise.all(
@@ -354,7 +359,7 @@ const catalogRouter = new Hono().get(
   }
 
   // Calculate next cursor
-  const hasMore = rows.length > limit;
+  const hasMore = !page && rows.length > limit;
   let nextCursor: string | null = null;
 
   if (hasMore && formattedProducts.length > 0) {

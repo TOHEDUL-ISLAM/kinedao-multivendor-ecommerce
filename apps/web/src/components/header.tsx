@@ -229,10 +229,6 @@ export default function Header() {
               </Link>
 
               <div className="flex-1" />
-
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0 text-primary font-semibold">
-                ✨ {t("header.choice")}
-              </Button>
             </div>
           </div>
         </nav>
