@@ -26,6 +26,7 @@
     "db:studio": "bun run --filter @kineDao.com/db db:studio",
     "db:generate": "bun run --filter @kineDao.com/db db:generate",
     "db:migrate": "bun run --filter @kineDao.com/db db:migrate",
+    "db:baseline": "bun run --filter @kineDao.com/db db:baseline",
     "db:seed": "bun run --filter server seed",
     "prepare": "husky"
   },

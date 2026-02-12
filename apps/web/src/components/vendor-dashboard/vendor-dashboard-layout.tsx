@@ -19,7 +19,6 @@ import {
   Wallet,
   Settings,
   MessageSquare,
-  Baby,
   Sun,
   Moon,
   type LucideIcon,
@@ -30,6 +29,7 @@ import type { Language } from "@/lib/i18n/translations";
 import { LanguageToggle } from "@/components/language-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { RoleSwitcher } from "@/components/auth/role-switcher";
+import { KineDaoLogo } from "@/components/kinedao-logo";
 
 interface NavItem {
   icon: LucideIcon;
@@ -158,31 +158,11 @@ export function VendorDashboardLayout({
               style={{ textDecoration: "none" }}
             >
               <Group gap="sm">
-                <Baby
-                  size={32}
-                  style={{
-                    color: "oklch(0.85 0.1 350)",
-                    filter: "drop-shadow(0 2px 4px oklch(0.85 0.1 350 / 0.3))",
-                  }}
-                  strokeWidth={2}
-                />
                 <Box visibleFrom="xs">
-                  <Text
-                    fw={700}
-                    size="xl"
-                    style={{
-                      color: isDark ? "oklch(0.82 0.12 335)" : "oklch(0.58 0.18 335)",
-                      lineHeight: 1.2,
-                      display: "block",
-                      fontFamily:
-                        "'Noto Sans Bengali', 'Hind Siliguri', Inter, sans-serif",
-                    }}
-                  >
-                    কিনেদাও
-                  </Text>
+                  <KineDaoLogo iconClassName="h-7 w-7" textClassName="text-xl pb-0" />
                   <Text
                     size="xs"
-                    mt={-2}
+                    mt={-1}
                     style={{
                       color: isDark ? "oklch(0.65 0.02 260)" : "oklch(0.5 0.02 260)",
                     }}

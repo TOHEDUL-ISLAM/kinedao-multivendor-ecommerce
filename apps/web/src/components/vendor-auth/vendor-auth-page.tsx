@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Baby, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useTranslation } from "@/hooks/use-translation";
 import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
+import { KineDaoLogo } from "@/components/kinedao-logo";
 
 interface VendorAuthPageProps {
 	redirectTo: string;
@@ -41,10 +42,7 @@ export function VendorAuthPage({
 					<div className="relative z-10 flex min-h-screen w-full items-start justify-center px-4 py-6 sm:px-8 lg:items-center lg:justify-start lg:pl-24 lg:pr-12 xl:pl-32 xl:pr-16">
 						<div className="w-full max-w-[470px]">
 							<Link to="/" className="mb-8 inline-flex items-center gap-2">
-								<Baby className="h-8 w-8 text-pink-500" />
-								<span className="pb-1 text-2xl font-bold text-transparent bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text dark:from-pink-400 dark:to-blue-400">
-									কিনেদাও
-								</span>
+								<KineDaoLogo />
 							</Link>
 
 							<div className="mb-6">

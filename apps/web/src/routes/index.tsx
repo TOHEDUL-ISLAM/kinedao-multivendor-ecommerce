@@ -114,20 +114,20 @@ function HomePage() {
   return (
     <div className="flex flex-col bg-background min-h-screen">
       {/* Hero Section — SHEAN-style 3-column layout */}
-      <section className="container mx-auto px-4 pt-6 pb-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
-          {/* Left: Promotional side banners (desktop only) */}
-          <div className="hidden lg:flex lg:col-span-3 flex-col">
+      <section className="container mx-auto px-4 pt-4 sm:pt-6 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-4">
+          {/* Left: Promotional side banners (large desktop only) */}
+          <div className="hidden xl:flex xl:col-span-3 flex-col">
             <PromotionalBanners banners={promoBanners} layout="vertical" />
           </div>
 
           {/* Center: Hero carousel */}
-          <div className="lg:col-span-6">
+          <div className="md:col-span-8 xl:col-span-6">
             <HeroBanners banners={heroBanners} />
           </div>
 
-          {/* Right: New Arrivals / Top Trends (desktop only) */}
-          <div className="hidden lg:block lg:col-span-3">
+          {/* Right: New Arrivals / Top Trends (tablet and desktop) */}
+          <div className="hidden md:block md:col-span-4 xl:col-span-3">
             {sidebarBanners.length > 0 ? (
               <NewArrivalsBanners banners={sidebarBanners} />
             ) : (
@@ -136,8 +136,8 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Mobile: Promo cards as horizontal row */}
-        <div className="lg:hidden mt-4 grid grid-cols-3 gap-3">
+        {/* Mobile + small tablet: Promo cards row */}
+        <div className="xl:hidden mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
           <PromotionalBanners banners={promoBanners} layout="horizontal" />
         </div>
       </section>

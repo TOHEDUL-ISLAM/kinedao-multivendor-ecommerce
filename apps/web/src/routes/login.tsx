@@ -34,7 +34,14 @@ export const Route = createFileRoute("/login")({
       return;
     }
 
-    const session = await getUser();
+    let session: Awaited<ReturnType<typeof getUser>> | null = null;
+    try {
+      session = await getUser();
+    } catch (error) {
+      console.error("[LoginRoute] getUser failed:", error);
+      session = null;
+    }
+
     if (!session) {
       return;
     }

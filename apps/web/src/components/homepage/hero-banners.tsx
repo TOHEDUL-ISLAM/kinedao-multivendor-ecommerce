@@ -78,7 +78,7 @@ export function HeroBanners({ banners }: HeroBannersProps) {
 				<ChevronLeft className="w-5 h-5 text-zinc-700 dark:text-zinc-200" />
 			}
 			classNames={{
-				root: "h-[280px] sm:h-[350px] lg:h-[420px] rounded-lg lg:rounded-xl overflow-hidden",
+				root: "h-[220px] sm:h-[300px] md:h-[340px] lg:h-[420px] rounded-lg lg:rounded-xl overflow-hidden",
 				viewport: "h-full",
 				container: "h-full",
 				slide: "h-full",
@@ -115,7 +115,7 @@ export function HeroBanners({ banners }: HeroBannersProps) {
 							<div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent" />
 
 							{/* Content — left-aligned overlay */}
-							<div className="relative h-full flex flex-col justify-center px-6 sm:px-8 lg:px-12 max-w-md">
+							<div className="relative h-full flex flex-col justify-center px-4 sm:px-6 md:px-8 lg:px-12 max-w-[85%] sm:max-w-md">
 								{banner.badgeText && (
 									<span
 										className={`inline-block px-3 py-1 rounded-full text-white text-xs sm:text-sm font-bold mb-3 w-fit ${
@@ -134,7 +134,7 @@ export function HeroBanners({ banners }: HeroBannersProps) {
 									</span>
 								)}
 
-								<h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
+								<h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 leading-tight">
 									{title}
 								</h2>
 

@@ -32,6 +32,7 @@ import type { Language } from "@/lib/i18n/translations";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { LanguageToggle } from "@/components/language-toggle";
 import { RoleSwitcher } from "@/components/auth/role-switcher";
+import { KineDaoLogo } from "@/components/kinedao-logo";
 
 interface NavItem {
   icon: LucideIcon;
@@ -187,14 +188,7 @@ export function AdminDashboardLayout({
               style={{ textDecoration: "none" }}
             >
               <Group gap="sm">
-                <LayoutDashboard
-                  size={28}
-                  style={{
-                    color: "oklch(0.65 0.15 175)",
-                    filter: "drop-shadow(0 2px 4px oklch(0.65 0.15 175 / 0.3))",
-                  }}
-                  strokeWidth={2.5}
-                />
+                <KineDaoLogo iconClassName="h-7 w-7" textClassName="text-xl pb-0" />
                 <Box visibleFrom="xs">
                   <Text
                     fw={700}
@@ -205,7 +199,7 @@ export function AdminDashboardLayout({
                       display: "block",
                     }}
                   >
-                    KineDao Admin
+                    {language === "bn" ? "প্রশাসন" : "Administration"}
                   </Text>
                   <Text
                     size="xs"

@@ -11,11 +11,11 @@ export function NewArrivalsBanners({ banners }: NewArrivalsBannersProps) {
 
 	return (
 		<div className="h-full flex flex-col">
-			<h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-3 px-1">
+			<h3 className="text-lg lg:text-xl font-bold text-zinc-900 dark:text-white mb-2 lg:mb-3 px-1">
 				New Arrivals
 			</h3>
 
-			<div className="flex-1 grid grid-cols-3 gap-x-3 gap-y-3">
+			<div className="flex-1 grid grid-cols-3 gap-2 lg:gap-3">
 				{displayBanners.map((banner, index) => {
 					const title =
 						language === "bn" && banner.titleBn

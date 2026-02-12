@@ -121,7 +121,7 @@ function PromoCard({
 		<a
 			href={banner.linkUrl || "#"}
 			className={`group relative overflow-hidden rounded-lg ${
-				compact ? "h-[100px]" : "flex-1 min-h-[120px]"
+				compact ? "h-[92px] sm:h-[100px]" : "flex-1 min-h-[110px] sm:min-h-[120px]"
 			}`}
 		>
 			{/* Background image */}

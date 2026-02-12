@@ -66,7 +66,6 @@ export function BasicInfoSection({
           label={buildFieldLabel(t.titleEn, t.requiredAlways, "teal")}
           value={form.title}
           onChange={(e) => updateField("title", e.currentTarget.value)}
-          required
           error={errors?.title}
           data-field-key="title"
           wrapperProps={{ "data-field-key": "title" }}
@@ -91,7 +90,6 @@ export function BasicInfoSection({
           maxDropdownHeight={320}
           nothingFoundMessage="No category found"
           comboboxProps={{ zIndex: 400, withinPortal: false }}
-          required
           error={errors?.categoryId}
           data-field-key="categoryId"
           wrapperProps={{ "data-field-key": "categoryId", "data-lenis-prevent": true }}

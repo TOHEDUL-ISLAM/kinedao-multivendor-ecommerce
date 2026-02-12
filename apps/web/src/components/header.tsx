@@ -9,7 +9,6 @@ import {
   Menu,
   Sun,
   Moon,
-  Baby,
   MapPin,
   Phone,
   Zap,
@@ -33,6 +32,7 @@ import UserMenu from "@/components/user-menu";
 import { api } from "@/lib/api-client";
 import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
 import { SearchBar } from "./search-bar";
+import { KineDaoLogo } from "./kinedao-logo";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -95,10 +95,10 @@ export default function Header() {
         isScrolled ? "bg-background/80 backdrop-blur-md shadow-sm" : "bg-background"
       }`}>
         {/* Top bar */}
-        <div className="bg-primary text-primary-foreground py-1 text-xs sm:text-sm">
+        <div className="bg-primary text-primary-foreground py-1 text-[11px] sm:text-sm">
           <div className="container mx-auto px-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+              <span className="flex items-center gap-1 cursor-pointer hover:opacity-80 whitespace-nowrap">
                 <MapPin className="w-3 h-3" />
                 {t("header.trackOrder")}
               </span>
@@ -120,14 +120,14 @@ export default function Header() {
         </div>
 
         {/* Main navbar */}
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <Baby className="h-8 w-8 text-pink-500" />
-              <span className="font-bold text-2xl bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent hidden sm:block pb-1">
-                কিনেদাও
-              </span>
+              <KineDaoLogo
+                iconClassName="h-7 w-7 sm:h-8 sm:w-8"
+                textClassName="hidden sm:block"
+              />
             </Link>
 
             {/* Search bar */}
@@ -136,20 +136,20 @@ export default function Header() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
-              <LanguageToggle />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <LanguageToggle className="hidden sm:inline-flex" />
               {/* Theme toggle */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="rounded-full"
+                className="hidden sm:inline-flex rounded-full"
               >
                 {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
 
               {/* Wishlist */}
-              <Link to="/wishlist">
+              <Link to="/wishlist" className="hidden sm:block">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -166,7 +166,11 @@ export default function Header() {
               </Link>
 
               {/* Notifications */}
-              {isLoggedIn && <NotificationBell />}
+              {isLoggedIn ? (
+                <div className="hidden sm:block">
+                  <NotificationBell />
+                </div>
+              ) : null}
 
               {/* Cart */}
               <Link to="/cart"> 
@@ -198,7 +202,7 @@ export default function Header() {
 
               {/* Account */}
               {isSessionPending ? (
-                 <Skeleton className="h-10 w-24 rounded-full" />
+                 <Skeleton className="h-9 w-9 sm:h-10 sm:w-24 rounded-full" />
               ) : isLoggedIn ? (
                 <UserMenu />
               ) : (

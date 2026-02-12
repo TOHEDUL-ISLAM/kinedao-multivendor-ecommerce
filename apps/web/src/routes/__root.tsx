@@ -11,6 +11,7 @@ import { ClientOnly } from "@/components/client-only";
 
 import Header from "../components/header";
 import Footer from "../components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import appCss from "../index.css?url";
 
 export interface RouterAppContext {}
@@ -116,20 +117,22 @@ function RootDocument() {
                 fallback={
                   <div className="min-h-svh flex flex-col">
                     {!hideMainChrome && <Header />}
-                    <main className="flex-1">
+                    <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>
                       <Outlet />
                     </main>
                     {!hideMainChrome && <Footer />}
+                    {!hideMainChrome && <MobileBottomNav />}
                   </div>
                 }
               >
                 <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
                   <div className="min-h-svh flex flex-col">
                     {!hideMainChrome && <Header />}
-                    <main className="flex-1">
+                    <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>
                       <Outlet />
                     </main>
                     {!hideMainChrome && <Footer />}
+                    {!hideMainChrome && <MobileBottomNav />}
                   </div>
 
                   {/* Global Modals */}
