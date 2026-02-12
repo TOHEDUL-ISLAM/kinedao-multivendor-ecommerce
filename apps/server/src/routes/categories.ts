@@ -161,13 +161,17 @@ const categoriesRouter = new Hono().get(
       }
     }
 
-    // Optionally load featured products for root categories
-    if (shouldIncludeFeaturedProducts) {
-      for (const rootNode of rootCategories) {
-        const featuredProducts = await getFeaturedProductsForCategory(rootNode.id, 4);
-        rootNode.featuredProducts = featuredProducts;
-      }
-    }
+	    // Optionally load featured products for root categories
+	    if (shouldIncludeFeaturedProducts) {
+	      await Promise.all(
+	        rootCategories.map(async (rootNode) => {
+	          rootNode.featuredProducts = await getFeaturedProductsForCategory(
+	            rootNode.id,
+	            4,
+	          );
+	        }),
+	      );
+	    }
 
     const response: CategoryTreeResponse = {
       tree: rootCategories,

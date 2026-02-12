@@ -11,7 +11,7 @@ interface StatusTimelineProps {
 }
 
 export function StatusTimeline({
-	status,
+	status: _status,
 	createdAt,
 	confirmedAt,
 	shippedAt,

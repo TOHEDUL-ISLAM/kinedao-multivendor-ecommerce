@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ShoppingCart, ShieldCheck, X, Trash2, Lock, RotateCcw, CheckCircle } from "lucide-react";
+import { AlertTriangle, ShoppingCart, ShieldCheck, Trash2, Lock, RotateCcw, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantitySelector } from "@/components/product/quantity-selector";
@@ -22,7 +22,6 @@ function CartPage() {
   const { t, language } = useTranslation();
   const cart = useCartStore((state) => state.cart);
   const isLoading = useCartStore((state) => state.isLoading);
-  const isSyncing = useCartStore((state) => state.isSyncing);
   const error = useCartStore((state) => state.error);
   const fetchCart = useCartStore((state) => state.fetchCart);
   const removeItem = useCartStore((state) => state.removeItem);

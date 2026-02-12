@@ -100,13 +100,13 @@ export function ShippingStep() {
 			deliveryInstructions: "",
 			isDefault: false,
 		},
-		onSubmit: async ({ value }) => {
-			createAddressMutation.mutate(value);
-		},
-		validators: {
-			onSubmit: shippingAddressSchema,
-		},
-	});
+			onSubmit: async ({ value }) => {
+				createAddressMutation.mutate(value);
+			},
+			validators: {
+				onSubmit: shippingAddressSchema as any,
+			},
+		});
 
 	// Handle address selection
 	const handleAddressSelect = async (address: any) => {

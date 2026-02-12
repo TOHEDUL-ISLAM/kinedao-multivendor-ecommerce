@@ -20,9 +20,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import {
   ShoppingCart,
-  Clock,
   DollarSign,
-  Wallet,
   Package,
   AlertCircle,
   Plus,

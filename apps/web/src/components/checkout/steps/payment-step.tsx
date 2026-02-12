@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
-import { Banknote, Info, Package } from "lucide-react";
+import { Banknote, Info } from "lucide-react";
 import { useMemo } from "react";
 
 export function PaymentStep() {

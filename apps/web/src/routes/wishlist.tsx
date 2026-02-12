@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/use-translation";
 import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
