@@ -90,6 +90,24 @@ export const vendorColors = {
           : "linear-gradient(135deg, oklch(0.9 0.05 145) 0%, oklch(0.92 0.04 140) 100%)",
         color: isDark ? "oklch(0.8 0.15 145)" : "oklch(0.5 0.15 145)",
       },
+      paid_to_admin: {
+        bg: isDark
+          ? "linear-gradient(135deg, oklch(0.3 0.05 175) 0%, oklch(0.28 0.04 165) 100%)"
+          : "linear-gradient(135deg, oklch(0.9 0.05 175) 0%, oklch(0.92 0.04 165) 100%)",
+        color: isDark ? "oklch(0.8 0.15 175)" : "oklch(0.52 0.14 175)",
+      },
+      completed: {
+        bg: isDark
+          ? "linear-gradient(135deg, oklch(0.3 0.05 130) 0%, oklch(0.28 0.04 120) 100%)"
+          : "linear-gradient(135deg, oklch(0.9 0.05 130) 0%, oklch(0.92 0.04 120) 100%)",
+        color: isDark ? "oklch(0.8 0.14 130)" : "oklch(0.45 0.13 130)",
+      },
+      returned: {
+        bg: isDark
+          ? "linear-gradient(135deg, oklch(0.3 0.05 25) 0%, oklch(0.28 0.04 20) 100%)"
+          : "linear-gradient(135deg, oklch(0.9 0.05 25) 0%, oklch(0.92 0.04 20) 100%)",
+        color: isDark ? "oklch(0.82 0.14 25)" : "oklch(0.5 0.15 25)",
+      },
       cancelled: {
         bg: isDark
           ? "linear-gradient(135deg, oklch(0.3 0.05 10) 0%, oklch(0.28 0.04 5) 100%)"

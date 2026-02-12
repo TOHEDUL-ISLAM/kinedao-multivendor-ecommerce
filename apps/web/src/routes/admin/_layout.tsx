@@ -1,7 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { getUser } from "@/functions/get-user";
-import { api } from "@/lib/api-client";
 import { AdminDashboardLayout } from "@/components/admin/admin-dashboard-layout";
+import { redirectToAdminPortalIfNeeded } from "@/lib/admin-portal";
+
+const hasAdminRole = (roles: string[] | null | undefined) =>
+  (roles ?? []).includes("admin") || (roles ?? []).includes("super_admin");
 
 export const Route = createFileRoute("/admin/_layout")({
   component: AdminDashboardLayoutRoute,
@@ -10,17 +14,19 @@ export const Route = createFileRoute("/admin/_layout")({
 
     if (!session) {
       throw redirect({
-        to: "/login",
+        to: "/admin/login",
         search: { redirect: location.href },
       });
     }
 
-    const response = await api.admin.me.$get();
-    if (!response.ok) {
-      throw redirect({ to: "/", search: { error: "access_denied" } });
+    const roles = ((session.user as { roles?: string[] | null }).roles ?? []);
+    if (!hasAdminRole(roles)) {
+      throw redirect({
+        to: "/admin/login",
+        search: { redirect: location.href, reason: "access_denied" },
+      });
     }
-    const adminMe = await response.json() as { isSuperAdmin?: boolean };
-    const isSuperAdmin = Boolean(adminMe.isSuperAdmin);
+    const isSuperAdmin = roles.includes("super_admin");
 
     if (location.pathname === "/admin" || location.pathname === "/admin/") {
       throw redirect({ to: "/admin/dashboard" });
@@ -38,6 +44,12 @@ export const Route = createFileRoute("/admin/_layout")({
 
 function AdminDashboardLayoutRoute() {
   const { adminName, isSuperAdmin } = Route.useLoaderData();
+
+  useEffect(() => {
+    void redirectToAdminPortalIfNeeded(
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
+  }, []);
 
   return (
     <AdminDashboardLayout adminName={adminName} isSuperAdmin={isSuperAdmin}>

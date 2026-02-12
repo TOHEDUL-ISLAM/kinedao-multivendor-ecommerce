@@ -13,6 +13,7 @@ import {
   Skeleton,
   Title,
   Box,
+  Button,
 } from "@mantine/core";
 import {
   Users,
@@ -25,6 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { getAdminPortalHref } from "@/lib/admin-portal";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
 import type { AdminOverviewDTO } from "@kineDao.com/api-types/admin";
@@ -34,13 +36,18 @@ const ADMIN_DASHBOARD_OVERVIEW_QUERY_KEY = ["admin-dashboard-overview"] as const
 async function fetchAdminDashboardOverview(): Promise<AdminOverviewDTO> {
   const response = await api.admin.overview.$get();
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
+    const errorBody = (await response.json().catch(() => null)) as
+      | { error?: string }
+      | null;
     console.error("[AdminDashboard] Fetch error details:", {
       status: response.status,
       statusText: response.statusText,
       body: errorBody
     });
-    throw new Error(errorBody.error || `Failed to fetch admin dashboard overview (${response.status})`);
+    throw new Error(
+      errorBody?.error ||
+        `Failed to fetch admin dashboard overview (${response.status})`,
+    );
   }
   return response.json();
 }
@@ -290,7 +297,9 @@ function AdminDashboardPage() {
               <Button variant="outline" color="red" onClick={async () => {
                 const { authClient } = await import("@/lib/auth-client");
                 await authClient.signOut();
-                window.location.href = "/login?redirect=/admin/dashboard";
+                window.location.href = getAdminPortalHref(
+                  "/admin/login?redirect=/admin/dashboard&reason=access_denied"
+                );
               }}>
                 Sign Out & Try Again
               </Button>

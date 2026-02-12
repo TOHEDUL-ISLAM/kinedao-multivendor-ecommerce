@@ -36,6 +36,18 @@ const statusStyles: Record<string, { background: string; color: string }> = {
     background: "linear-gradient(135deg, oklch(0.9 0.05 145) 0%, oklch(0.92 0.04 140) 100%)",
     color: "oklch(0.5 0.15 145)",
   },
+  paid_to_admin: {
+    background: "linear-gradient(135deg, oklch(0.9 0.05 175) 0%, oklch(0.92 0.04 165) 100%)",
+    color: "oklch(0.52 0.14 175)",
+  },
+  completed: {
+    background: "linear-gradient(135deg, oklch(0.88 0.04 130) 0%, oklch(0.9 0.03 120) 100%)",
+    color: "oklch(0.45 0.13 130)",
+  },
+  returned: {
+    background: "linear-gradient(135deg, oklch(0.9 0.05 25) 0%, oklch(0.92 0.04 20) 100%)",
+    color: "oklch(0.5 0.15 25)",
+  },
   cancelled: {
     background: "linear-gradient(135deg, oklch(0.9 0.05 10) 0%, oklch(0.92 0.04 5) 100%)",
     color: "oklch(0.55 0.15 10)",

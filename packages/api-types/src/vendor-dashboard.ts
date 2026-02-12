@@ -326,6 +326,9 @@ export const vendorOrderListQuerySchema = z.object({
 			"processing",
 			"shipped",
 			"delivered",
+			"paid_to_admin",
+			"completed",
+			"returned",
 			"cancelled",
 		])
 		.default("all"),
@@ -428,4 +431,41 @@ export interface VendorEarningsSummaryDTO {
 	totalPaidOut: number; // paisa - already paid
 	thisMonthEarnings: number; // paisa - current month delivered
 	orderCount: number; // total delivered orders
+	availableBalance: number; // paisa
+	pendingBalance: number; // paisa
+}
+
+export interface VendorWalletSummaryDTO {
+	availableBalance: number; // paisa
+	pendingBalance: number; // paisa
+	totalPaidOut: number; // paisa
+}
+
+export interface VendorTransactionItemDTO {
+	id: string;
+	orderId: string | null;
+	payoutId: string | null;
+	type: string;
+	status: string;
+	amountPaisa: number;
+	description: string | null;
+	referenceId: string | null;
+	referenceType: string | null;
+	createdAt: string;
+}
+
+export const vendorTransactionsQuerySchema = z.object({
+	page: z.coerce.number().int().min(1).default(1),
+	limit: z.coerce.number().int().min(1).max(100).default(20),
+	status: z.enum(["all", "pending", "cleared", "cancelled"]).default("all"),
+});
+
+export type VendorTransactionsQuery = z.infer<typeof vendorTransactionsQuerySchema>;
+
+export interface VendorTransactionsResponseDTO {
+	transactions: VendorTransactionItemDTO[];
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
 }

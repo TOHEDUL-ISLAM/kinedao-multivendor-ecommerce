@@ -16,6 +16,15 @@ export const Route = createFileRoute("/vendor/apply/")({
   loader: async ({ context }) => {
     // Only check status if user is logged in
     if (context.session) {
+      const roles = ((context.session.user as { roles?: string[] | null }).roles ?? []);
+      const hasVendorRole = roles.includes("vendor");
+
+      if (hasVendorRole) {
+        throw redirect({
+          to: "/vendor/dashboard",
+        });
+      }
+
       // Check application status
       const response = await api.vendor.application.status.$get();
 

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Button, Group } from "@mantine/core";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useUserRoles } from "@/hooks/use-user-roles";
+import { getAdminPortalHref } from "@/lib/admin-portal";
 
 const labels = {
 	en: {
@@ -20,6 +21,7 @@ export function RoleSwitcher() {
 	const { language } = useLanguage();
 	const t = labels[language];
 	const { isVendor, isAdmin } = useUserRoles();
+	const adminDashboardHref = getAdminPortalHref("/admin/dashboard");
 
 	const hasMultipleRoles = (isVendor ? 1 : 0) + (isAdmin ? 1 : 0) >= 1;
 	if (!hasMultipleRoles) {
@@ -50,8 +52,8 @@ export function RoleSwitcher() {
 			) : null}
 			{isAdmin ? (
 				<Button
-					component={Link}
-					to="/admin/dashboard"
+					component="a"
+					href={adminDashboardHref}
 					variant="light"
 					size="xs"
 					radius="md"
@@ -62,4 +64,3 @@ export function RoleSwitcher() {
 		</Group>
 	);
 }
-

@@ -41,7 +41,7 @@ const labels = {
     totalPaidOut: "Total Paid Out",
     deliveredOrders: "Delivered Orders",
     comingSoon: "Detailed earnings analytics and payout history coming soon.",
-    payoutInfo: "Payouts are processed automatically. Contact support for any payout-related queries.",
+    payoutInfo: "Payouts are processed manually after clearing (T+7). Contact support for payout queries.",
   },
   bn: {
     title: "আয়",
@@ -51,7 +51,7 @@ const labels = {
     totalPaidOut: "মোট পরিশোধ",
     deliveredOrders: "ডেলিভারড অর্ডার",
     comingSoon: "বিস্তারিত আয় বিশ্লেষণ এবং পেমেন্ট ইতিহাস শীঘ্রই আসছে।",
-    payoutInfo: "পেমেন্ট স্বয়ংক্রিয়ভাবে প্রসেস হয়। পেমেন্ট সম্পর্কিত যেকোনো প্রশ্নের জন্য সাপোর্টে যোগাযোগ করুন।",
+    payoutInfo: "পেআউট T+7 ক্লিয়ারিংয়ের পর ম্যানুয়ালি প্রসেস হয়। যেকোনো প্রশ্নে সাপোর্টে যোগাযোগ করুন।",
   },
 } as const;
 

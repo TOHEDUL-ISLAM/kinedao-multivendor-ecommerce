@@ -32,6 +32,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VendorDashboardRouteImport } from './routes/vendor/_dashboard'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminAcceptInviteRouteImport } from './routes/admin/accept-invite'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AccountLayoutRouteImport } from './routes/account/_layout'
@@ -177,6 +178,11 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAcceptInviteRoute = AdminAcceptInviteRouteImport.update({
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountLayoutRouteWithChildren
   '/admin': typeof AdminLayoutRouteWithChildren
   '/admin/accept-invite': typeof AdminAcceptInviteRoute
+  '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor': typeof VendorDashboardRouteWithChildren
@@ -423,6 +430,7 @@ export interface FileRoutesByTo {
   '/wishlist': typeof WishlistRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/admin/accept-invite': typeof AdminAcceptInviteRoute
+  '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor': typeof VendorDashboardRouteWithChildren
@@ -480,6 +488,7 @@ export interface FileRoutesById {
   '/account/_layout': typeof AccountLayoutRouteWithChildren
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/admin/accept-invite': typeof AdminAcceptInviteRoute
+  '/admin/login': typeof AdminLoginRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor/_dashboard': typeof VendorDashboardRouteWithChildren
@@ -538,6 +547,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/admin/accept-invite'
+    | '/admin/login'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/admin'
     | '/admin/accept-invite'
+    | '/admin/login'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor'
@@ -649,6 +660,7 @@ export interface FileRouteTypes {
     | '/account/_layout'
     | '/admin/_layout'
     | '/admin/accept-invite'
+    | '/admin/login'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor/_dashboard'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   AccountLayoutRoute: typeof AccountLayoutRouteWithChildren
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
   AdminAcceptInviteRoute: typeof AdminAcceptInviteRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
   VendorDashboardRoute: typeof VendorDashboardRouteWithChildren
@@ -875,6 +888,13 @@ declare module '@tanstack/react-router' {
       path: '/category/$slug'
       fullPath: '/category/$slug'
       preLoaderRoute: typeof CategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/accept-invite': {
@@ -1203,6 +1223,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountLayoutRoute: AccountLayoutRouteWithChildren,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
   AdminAcceptInviteRoute: AdminAcceptInviteRoute,
+  AdminLoginRoute: AdminLoginRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
   VendorDashboardRoute: VendorDashboardRouteWithChildren,

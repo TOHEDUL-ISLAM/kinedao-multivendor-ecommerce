@@ -9,6 +9,7 @@ import {
   varchar,
   index,
   real,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 // Vendors table - stores marketplace seller information
@@ -21,6 +22,13 @@ export const vendors = pgTable(
     logoUrl: text("logo_url"),
     ratingAvg: real("rating_avg").default(0),
     ratingCount: integer("rating_count").default(0),
+    commissionRate: real("commission_rate").default(12).notNull(),
+    payoutDetails: jsonb("payout_details"),
+    balancePendingPaisa: integer("balance_pending_paisa").default(0).notNull(),
+    balanceAvailablePaisa: integer("balance_available_paisa")
+      .default(0)
+      .notNull(),
+    pathaoStoreId: varchar("pathao_store_id", { length: 120 }),
     locationCity: varchar("location_city", { length: 100 }),
     isVerified: boolean("is_verified").default(false),
     badges: text("badges").array(),
@@ -30,7 +38,10 @@ export const vendors = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("vendors_slug_idx").on(table.slug)]
+  (table) => [
+    index("vendors_slug_idx").on(table.slug),
+    index("vendors_pathao_store_idx").on(table.pathaoStoreId),
+  ]
 );
 
 // Brands table - for popular brands display section

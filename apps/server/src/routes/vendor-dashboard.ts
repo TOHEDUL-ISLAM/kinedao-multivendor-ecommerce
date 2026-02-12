@@ -14,10 +14,11 @@ import {
 	orders,
 	orderItems,
 	vendorPayouts,
+	transactions,
 	type ShippingAddressSnapshot,
 	type OrderItemProductSnapshot,
 } from "@kineDao.com/db/schema";
-import { and, asc, desc, eq, sql, inArray, ilike } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, sql } from "drizzle-orm";
 import { notify } from "../lib/notification-service";
 import {
 	vendorProductListQuerySchema,
@@ -33,6 +34,9 @@ import {
 	type VendorOrderListItemDTO,
 	type VendorOrderDetailDTO,
 	type VendorEarningsSummaryDTO,
+	type VendorWalletSummaryDTO,
+	type VendorTransactionsResponseDTO,
+	vendorTransactionsQuerySchema,
 	type VendorRecentOrderDTO,
 	type VendorLowStockProductDTO,
 } from "@kineDao.com/api-types/vendor-dashboard";
@@ -1440,65 +1444,228 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 			);
 
 			const [
-				totalEarningsResult,
-				thisMonthResult,
+				vendorBalanceRow,
+				totalNetResult,
+				thisMonthNetResult,
 				totalPaidOutResult,
 				orderCountResult,
 			] = await Promise.all([
 				db
 					.select({
-						total: sql<number>`coalesce(sum(${orders.total}), 0)::int`,
+						availableBalance: vendors.balanceAvailablePaisa,
+						pendingBalance: vendors.balancePendingPaisa,
 					})
-					.from(orders)
+					.from(vendors)
+					.where(eq(vendors.id, vendorId))
+					.limit(1),
+				db
+					.select({
+						total: sql<number>`coalesce(sum(${transactions.amountPaisa}), 0)::int`,
+					})
+					.from(transactions)
 					.where(
 						and(
-							eq(orders.vendorId, vendorId),
-							eq(orders.status, "delivered"),
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, [
+								"sale",
+								"commission_deduction",
+								"delivery_charge",
+								"return_fee",
+								"adjustment",
+							]),
 						),
 					),
 				db
 					.select({
-						total: sql<number>`coalesce(sum(${orders.total}), 0)::int`,
+						total: sql<number>`coalesce(sum(${transactions.amountPaisa}), 0)::int`,
 					})
-					.from(orders)
+					.from(transactions)
 					.where(
 						and(
-							eq(orders.vendorId, vendorId),
-							eq(orders.status, "delivered"),
-							sql`${orders.deliveredAt} >= ${startOfMonth.toISOString()}`,
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, [
+								"sale",
+								"commission_deduction",
+								"delivery_charge",
+								"return_fee",
+								"adjustment",
+							]),
+							gte(transactions.createdAt, startOfMonth),
 						),
 					),
 				db
 					.select({
-						total: sql<number>`coalesce(sum(${vendorPayouts.amountPaisa}), 0)::int`,
+						total: sql<number>`coalesce(sum(abs(${transactions.amountPaisa})), 0)::int`,
 					})
-					.from(vendorPayouts)
+					.from(transactions)
 					.where(
 						and(
-							eq(vendorPayouts.vendorId, vendorId),
-							eq(vendorPayouts.status, "completed"),
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, ["payout", "payout_fee"]),
 						),
 					),
 				db
-					.select({ count: sql<number>`count(*)::int` })
-					.from(orders)
+					.select({
+						count: sql<number>`count(*)::int`,
+					})
+					.from(transactions)
 					.where(
 						and(
-							eq(orders.vendorId, vendorId),
-							eq(orders.status, "delivered"),
+							eq(transactions.vendorId, vendorId),
+							eq(transactions.type, "sale"),
 						),
 					),
 			]);
 
-			const totalEarnings = totalEarningsResult[0]?.total ?? 0;
+			const totalEarnings = totalNetResult[0]?.total ?? 0;
 			const totalPaidOut = totalPaidOutResult[0]?.total ?? 0;
+			const availableBalance = vendorBalanceRow[0]?.availableBalance ?? 0;
+			const pendingBalance = vendorBalanceRow[0]?.pendingBalance ?? 0;
 
 			const response: VendorEarningsSummaryDTO = {
 				totalEarnings,
-				pendingPayout: totalEarnings - totalPaidOut,
+				pendingPayout: availableBalance,
 				totalPaidOut,
-				thisMonthEarnings: thisMonthResult[0]?.total ?? 0,
+				thisMonthEarnings: thisMonthNetResult[0]?.total ?? 0,
 				orderCount: orderCountResult[0]?.count ?? 0,
+				availableBalance,
+				pendingBalance,
+			};
+
+			return c.json(response, 200);
+		},
+	)
+
+	// =====================
+	// GET /wallet - Wallet summary
+	// =====================
+	.get(
+		"/wallet",
+		describeRoute({
+			tags: ["Vendor Dashboard"],
+			summary: "Get wallet summary",
+			description:
+				"Returns available and pending wallet balances with total paid out.",
+			responses: {
+				200: {
+					description: "Wallet summary",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const vendorId = c.var.vendorId;
+
+			const [vendorRow, paidOutResult] = await Promise.all([
+				db
+					.select({
+						availableBalance: vendors.balanceAvailablePaisa,
+						pendingBalance: vendors.balancePendingPaisa,
+					})
+					.from(vendors)
+					.where(eq(vendors.id, vendorId))
+					.limit(1),
+				db
+					.select({
+						total: sql<number>`coalesce(sum(abs(${transactions.amountPaisa})), 0)::int`,
+					})
+					.from(transactions)
+					.where(
+						and(
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, ["payout", "payout_fee"]),
+						),
+					),
+			]);
+
+			const response: VendorWalletSummaryDTO = {
+				availableBalance: vendorRow[0]?.availableBalance ?? 0,
+				pendingBalance: vendorRow[0]?.pendingBalance ?? 0,
+				totalPaidOut: paidOutResult[0]?.total ?? 0,
+			};
+
+			return c.json(response, 200);
+		},
+	)
+
+	// =====================
+	// GET /transactions - Ledger statement
+	// =====================
+	.get(
+		"/transactions",
+		describeRoute({
+			tags: ["Vendor Dashboard"],
+			summary: "Get vendor ledger statement",
+			description: "Returns paginated wallet transactions for the vendor.",
+			responses: {
+				200: {
+					description: "Transaction statement",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+			},
+		}),
+		zValidator("query", vendorTransactionsQuerySchema),
+		async (c) => {
+			const vendorId = c.var.vendorId;
+			const query = c.req.valid("query");
+			const offset = (query.page - 1) * query.limit;
+
+			const whereClause =
+				query.status === "all"
+					? eq(transactions.vendorId, vendorId)
+					: and(
+						eq(transactions.vendorId, vendorId),
+						eq(transactions.status, query.status),
+					);
+
+			const [totalResult, rows] = await Promise.all([
+				db
+					.select({ count: sql<number>`count(*)::int` })
+					.from(transactions)
+					.where(whereClause),
+				db
+					.select({
+						id: transactions.id,
+						orderId: transactions.orderId,
+						payoutId: transactions.payoutId,
+						type: transactions.type,
+						status: transactions.status,
+						amountPaisa: transactions.amountPaisa,
+						description: transactions.description,
+						referenceId: transactions.referenceId,
+						referenceType: transactions.referenceType,
+						createdAt: transactions.createdAt,
+					})
+					.from(transactions)
+					.where(whereClause)
+					.orderBy(desc(transactions.createdAt))
+					.limit(query.limit)
+					.offset(offset),
+			]);
+
+			const total = totalResult[0]?.count ?? 0;
+			const totalPages = Math.ceil(total / query.limit);
+			const response: VendorTransactionsResponseDTO = {
+				transactions: rows.map((row) => ({
+					id: row.id,
+					orderId: row.orderId,
+					payoutId: row.payoutId,
+					type: row.type,
+					status: row.status,
+					amountPaisa: row.amountPaisa,
+					description: row.description,
+					referenceId: row.referenceId,
+					referenceType: row.referenceType,
+					createdAt: row.createdAt.toISOString(),
+				})),
+				total,
+				page: query.page,
+				limit: query.limit,
+				totalPages,
 			};
 
 			return c.json(response, 200);

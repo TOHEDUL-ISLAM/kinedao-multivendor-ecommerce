@@ -20,7 +20,16 @@ export const Route = createFileRoute("/vendor/apply/status")({
     }
     return { session };
   },
-  loader: async (): Promise<{ status: VendorApplicationStatusResponse | null }> => {
+  loader: async ({ context }): Promise<{ status: VendorApplicationStatusResponse | null }> => {
+    const roles = ((context.session.user as { roles?: string[] | null }).roles ?? []);
+    const hasVendorRole = roles.includes("vendor");
+
+    if (hasVendorRole) {
+      throw redirect({
+        to: "/vendor/dashboard",
+      });
+    }
+
     const response = await api.vendor.application.status.$get();
 
     if (response.ok) {

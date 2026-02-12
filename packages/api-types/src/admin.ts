@@ -256,6 +256,9 @@ export const adminOrderListQuerySchema = z.object({
 			"processing",
 			"shipped",
 			"delivered",
+			"paid_to_admin",
+			"completed",
+			"returned",
 			"cancelled",
 		])
 		.default("all"),
@@ -298,6 +301,16 @@ export interface AdminOrderDetailDTO {
 	customerNotes: string | null;
 	trackingNumber: string | null;
 	trackingCarrier: string | null;
+	courierName: string | null;
+	courierOrderRef: string | null;
+	actualCourierCostPaisa: number;
+	returnFeePaisa: number;
+	commissionRateSnapshot: number | null; // basis points
+	commissionAmountPaisa: number | null;
+	vendorNetPaisa: number | null;
+	paidToAdminAt: string | null;
+	completedAt: string | null;
+	returnedAt: string | null;
 	userId: string;
 	customerName: string;
 	customerEmail: string;
@@ -375,8 +388,10 @@ export interface AdminPendingPayoutDTO {
 	vendorId: string;
 	vendorName: string;
 	vendorSlug: string;
-	orderCount: number; // Delivered orders not yet paid
-	pendingAmount: number; // paisa (after commission if any)
+	orderCount: number; // Financially reconciled orders
+	pendingAmount: number; // Backward-compat: equals availableAmount
+	availableAmount: number; // paisa, ready to pay now
+	pendingBalance: number; // paisa, still in clearing hold
 	paymentMethod: string; // From vendor application
 	bankAccountNumber: string | null;
 	bkashNumber: string | null;
@@ -387,15 +402,16 @@ export interface AdminPendingPayoutDTO {
 
 export const adminPayoutProcessSchema = z.object({
 	vendorId: z.string().uuid(),
-	amountPaisa: z.coerce.number().int().min(1),
+	amountPaisa: z.coerce.number().int().min(1).optional(), // Optional; server can auto-compute full payable
+	payoutFeePaisa: z.coerce.number().int().min(0).optional(),
 	paymentMethod: z.enum(["bank", "bkash", "nagad"]),
 	paymentReference: z
 		.string()
 		.min(1, "Payment reference is required")
 		.max(100),
 	notes: z.string().max(500).optional(),
-	periodStart: z.string(), // ISO date
-	periodEnd: z.string(), // ISO date
+	periodStart: z.string().optional(), // ISO date
+	periodEnd: z.string().optional(), // ISO date
 });
 
 export type AdminPayoutProcessInput = z.infer<typeof adminPayoutProcessSchema>;
@@ -405,6 +421,7 @@ export interface AdminPayoutHistoryItemDTO {
 	vendorId: string;
 	vendorName: string;
 	amountPaisa: number;
+	payoutFeePaisa: number;
 	paymentMethod: string;
 	paymentReference: string | null;
 	status: string;
@@ -434,6 +451,32 @@ export const adminPayoutHistoryQuerySchema = z.object({
 export type AdminPayoutHistoryQuery = z.infer<
 	typeof adminPayoutHistoryQuerySchema
 >;
+
+export const adminOrderReconcileSchema = z.object({
+	actualCourierCostPaisa: z.coerce.number().int().min(0),
+	returnFeePaisa: z.coerce.number().int().min(0).optional().default(0),
+	deductDeliveryFromVendor: z.boolean().optional().default(false),
+	deductReturnFeeFromVendor: z.boolean().optional().default(false),
+	courierName: z.string().max(40).optional(),
+	courierOrderRef: z.string().max(120).optional(),
+	notes: z.string().max(500).optional(),
+});
+
+export type AdminOrderReconcileInput = z.infer<typeof adminOrderReconcileSchema>;
+
+export const adminSettlementClearSchema = z.object({
+	maturityDays: z.coerce.number().int().min(1).max(30).optional().default(7),
+});
+
+export type AdminSettlementClearInput = z.infer<typeof adminSettlementClearSchema>;
+
+export interface AdminWalletSummaryDTO {
+	vendorId: string;
+	availableBalancePaisa: number;
+	pendingBalancePaisa: number;
+	computedPayablePaisa: number;
+	commissionRatePercent: number;
+}
 
 // =====================
 // Banner Management

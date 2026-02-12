@@ -35,6 +35,26 @@ import { db } from "@kineDao.com/db";
 import { user } from "@kineDao.com/db/schema/auth";
 import { and, eq, isNotNull, lt } from "drizzle-orm";
 
+const normalizeOrigin = (value: string) => value.replace(/\/+$/, "");
+
+const getAllowedCorsOrigins = () => {
+  const configured = (env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(
+    new Set([
+      normalizeOrigin(env.CORS_ORIGIN),
+      normalizeOrigin(env.FRONTEND_URL),
+      normalizeOrigin(env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL),
+      ...configured.map(normalizeOrigin),
+    ])
+  );
+};
+
+const allowedCorsOrigins = getAllowedCorsOrigins();
+
 export type AppEnv = {
   Variables: {
     user: typeof auth.$Infer.Session.user | null;
@@ -114,7 +134,7 @@ const app = new Hono<AppEnv>()
   .use(
     "/*",
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: allowedCorsOrigins,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization", "x-guest-id"],
       credentials: true,

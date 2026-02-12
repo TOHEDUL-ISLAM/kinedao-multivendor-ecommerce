@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Center, Paper, Stack, Text, Title } from "@mantine/core";
 import { toast } from "sonner";
 import { z } from "zod";
 import { getUser } from "@/functions/get-user";
 import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
+import { redirectToAdminPortalIfNeeded } from "@/lib/admin-portal";
 
 export const Route = createFileRoute("/admin/accept-invite")({
 	validateSearch: z.object({
@@ -35,6 +36,12 @@ function AcceptAdminInvitePage() {
 		if (!token) return "/admin/accept-invite";
 		return `/admin/accept-invite?token=${encodeURIComponent(token)}`;
 	}, [token]);
+
+	useEffect(() => {
+		void redirectToAdminPortalIfNeeded(
+			`${window.location.pathname}${window.location.search}${window.location.hash}`,
+		);
+	}, []);
 
 	const acceptMutation = useMutation({
 		mutationFn: async () => {
@@ -120,7 +127,7 @@ function AcceptAdminInvitePage() {
 													fetchOptions: {
 														onSuccess: () => {
 															void navigate({
-																to: "/login",
+																to: "/admin/login",
 																search: {
 																	redirect: redirectPath,
 																	mode: "signin",
@@ -144,13 +151,13 @@ function AcceptAdminInvitePage() {
 							</Text>
 							<Button
 								component="a"
-								href={`/login?redirect=${encodeURIComponent(redirectPath)}&mode=signin`}
+								href={`/admin/login?redirect=${encodeURIComponent(redirectPath)}&mode=signin`}
 							>
 								Sign In
 							</Button>
 							<Button
 								component="a"
-								href={`/login?redirect=${encodeURIComponent(redirectPath)}&mode=signup`}
+								href={`/admin/login?redirect=${encodeURIComponent(redirectPath)}&mode=signup`}
 								variant="default"
 							>
 								Create Account

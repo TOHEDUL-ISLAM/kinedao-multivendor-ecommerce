@@ -30,6 +30,16 @@ function sanitizeRedirect(redirect?: string, portal?: "vendor"): string {
 export const Route = createFileRoute("/login")({
   validateSearch: loginSearchSchema,
   beforeLoad: async ({ search }) => {
+    if (search.redirect?.startsWith("/admin/")) {
+      throw redirect({
+        to: "/admin/login",
+        search: {
+          redirect: search.redirect,
+          mode: search.mode,
+        },
+      });
+    }
+
     if (search.portal !== "vendor") {
       return;
     }

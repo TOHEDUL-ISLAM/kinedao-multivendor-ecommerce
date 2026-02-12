@@ -11,6 +11,9 @@ const statusColors: Record<string, string> = {
 	processing: "blue",
 	shipped: "grape",
 	delivered: "green",
+	paid_to_admin: "teal",
+	completed: "green",
+	returned: "orange",
 	cancelled: "red",
 };
 

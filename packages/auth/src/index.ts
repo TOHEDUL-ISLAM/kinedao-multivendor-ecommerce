@@ -5,16 +5,46 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { sendEmail } from "./email";
 
+const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
+
+const parseCommaSeparatedUrls = (value: string | undefined) =>
+  (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .flatMap((item) => {
+      try {
+        return [normalizeBaseUrl(new URL(item).toString())];
+      } catch {
+        return [];
+      }
+    });
+
 const isSecureOrigin = env.BETTER_AUTH_URL.startsWith("https://");
 const cookieSameSite = isSecureOrigin ? "none" : "lax";
-const frontendBaseUrl = env.FRONTEND_URL.replace(/\/+$/, "");
-const frontendOrigin = new URL(frontendBaseUrl).origin;
+const frontendBaseUrl = normalizeBaseUrl(env.FRONTEND_URL);
+const adminFrontendBaseUrl = normalizeBaseUrl(
+  env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL
+);
+const corsOriginBaseUrl = normalizeBaseUrl(env.CORS_ORIGIN);
+const additionalCorsOrigins = parseCommaSeparatedUrls(env.CORS_ORIGINS);
+const trustedFrontendUrls = Array.from(
+  new Set([
+    frontendBaseUrl,
+    adminFrontendBaseUrl,
+    corsOriginBaseUrl,
+    ...additionalCorsOrigins,
+  ])
+);
+const trustedFrontendOrigins = new Set(
+  trustedFrontendUrls.map((url) => new URL(url).origin)
+);
 
 const getSafeFrontendCallback = (value?: string | null) => {
   if (!value) return null;
   try {
     const url = new URL(value, frontendBaseUrl);
-    return url.origin === frontendOrigin ? url.toString() : null;
+    return trustedFrontendOrigins.has(url.origin) ? url.toString() : null;
   } catch {
     return null;
   }
@@ -49,7 +79,10 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: Array.from(
-    new Set([env.CORS_ORIGIN, env.FRONTEND_URL, env.BETTER_AUTH_URL])
+    new Set([
+      ...trustedFrontendUrls,
+      normalizeBaseUrl(env.BETTER_AUTH_URL),
+    ])
   ),
   emailAndPassword: {
     enabled: true,

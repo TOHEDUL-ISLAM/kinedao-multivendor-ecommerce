@@ -199,6 +199,9 @@ export const orderListQuerySchema = z.object({
 			"processing",
 			"shipped",
 			"delivered",
+			"paid_to_admin",
+			"completed",
+			"returned",
 			"cancelled",
 		])
 		.optional()

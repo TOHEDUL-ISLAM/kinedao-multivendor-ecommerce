@@ -26,6 +26,7 @@ export const vendorPayouts = pgTable(
 
 		// Payout details (amount in paisa)
 		amountPaisa: integer("amount_paisa").notNull(),
+		payoutFeePaisa: integer("payout_fee_paisa").notNull().default(0),
 		periodStart: timestamp("period_start").notNull(),
 		periodEnd: timestamp("period_end").notNull(),
 

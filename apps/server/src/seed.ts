@@ -17,6 +17,7 @@ import {
   carts,
   orders,
   orderItems,
+  productReviews,
 } from "@kineDao.com/db/schema";
 import { faker } from "@faker-js/faker";
 
@@ -79,7 +80,6 @@ const imageCollections = {
     "https://images.unsplash.com/photo-1604917621956-10dfa7cce2e7?w=800",
     "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800",
     "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=1000",
-    "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=1000",
     "https://images.unsplash.com/photo-1583845112203-29329902332e?w=1000",
     "https://images.unsplash.com/photo-1604917621956-10dfa7cce2e7?w=1000",
     "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=1000",
@@ -482,6 +482,7 @@ async function seed() {
   // Clear existing data
   console.log("Clearing existing data...");
   // Delete in order of dependencies (child tables first)
+  await db.delete(productReviews); // References orderItems and orders
   await db.delete(orderItems); // References products
   await db.delete(orders); // Parent of orderItems
   await db.delete(campaignProducts);

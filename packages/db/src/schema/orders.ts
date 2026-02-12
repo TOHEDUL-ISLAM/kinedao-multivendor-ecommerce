@@ -26,6 +26,9 @@ export const ORDER_STATUSES = [
 	"processing",
 	"shipped",
 	"delivered",
+	"paid_to_admin",
+	"completed",
+	"returned",
 	"cancelled",
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -94,6 +97,18 @@ export const orders = pgTable(
 		// Tracking (set by vendor when marking as shipped)
 		trackingNumber: varchar("tracking_number", { length: 100 }),
 		trackingCarrier: varchar("tracking_carrier", { length: 100 }),
+		courierName: varchar("courier_name", { length: 40 }),
+		courierOrderRef: varchar("courier_order_ref", { length: 120 }),
+
+		// Financial settlement snapshot
+		commissionRateSnapshot: integer("commission_rate_snapshot"), // basis points (e.g. 1200 = 12.00%)
+		commissionAmountPaisa: integer("commission_amount_paisa"),
+		vendorNetPaisa: integer("vendor_net_paisa"),
+		actualCourierCostPaisa: integer("actual_courier_cost_paisa")
+			.notNull()
+			.default(0),
+		returnFeePaisa: integer("return_fee_paisa").notNull().default(0),
+		settlementNotes: text("settlement_notes"),
 
 		// COD Verification
 		codVerifiedAt: timestamp("cod_verified_at"),
@@ -107,6 +122,9 @@ export const orders = pgTable(
 		confirmedAt: timestamp("confirmed_at"),
 		shippedAt: timestamp("shipped_at"),
 		deliveredAt: timestamp("delivered_at"),
+		paidToAdminAt: timestamp("paid_to_admin_at"),
+		completedAt: timestamp("completed_at"),
+		returnedAt: timestamp("returned_at"),
 		cancelledAt: timestamp("cancelled_at"),
 	},
 	(table) => [

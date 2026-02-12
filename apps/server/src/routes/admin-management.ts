@@ -45,7 +45,7 @@ const INVITE_MAX_PER_WINDOW = 5;
 const inviteAttempts = new Map<string, number[]>();
 
 function buildInviteUrl(token: string): string {
-	const base = env.FRONTEND_URL.replace(/\/+$/, "");
+	const base = (env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL).replace(/\/+$/, "");
 	return `${base}/admin/accept-invite?token=${encodeURIComponent(token)}`;
 }
 

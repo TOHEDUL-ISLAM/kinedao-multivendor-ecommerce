@@ -18,9 +18,10 @@ import {
   Divider,
   Skeleton,
   Badge,
+  Alert,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Wallet, CheckCircle } from "lucide-react";
+import { Wallet, CheckCircle, Clock3 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -39,10 +40,20 @@ const labels = {
     vendorName: "Vendor",
     orderCount: "Orders",
     pendingAmount: "Pending Amount",
+    availableNow: "Available Now",
+    pendingClearing: "Pending Clearing",
+    t7Notice: "Funds in pending clearing cannot be paid yet (T+7 rule).",
+    runSettlement: "Run T+7 Settlement",
+    settlementHint:
+      "Use this to clear matured pending balances into available payouts.",
+    settlementSuccess: "Settlement clearing completed",
+    settlementError: "Failed to run settlement clearing",
     paymentMethod: "Payment Method",
     lastPayout: "Last Payout",
     markAsPaid: "Mark as Paid",
     noPendingPayouts: "No pending payouts",
+    noPendingPayoutsHelp:
+      "No payout is available right now. Reconcile delivered orders first, then wait for T+7 clearing.",
     amount: "Amount",
     reference: "Payment Reference",
     notes: "Notes (Optional)",
@@ -74,10 +85,20 @@ const labels = {
     vendorName: "বিক্রেতা",
     orderCount: "অর্ডার",
     pendingAmount: "অপেক্ষমাণ পরিমাণ",
+    availableNow: "এখন পেআউটযোগ্য",
+    pendingClearing: "ক্লিয়ারিংয়ে অপেক্ষমাণ",
+    t7Notice: "Pending clearing এর টাকা T+7 হওয়ার আগে পরিশোধ করা যাবে না।",
+    runSettlement: "T+7 সেটেলমেন্ট চালান",
+    settlementHint:
+      "মেয়াদ পূর্ণ pending ব্যালেন্স available payout এ আনতে এটি ব্যবহার করুন।",
+    settlementSuccess: "সেটেলমেন্ট ক্লিয়ারিং সম্পন্ন হয়েছে",
+    settlementError: "সেটেলমেন্ট ক্লিয়ারিং চালাতে ব্যর্থ",
     paymentMethod: "পেমেন্ট পদ্ধতি",
     lastPayout: "শেষ পেআউট",
     markAsPaid: "পেইড চিহ্নিত করুন",
     noPendingPayouts: "কোনো অপেক্ষমাণ পেআউট নেই",
+    noPendingPayoutsHelp:
+      "এখন কোনো পেআউটযোগ্য ব্যালেন্স নেই। আগে Delivered অর্ডার Reconcile করুন, তারপর T+7 ক্লিয়ারিংয়ের জন্য অপেক্ষা করুন।",
     amount: "পরিমাণ",
     reference: "পেমেন্ট রেফারেন্স",
     notes: "নোট (ঐচ্ছিক)",
@@ -158,7 +179,7 @@ function AdminPayoutsPage() {
   const processPayoutMutation = useMutation({
     mutationFn: async (data: {
       vendorId: string;
-      amountPaisa: number;
+      amountPaisa?: number;
       paymentMethod: "bank" | "bkash" | "nagad";
       paymentReference: string;
       notes?: string;
@@ -182,9 +203,31 @@ function AdminPayoutsPage() {
     },
   });
 
+  const settleMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.admin.settlement["clear-matured"].$post({
+        json: { maturityDays: 7 },
+      });
+      if (!response.ok) throw new Error("Failed to run settlement");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(t.settlementSuccess);
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-payouts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-overview"] });
+    },
+    onError: () => {
+      toast.error(t.settlementError);
+    },
+  });
+
   const handleMarkAsPaid = (payout: AdminPendingPayoutDTO) => {
+    if (payout.availableAmount <= 0) {
+      toast.error(t.t7Notice);
+      return;
+    }
     setSelectedPayout(payout);
-    setAmount((payout.pendingAmount / 100).toString());
+    setAmount((payout.availableAmount / 100).toString());
     setPaymentMethod(payout.paymentMethod as "bank" | "bkash" | "nagad");
     setPeriodStart(new Date().toISOString().split("T")[0]);
     setPeriodEnd(new Date().toISOString().split("T")[0]);
@@ -199,7 +242,6 @@ function AdminPayoutsPage() {
 
     processPayoutMutation.mutate({
       vendorId: selectedPayout.vendorId,
-      amountPaisa: Math.round(parseFloat(amount) * 100),
       paymentMethod,
       paymentReference: reference,
       notes: notes || undefined,
@@ -223,6 +265,24 @@ function AdminPayoutsPage() {
       <Title order={2} style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}>
         {t.title}
       </Title>
+
+      <Alert
+        icon={<Clock3 size={16} />}
+        color="teal"
+        variant="light"
+        title={t.settlementHint}
+      >
+        <Group justify="flex-end" mt="xs">
+          <Button
+            size="xs"
+            variant="light"
+            onClick={() => settleMutation.mutate()}
+            loading={settleMutation.isPending}
+          >
+            {t.runSettlement}
+          </Button>
+        </Group>
+      </Alert>
 
       {/* Pending Payouts */}
       <Paper
@@ -274,18 +334,48 @@ function AdminPayoutsPage() {
 
                   <SimpleGrid cols={2} spacing="sm">
                     <div>
-                      <Text size="xs" c="dimmed">{t.pendingAmount}</Text>
-                      <Text size="xl" fw={700} style={{ color: "oklch(0.65 0.15 145)" }}>
-                        {formatBDT(payout.pendingAmount)}
+                      <Text size="xs" c="dimmed">{t.availableNow}</Text>
+                      <Text
+                        size="xl"
+                        fw={700}
+                        style={{
+                          color:
+                            payout.availableAmount >= 0
+                              ? "oklch(0.65 0.15 145)"
+                              : "oklch(0.62 0.2 25)",
+                        }}
+                      >
+                        {formatBDT(payout.availableAmount)}
                       </Text>
                     </div>
+                    <div>
+                      <Text size="xs" c="dimmed">{t.pendingClearing}</Text>
+                      <Text
+                        size="xl"
+                        fw={700}
+                        style={{
+                          color:
+                            payout.pendingBalance >= 0
+                              ? "oklch(0.72 0.08 90)"
+                              : "oklch(0.62 0.2 25)",
+                        }}
+                      >
+                        {formatBDT(payout.pendingBalance)}
+                      </Text>
+                    </div>
+                  </SimpleGrid>
+
+                  <Group justify="space-between">
                     <div>
                       <Text size="xs" c="dimmed">{t.paymentMethod}</Text>
                       <Badge size="lg" mt="xs">
                         {payout.paymentMethod === "bank" ? t.bank : payout.paymentMethod === "bkash" ? t.bkash : t.nagad}
                       </Badge>
                     </div>
-                  </SimpleGrid>
+                    {payout.availableAmount <= 0 && payout.pendingBalance > 0 ? (
+                      <Text size="xs" c="dimmed" maw={180} ta="right">{t.t7Notice}</Text>
+                    ) : null}
+                  </Group>
 
                   {payout.lastPayoutDate && (
                     <div>
@@ -301,6 +391,7 @@ function AdminPayoutsPage() {
                     fullWidth
                     leftSection={<CheckCircle size={18} />}
                     onClick={() => handleMarkAsPaid(payout)}
+                    disabled={payout.availableAmount <= 0}
                     style={{
                       background: "linear-gradient(135deg, oklch(0.65 0.15 175) 0%, oklch(0.7 0.13 165) 100%)",
                     }}
@@ -312,9 +403,10 @@ function AdminPayoutsPage() {
             ))}
           </SimpleGrid>
         ) : (
-          <Text c="dimmed" ta="center" py="xl">
-            {t.noPendingPayouts}
-          </Text>
+          <Stack align="center" py="xl" gap="xs">
+            <Text c="dimmed" ta="center">{t.noPendingPayouts}</Text>
+            <Text c="dimmed" ta="center" size="sm" maw={520}>{t.noPendingPayoutsHelp}</Text>
+          </Stack>
         )}
       </Paper>
 
@@ -415,10 +507,8 @@ function AdminPayoutsPage() {
           <TextInput
             label={t.amountLabel}
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            type="number"
-            step="0.01"
-            required
+            readOnly
+            disabled
             leftSection={<Text size="sm">৳</Text>}
           />
 

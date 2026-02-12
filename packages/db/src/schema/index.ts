@@ -31,6 +31,7 @@ export * from "./orders";
 
 // Vendor payouts schema
 export * from "./vendor-payouts";
+export * from "./transactions";
 
 // Admin schema
 export * from "./admin";
