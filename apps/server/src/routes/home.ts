@@ -3,7 +3,6 @@ import { describeRoute, resolver } from "hono-openapi";
 import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
-  productSkus,
   campaigns,
   brands,
   categories,
@@ -267,21 +266,12 @@ const homeRouter = new Hono().get(
     const [flashDealsRaw, bestSellersRaw, newArrivalsRaw] = await Promise.all([
       db.query.products.findMany({
         ...productCardSelect,
-        where: and(
-          baseProductWhere,
-          sql`exists (
-            select 1
-            from ${productSkus}
-            where ${productSkus.productId} = ${products.id}
-              and ${productSkus.compareAtAmount} is not null
-              and ${productSkus.compareAtAmount} > ${productSkus.priceAmount}
-          )`,
-        ),
+        where: baseProductWhere,
         orderBy: (productTable, { desc }) => [
           desc(productTable.bestSellerScore),
           desc(productTable.createdAt),
         ],
-        limit: 36,
+        limit: 120,
       }),
       db.query.products.findMany({
         ...productCardSelect,
