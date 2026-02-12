@@ -23,8 +23,8 @@ export function RoleSwitcher() {
 	const { isVendor, isAdmin } = useUserRoles();
 	const adminDashboardHref = getAdminPortalHref("/admin/dashboard");
 
-	const hasMultipleRoles = (isVendor ? 1 : 0) + (isAdmin ? 1 : 0) >= 1;
-	if (!hasMultipleRoles) {
+	const hasAnyElevatedRole = (isVendor ? 1 : 0) + (isAdmin ? 1 : 0) >= 1;
+	if (!hasAnyElevatedRole) {
 		return null;
 	}
 

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useLanguage } from "@/lib/i18n/use-language";
 import type { BannerDTO } from "@kineDao.com/api-types/catalog";
 
@@ -116,14 +117,15 @@ function PromoCard({
 	const badgeColorClass = banner.badgeColor
 		? (BADGE_COLORS[banner.badgeColor] ?? "bg-teal-500")
 		: "bg-red-500";
+	const linkUrl = banner.linkUrl || "#";
+	const isInternalLink = linkUrl.startsWith("/") && !linkUrl.startsWith("//");
+	const isExternalLink = /^https?:\/\//i.test(linkUrl);
+	const cardClassName = `group relative overflow-hidden rounded-lg ${
+		compact ? "h-[92px] sm:h-[100px]" : "flex-1 min-h-[110px] sm:min-h-[120px]"
+	}`;
 
-	return (
-		<a
-			href={banner.linkUrl || "#"}
-			className={`group relative overflow-hidden rounded-lg ${
-				compact ? "h-[92px] sm:h-[100px]" : "flex-1 min-h-[110px] sm:min-h-[120px]"
-			}`}
-		>
+	const cardContent = (
+		<>
 			{/* Background image */}
 			<img
 				src={banner.imageUrl}
@@ -158,6 +160,25 @@ function PromoCard({
 					</p>
 				)}
 			</div>
+		</>
+	);
+
+	if (isInternalLink) {
+		return (
+			<Link to={linkUrl as any} className={cardClassName}>
+				{cardContent}
+			</Link>
+		);
+	}
+
+	return (
+		<a
+			href={linkUrl}
+			className={cardClassName}
+			target={isExternalLink ? "_blank" : undefined}
+			rel={isExternalLink ? "noopener noreferrer" : undefined}
+		>
+			{cardContent}
 		</a>
 	);
 }

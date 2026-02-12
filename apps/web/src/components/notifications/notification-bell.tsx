@@ -83,10 +83,11 @@ export function NotificationBell() {
 							</Stack>
 						) : (
 							<Stack gap={0}>
-								{notifications.map((notification: NotificationDTO) => (
-									<button
-										key={notification.id}
-										onClick={() => {
+									{notifications.map((notification: NotificationDTO) => (
+										<button
+											type="button"
+											key={notification.id}
+											onClick={() => {
 											// Mark as read if unread
 											if (!notification.isRead) {
 												markAsRead(notification.id);
@@ -109,12 +110,23 @@ export function NotificationBell() {
 										onMouseEnter={(e) => {
 											e.currentTarget.style.backgroundColor = "var(--mantine-color-gray-1)";
 										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.backgroundColor = notification.isRead
-												? "transparent"
-												: "var(--mantine-color-blue-0)";
-										}}
-									>
+											onMouseLeave={(e) => {
+												e.currentTarget.style.backgroundColor = notification.isRead
+													? "transparent"
+													: "var(--mantine-color-blue-0)";
+											}}
+											onFocus={(e) => {
+												e.currentTarget.style.backgroundColor = "var(--mantine-color-gray-1)";
+												e.currentTarget.style.outline = "2px solid var(--mantine-color-blue-6)";
+												e.currentTarget.style.outlineOffset = "-2px";
+											}}
+											onBlur={(e) => {
+												e.currentTarget.style.backgroundColor = notification.isRead
+													? "transparent"
+													: "var(--mantine-color-blue-0)";
+												e.currentTarget.style.outline = "none";
+											}}
+										>
 										<Group justify="space-between" align="flex-start" wrap="nowrap">
 											<Stack gap={4} style={{ flex: 1 }}>
 												<Group gap="xs">

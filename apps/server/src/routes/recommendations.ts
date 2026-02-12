@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
 import { db, getS3Url } from "@kineDao.com/db";
 import { categories, categoryMetrics, products, productImages, productSkus, vendors } from "@kineDao.com/db/schema";
-import { and, eq, sql, desc, arrayContains, inArray } from "drizzle-orm";
+import { and, eq, sql, desc, arrayContains, inArray, notInArray } from "drizzle-orm";
 import {
   recommendationsQuerySchema,
   cartRecommendationsQuerySchema,
@@ -239,7 +239,7 @@ const recommendationsRouter = new Hono().get(
           inArray(products.categoryId, categoryIds),
           eq(products.isActive, true),
           eq(products.status, "approved"),
-          sql`${products.id} NOT IN (${sql.join(productIds.map((id) => sql`${id}`), sql`, `)})`
+          notInArray(products.id, productIds)
         )
       )
       .orderBy(desc(products.ratingAvg))
@@ -255,7 +255,7 @@ const recommendationsRouter = new Hono().get(
             alt: productImages.alt,
           })
           .from(productImages)
-          .where(sql`${productImages.productId} IN ${recommendedProductIds}`)
+          .where(inArray(productImages.productId, recommendedProductIds))
       : [];
 
     // Fetch SKUs for recommended products
@@ -263,7 +263,7 @@ const recommendationsRouter = new Hono().get(
       ? await db
           .select()
           .from(productSkus)
-          .where(sql`${productSkus.productId} IN ${recommendedProductIds}`)
+          .where(inArray(productSkus.productId, recommendedProductIds))
       : [];
 
     // Build recommended products DTOs

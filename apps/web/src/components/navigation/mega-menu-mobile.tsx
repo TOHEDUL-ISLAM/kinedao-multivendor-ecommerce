@@ -91,6 +91,27 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
     { key: "contact", label: t("footer.contact"), href: "/contact", icon: Phone },
   ];
 
+  const uiText =
+    language === "bn"
+      ? {
+          menu: "মেনু",
+          categories: "ক্যাটাগরি",
+          searchMenu: "মেনু খুঁজুন...",
+          searchCategories: "ক্যাটাগরি খুঁজুন...",
+          noMenu: "কোন মেনু আইটেম পাওয়া যায়নি",
+          noMatchingCategories: "মিলে এমন কোনো ক্যাটাগরি পাওয়া যায়নি",
+          noCategories: "কোনো ক্যাটাগরি পাওয়া যায়নি",
+        }
+      : {
+          menu: "Menu",
+          categories: "Categories",
+          searchMenu: "Search menu...",
+          searchCategories: "Search categories...",
+          noMenu: "No menu items found",
+          noMatchingCategories: "No matching categories",
+          noCategories: "No categories available",
+        };
+
   // Current level of categories to display
   const currentCategories =
     navigationStack.length > 0
@@ -169,7 +190,9 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
                 </div>
               ) : (
                 <SheetTitle>
-                  {activeTab === "menu" ? "Menu" : `${t("common.all")} ${t("catalog.categories")}`}
+                  {activeTab === "menu"
+                    ? uiText.menu
+                    : `${t("common.all")} ${t("catalog.categories")}`}
                 </SheetTitle>
               )}
             </div>
@@ -180,7 +203,9 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={activeTab === "menu" ? "Search menu..." : "Search categories..."}
+                placeholder={
+                  activeTab === "menu" ? uiText.searchMenu : uiText.searchCategories
+                }
                 className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
               />
             </div>
@@ -199,7 +224,7 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
                     : "text-muted-foreground",
                 )}
               >
-                Menu
+                {uiText.menu}
               </button>
               <button
                 type="button"
@@ -211,7 +236,7 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
                     : "text-muted-foreground",
                 )}
               >
-                Categories
+                {uiText.categories}
               </button>
             </div>
           </div>
@@ -240,7 +265,7 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
 
               {filteredMenuItems.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">
-                  No menu items found
+                  {uiText.noMenu}
                 </div>
               ) : null}
             </nav>
@@ -256,7 +281,7 @@ export function MegaMenuMobile({ trigger }: MegaMenuMobileProps) {
             </div>
           ) : filteredCategories.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
-              {normalizedQuery ? "No matching categories" : "No categories available"}
+              {normalizedQuery ? uiText.noMatchingCategories : uiText.noCategories}
             </div>
           ) : (
             <nav className="py-2">

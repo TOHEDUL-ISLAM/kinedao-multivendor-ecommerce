@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
 import { db, getS3Url } from "@kineDao.com/db";
 import { products, productImages, productSkus, vendors, categories } from "@kineDao.com/db/schema";
-import { eq, or, ilike, and, asc } from "drizzle-orm";
+import { eq, or, ilike, and, asc, inArray } from "drizzle-orm";
 import { searchQuerySchema, type SearchSuggestResponse } from "@kineDao.com/api-types/catalog";
 import { z } from "zod";
 
@@ -58,36 +58,64 @@ const searchRouter = new Hono().get(
     )
     .limit(limit);
 
-  // Get images and prices for product results
-  const productsWithDetails = await Promise.all(
-    productResults.map(async (product) => {
-      const [image] = await db
-        .select({
-          s3Key: productImages.s3Key,
-        })
-        .from(productImages)
-        .where(eq(productImages.productId, product.id))
-        .orderBy(asc(productImages.sortOrder))
-        .limit(1);
+  const productIds = productResults.map((product) => product.id);
+  const [imageRows, skuRows] =
+    productIds.length > 0
+      ? await Promise.all([
+          db
+            .select({
+              productId: productImages.productId,
+              s3Key: productImages.s3Key,
+            })
+            .from(productImages)
+            .where(inArray(productImages.productId, productIds))
+            .orderBy(asc(productImages.productId), asc(productImages.sortOrder)),
+          db
+            .select({
+              productId: productSkus.productId,
+              priceAmount: productSkus.priceAmount,
+              currency: productSkus.currency,
+            })
+            .from(productSkus)
+            .where(inArray(productSkus.productId, productIds))
+            .orderBy(asc(productSkus.productId), asc(productSkus.priceAmount)),
+        ])
+      : [[], []];
 
-      const [sku] = await db
-        .select()
-        .from(productSkus)
-        .where(eq(productSkus.productId, product.id))
-        .orderBy(asc(productSkus.priceAmount))
-        .limit(1);
+  const imageByProductId = new Map<string, string>();
+  for (const row of imageRows) {
+    if (!imageByProductId.has(row.productId)) {
+      imageByProductId.set(row.productId, row.s3Key);
+    }
+  }
 
-      return {
-        id: product.id,
-        title: product.title,
-        titleBn: product.titleBn,
-        slug: product.slug,
-        imageUrl: image ? getS3Url(image.s3Key) : null,
-        priceAmount: sku?.priceAmount || 0,
-        currency: sku?.currency || "BDT",
-      };
-    })
-  );
+  const priceByProductId = new Map<
+    string,
+    { priceAmount: number; currency: string }
+  >();
+  for (const row of skuRows) {
+    if (!priceByProductId.has(row.productId)) {
+      priceByProductId.set(row.productId, {
+        priceAmount: row.priceAmount,
+        currency: row.currency,
+      });
+    }
+  }
+
+  const productsWithDetails = productResults.map((product) => {
+    const imageKey = imageByProductId.get(product.id);
+    const pricing = priceByProductId.get(product.id);
+
+    return {
+      id: product.id,
+      title: product.title,
+      titleBn: product.titleBn,
+      slug: product.slug,
+      imageUrl: imageKey ? getS3Url(imageKey) : null,
+      priceAmount: pricing?.priceAmount ?? 0,
+      currency: pricing?.currency ?? "BDT",
+    };
+  });
 
   // Search categories
   const categoryResults = await db

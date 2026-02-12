@@ -10,7 +10,7 @@ import {
   vendors,
   categories,
 } from "@kineDao.com/db/schema";
-import { eq, and, sql, asc, desc, ilike, gte, lte, or } from "drizzle-orm";
+import { eq, and, sql, asc, desc, ilike, gte, lte, or, inArray } from "drizzle-orm";
 import {
   categoryPageQuerySchema,
   type CategoryPageResponse,
@@ -215,7 +215,7 @@ const categoryRouter = new Hono().get(
   // Build base conditions
   const conditions = [
     eq(products.isActive, true),
-    sql`${products.categoryId} IN ${categoryIds}`,
+    inArray(products.categoryId, categoryIds),
   ];
 
   // Brand filter (comma-separated)

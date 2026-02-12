@@ -56,7 +56,7 @@ export function CheckoutWizard() {
 		}
 
 		if (!selectedAddress.id) {
-			toast.error("Please select a shipping address");
+			toast.error(t("checkout.shipping.selectAddress"));
 			return;
 		}
 
