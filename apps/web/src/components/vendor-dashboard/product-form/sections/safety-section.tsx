@@ -29,6 +29,10 @@ export function SafetySection({
       border: vendorColors.input(isDark).border,
       color: vendorColors.input(isDark).color,
     },
+    dropdown: {
+      maxHeight: 240,
+      overflowY: "auto" as const,
+    },
   };
 
   return (
@@ -38,6 +42,10 @@ export function SafetySection({
         data={safetyCertOptions}
         value={form.safetyCertifications}
         onChange={(val) => updateField("safetyCertifications", val)}
+        withScrollArea={false}
+        maxDropdownHeight={240}
+        searchable
+        comboboxProps={{ zIndex: 410, withinPortal: true }}
         styles={inputStyles}
       />
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">

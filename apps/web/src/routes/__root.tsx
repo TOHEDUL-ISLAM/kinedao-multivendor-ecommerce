@@ -82,7 +82,31 @@ function MantineThemeBridge({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme();
   const forceColorScheme = resolvedTheme === "dark" ? "dark" : "light";
 
-  return <MantineProvider forceColorScheme={forceColorScheme}>{children}</MantineProvider>;
+  return (
+    <MantineProvider
+      forceColorScheme={forceColorScheme}
+      theme={{
+        components: {
+          Select: {
+            defaultProps: {
+              withScrollArea: false,
+              maxDropdownHeight: 280,
+              comboboxProps: { withinPortal: true, zIndex: 400 },
+            },
+          },
+          MultiSelect: {
+            defaultProps: {
+              withScrollArea: false,
+              maxDropdownHeight: 280,
+              comboboxProps: { withinPortal: true, zIndex: 400 },
+            },
+          },
+        },
+      }}
+    >
+      {children}
+    </MantineProvider>
+  );
 }
 
 function RootDocument() {
@@ -98,6 +122,25 @@ function RootDocument() {
     !location.pathname.startsWith("/vendor/apply");
   const isAdminPanel = location.pathname.startsWith("/admin");
   const hideMainChrome = isVendorLogin || isVendorForm || isVendorDashboard || isAdminPanel;
+  const lenisOptions = {
+    lerp: 0.1,
+    duration: 1.2,
+    allowNestedScroll: true,
+    prevent: (node: Node) => {
+      if (!(node instanceof HTMLElement)) return false;
+      return Boolean(
+        node.closest(
+          [
+            "[data-lenis-prevent]",
+            ".mantine-Combobox-dropdown",
+            ".mantine-Select-dropdown",
+            ".mantine-MultiSelect-dropdown",
+            "[role='listbox']",
+          ].join(","),
+        ),
+      );
+    },
+  };
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -125,7 +168,7 @@ function RootDocument() {
                   </div>
                 }
               >
-                <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
+                <ReactLenis root options={lenisOptions}>
                   <div className="min-h-svh flex flex-col">
                     {!hideMainChrome && <Header />}
                     <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>

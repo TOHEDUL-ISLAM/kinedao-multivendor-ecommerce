@@ -243,9 +243,10 @@ export function VariantsSection({
                     searchable
                     clearable
                     hidePickedOptions
+                    withScrollArea={false}
                     maxDropdownHeight={240}
                     nothingFoundMessage="No value found"
-                    comboboxProps={{ zIndex: 410, withinPortal: false }}
+                    comboboxProps={{ zIndex: 410, withinPortal: true }}
                     styles={inputStyles}
                     data-field-key={
                       optionIndex == null ? `variant.${type}` : `options.${optionIndex}.values`

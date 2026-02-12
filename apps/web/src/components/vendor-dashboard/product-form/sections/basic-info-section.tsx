@@ -47,15 +47,22 @@ export function BasicInfoSection({
   const buildFieldLabel = (
     label: string,
     requirement: string,
-    color: "teal" | "gray" | "yellow" = "gray"
+    color: "teal" | "gray" | "yellow" = "gray",
+    isRequired = false,
   ) => (
     <Group gap={6}>
       <Text size="sm" fw={500}>
         {label}
       </Text>
-      <Badge size="xs" variant="light" color={color}>
-        {requirement}
-      </Badge>
+      {isRequired ? (
+        <Text size="sm" fw={700} c="red">
+          *
+        </Text>
+      ) : (
+        <Badge size="xs" variant="light" color={color}>
+          {requirement}
+        </Badge>
+      )}
     </Group>
   );
 
@@ -63,7 +70,7 @@ export function BasicInfoSection({
     <FormSectionCard title={t.basicInfo} icon={<Info size={20} />}>
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
         <TextInput
-          label={buildFieldLabel(t.titleEn, t.requiredAlways, "teal")}
+          label={buildFieldLabel(t.titleEn, t.requiredAlways, "teal", true)}
           value={form.title}
           onChange={(e) => updateField("title", e.currentTarget.value)}
           error={errors?.title}
@@ -81,15 +88,16 @@ export function BasicInfoSection({
 
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
         <Select
-          label={buildFieldLabel(t.category, t.requiredAlways, "teal")}
+          label={buildFieldLabel(t.category, t.requiredAlways, "teal", true)}
           placeholder={t.selectCategory}
           data={categoryOptions}
           value={form.categoryId}
           onChange={(val) => updateField("categoryId", val || "")}
           searchable
+          withScrollArea={false}
           maxDropdownHeight={320}
           nothingFoundMessage="No category found"
-          comboboxProps={{ zIndex: 400, withinPortal: false }}
+          comboboxProps={{ zIndex: 400, withinPortal: true }}
           error={errors?.categoryId}
           data-field-key="categoryId"
           wrapperProps={{ "data-field-key": "categoryId", "data-lenis-prevent": true }}

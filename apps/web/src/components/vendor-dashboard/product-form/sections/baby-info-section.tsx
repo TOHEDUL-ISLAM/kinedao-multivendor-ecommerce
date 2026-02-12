@@ -64,9 +64,15 @@ export function BabyInfoSection({
           value={form.ageRangeMin != null ? String(form.ageRangeMin) : null}
           onChange={(val) => updateField("ageRangeMin", val ? Number(val) : null)}
           clearable
+          withScrollArea={false}
+          maxDropdownHeight={240}
+          comboboxProps={{ zIndex: 410, withinPortal: true }}
           data-field-key="ageRangeMin"
           wrapperProps={{ "data-field-key": "ageRangeMin" }}
-          styles={inputStyles}
+          styles={{
+            ...inputStyles,
+            dropdown: { maxHeight: 240, overflowY: "auto" },
+          }}
         />
         <Select
           label={buildFieldLabel(t.ageRangeMax, t.optionalField)}
@@ -74,10 +80,16 @@ export function BabyInfoSection({
           value={form.ageRangeMax != null ? String(form.ageRangeMax) : null}
           onChange={(val) => updateField("ageRangeMax", val ? Number(val) : null)}
           clearable
+          withScrollArea={false}
+          maxDropdownHeight={240}
+          comboboxProps={{ zIndex: 410, withinPortal: true }}
           error={errors?.ageRangeMax}
           data-field-key="ageRangeMax"
           wrapperProps={{ "data-field-key": "ageRangeMax" }}
-          styles={inputStyles}
+          styles={{
+            ...inputStyles,
+            dropdown: { maxHeight: 240, overflowY: "auto" },
+          }}
         />
       </SimpleGrid>
 

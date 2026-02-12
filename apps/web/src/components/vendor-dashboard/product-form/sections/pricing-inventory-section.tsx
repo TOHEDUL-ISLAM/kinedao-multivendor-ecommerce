@@ -325,6 +325,10 @@ export function PricingInventorySection({
                 setBulkAvailability((value as BulkAvailability | null) ?? "keep")
               }
               allowDeselect={false}
+              withScrollArea={false}
+              maxDropdownHeight={220}
+              comboboxProps={{ zIndex: 410, withinPortal: true }}
+              styles={{ dropdown: { maxHeight: 220, overflowY: "auto" } }}
             />
           </Group>
 
@@ -348,6 +352,10 @@ export function PricingInventorySection({
                 setDiscountMode((value as DiscountMode | null) ?? "from_price")
               }
               allowDeselect={false}
+              withScrollArea={false}
+              maxDropdownHeight={220}
+              comboboxProps={{ zIndex: 410, withinPortal: true }}
+              styles={{ dropdown: { maxHeight: 220, overflowY: "auto" } }}
             />
           </Group>
 
