@@ -173,7 +173,7 @@ export default function Header() {
               ) : null}
 
               {/* Cart */}
-              <Link to="/cart"> 
+              <Link to="/cart" className="hidden sm:block"> 
                 <Button
                   variant="ghost"
                   size="icon"

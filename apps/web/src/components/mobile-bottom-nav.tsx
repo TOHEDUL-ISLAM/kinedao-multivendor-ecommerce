@@ -1,15 +1,15 @@
 "use client";
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Grid3X3, ShoppingCart, Settings } from "lucide-react";
+import { Home, Heart, ShoppingCart, UserCircle } from "lucide-react";
 import type { ComponentType } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
-  key: "home" | "category" | "cart" | "settings";
-  to: "/" | "/catalog" | "/cart" | "/account/settings";
+  key: "home" | "wishlist" | "cart" | "profile";
+  to: "/" | "/wishlist" | "/cart" | "/account";
   label: string;
   icon: ComponentType<{ className?: string }>;
   isActive: (pathname: string) => boolean;
@@ -29,11 +29,11 @@ export function MobileBottomNav() {
       isActive: (pathname) => pathname === "/",
     },
     {
-      key: "category",
-      to: "/catalog",
-      label: t("catalog.categories"),
-      icon: Grid3X3,
-      isActive: (pathname) => pathname.startsWith("/catalog") || pathname.startsWith("/category/"),
+      key: "wishlist",
+      to: "/wishlist",
+      label: t("userMenu.wishlist"),
+      icon: Heart,
+      isActive: (pathname) => pathname.startsWith("/wishlist"),
     },
     {
       key: "cart",
@@ -43,12 +43,12 @@ export function MobileBottomNav() {
       isActive: (pathname) => pathname.startsWith("/cart") || pathname.startsWith("/checkout"),
     },
     {
-      key: "settings",
-      to: "/account/settings",
-      label: t("userMenu.settings"),
-      icon: Settings,
+      key: "profile",
+      to: "/account",
+      label: t("userMenu.myAccount"),
+      icon: UserCircle,
       isActive: (pathname) =>
-        pathname.startsWith("/account/settings") || pathname.startsWith("/account/language"),
+        pathname.startsWith("/account"),
     },
   ];
 
