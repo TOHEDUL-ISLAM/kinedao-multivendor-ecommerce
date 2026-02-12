@@ -8,7 +8,13 @@
     "./auth": "./src/auth.ts",
     "./newsletter": "./src/newsletter.ts",
     "./cart": "./src/cart.ts",
-    "./vendor": "./src/vendor.ts"
+    "./vendor": "./src/vendor.ts",
+    "./checkout": "./src/checkout.ts",
+    "./vendor-dashboard": "./src/vendor-dashboard.ts",
+    "./admin": "./src/admin.ts",
+    "./admin-management": "./src/admin-management.ts",
+    "./wishlist": "./src/wishlist.ts",
+    "./reviews": "./src/reviews.ts"
   },
   "dependencies": {
     "zod": "catalog:"

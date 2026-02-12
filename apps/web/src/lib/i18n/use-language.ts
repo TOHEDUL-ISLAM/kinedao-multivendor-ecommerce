@@ -1,7 +1,25 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Language, TranslationKey } from "./translations";
 import { formatTranslation, getTranslation } from "./translations";
+
+function getInitialLanguage(): Language {
+  if (typeof window === "undefined") return "en";
+
+  try {
+    const raw = window.localStorage.getItem("kinedao-language");
+    if (!raw) return "en";
+
+    const parsed = JSON.parse(raw) as {
+      state?: { language?: Language };
+    };
+
+    const storedLanguage = parsed?.state?.language;
+    return storedLanguage === "bn" || storedLanguage === "en" ? storedLanguage : "en";
+  } catch {
+    return "en";
+  }
+}
 
 interface LanguageStore {
   language: Language;
@@ -13,7 +31,7 @@ interface LanguageStore {
 export const useLanguage = create<LanguageStore>()(
   persist(
     (set, get) => ({
-      language: "bn", // Default to Bangla (primary audience)
+      language: getInitialLanguage(),
 
       setLanguage: (language: Language) => {
         set({ language });
@@ -38,6 +56,17 @@ export const useLanguage = create<LanguageStore>()(
     }),
     {
       name: "kinedao-language", // localStorage key (unified with language-store)
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined") {
+          return localStorage;
+        }
+
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
     }
   )
 );

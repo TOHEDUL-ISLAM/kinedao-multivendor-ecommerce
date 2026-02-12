@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   productImages,
@@ -10,7 +10,7 @@ import {
   vendors,
   categories,
 } from "@kineDao.com/db/schema";
-import { eq, and, sql, asc, desc, ilike, gte, lte, or } from "drizzle-orm";
+import { eq, and, sql, asc, desc, ilike, gte, lte, or, inArray } from "drizzle-orm";
 import {
   categoryPageQuerySchema,
   type CategoryPageResponse,
@@ -38,7 +38,10 @@ async function formatProductCard(
   }
 ): Promise<ProductCardDTO> {
   const [image] = await db
-    .select()
+    .select({
+      s3Key: productImages.s3Key,
+      alt: productImages.alt,
+    })
     .from(productImages)
     .where(eq(productImages.productId, product.id))
     .orderBy(asc(productImages.sortOrder))
@@ -85,7 +88,7 @@ async function formatProductCard(
     ratingCount: product.ratingCount,
     isNew: product.isNew,
     isHot: product.isHot,
-    imageUrl: image?.url || null,
+    imageUrl: image ? getS3Url(image.s3Key) : null,
     imageAlt: image?.alt || null,
     priceAmount: anySku?.priceAmount || 0,
     compareAtAmount: anySku?.compareAtAmount || null,
@@ -212,7 +215,7 @@ const categoryRouter = new Hono().get(
   // Build base conditions
   const conditions = [
     eq(products.isActive, true),
-    sql`${products.categoryId} IN ${categoryIds}`,
+    inArray(products.categoryId, categoryIds),
   ];
 
   // Brand filter (comma-separated)

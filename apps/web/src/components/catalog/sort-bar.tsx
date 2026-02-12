@@ -59,7 +59,7 @@ export function SortBar({
         <button
           onClick={onFilterClick}
           className={cn(
-            "flex sm:hidden items-center gap-2 px-3 py-2 rounded-lg border transition-colors",
+            "flex lg:hidden items-center gap-2 px-3 py-2 rounded-lg border transition-colors",
             hasActiveFilters
               ? "border-primary bg-primary/10 text-primary"
               : "border-border hover:border-primary/50"

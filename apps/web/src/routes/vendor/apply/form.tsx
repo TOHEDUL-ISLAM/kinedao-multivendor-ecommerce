@@ -16,17 +16,26 @@ export const Route = createFileRoute("/vendor/apply/form")({
     }
     return { session };
   },
-  loader: async () => {
+  loader: async ({ context }) => {
+    const roles = ((context.session.user as { roles?: string[] | null }).roles ?? []);
+    const hasVendorRole = roles.includes("vendor");
+
+    if (hasVendorRole) {
+      throw redirect({
+        to: "/vendor/dashboard",
+      });
+    }
+
     // Check application status
     const response = await api.vendor.application.status.$get();
 
     if (response.ok) {
       const data = await response.json();
 
-      // If already approved, redirect to vendor dashboard
+      // If approved, redirect to dashboard
       if (data.application?.status === "approved") {
         throw redirect({
-          to: "/dashboard", // TODO: Change to /vendor/dashboard when implemented
+          to: "/vendor/dashboard",
         });
       }
 

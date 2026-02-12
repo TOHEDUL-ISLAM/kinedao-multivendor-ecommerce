@@ -9,7 +9,6 @@ import {
   Menu,
   Sun,
   Moon,
-  Baby,
   MapPin,
   Phone,
   Zap,
@@ -23,13 +22,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useFavoritesStore } from "@/stores/favorites-store";
 import { ensureGuestId } from "@/lib/cart-session";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
 import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
-import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api-client";
+import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
 import { SearchBar } from "./search-bar";
+import { KineDaoLogo } from "./kinedao-logo";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,10 +41,17 @@ export default function Header() {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const cartCount = useCartStore((state) => state.itemCount);
+  const favoriteCount = useFavoritesStore((state) => state.productIds.length);
   const fetchCart = useCartStore((state) => state.fetchCart);
   const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
+  const mergeGuestWishlist = useFavoritesStore((state) => state.mergeGuestToServer);
 
-  const { data: session, isPending } = authClient.useSession();
+  const {
+    session,
+    isSessionPending,
+    action: sellerAction,
+    isLoading: isSellerActionLoading,
+  } = useHeaderSellerAction();
   const isLoggedIn = !!session;
 
   useEffect(() => {
@@ -63,6 +73,18 @@ export default function Header() {
     }
   }, [mergeGuestCart, session?.user?.id]);
 
+  useEffect(() => {
+    if (session?.user?.id) {
+      void mergeGuestWishlist(session.user.id);
+    }
+  }, [mergeGuestWishlist, session?.user?.id]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      void api.account.recover.$post();
+    }
+  }, [session?.user?.id]);
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -73,10 +95,10 @@ export default function Header() {
         isScrolled ? "bg-background/80 backdrop-blur-md shadow-sm" : "bg-background"
       }`}>
         {/* Top bar */}
-        <div className="bg-primary text-primary-foreground py-1 text-xs sm:text-sm">
+        <div className="bg-primary text-primary-foreground py-1 text-[11px] sm:text-sm">
           <div className="container mx-auto px-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+              <span className="flex items-center gap-1 cursor-pointer hover:opacity-80 whitespace-nowrap">
                 <MapPin className="w-3 h-3" />
                 {t("header.trackOrder")}
               </span>
@@ -98,14 +120,14 @@ export default function Header() {
         </div>
 
         {/* Main navbar */}
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <Baby className="h-8 w-8 text-pink-500" />
-              <span className="font-bold text-2xl bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent hidden sm:block pb-1">
-                কিনেদাও
-              </span>
+              <KineDaoLogo
+                iconClassName="h-7 w-7 sm:h-8 sm:w-8"
+                textClassName="hidden sm:block"
+              />
             </Link>
 
             {/* Search bar */}
@@ -114,27 +136,44 @@ export default function Header() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
-              <LanguageToggle />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <LanguageToggle className="hidden sm:inline-flex" />
               {/* Theme toggle */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="rounded-full"
+                className="hidden sm:inline-flex rounded-full"
               >
                 {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
 
               {/* Wishlist */}
-              <Link to="/catalog">
-                <Button variant="ghost" size="icon" className="rounded-full hidden sm:flex">
+              <Link to="/wishlist" className="hidden sm:block">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full relative"
+                  aria-label={t("header.wishlist")}
+                >
                   <Heart className="w-5 h-5" />
+                  {favoriteCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground rounded-full">
+                      {favoriteCount > 9 ? "9+" : favoriteCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
 
+              {/* Notifications */}
+              {isLoggedIn ? (
+                <div className="hidden sm:block">
+                  <NotificationBell />
+                </div>
+              ) : null}
+
               {/* Cart */}
-              <Link to="/cart"> 
+              <Link to="/cart" className="hidden sm:block"> 
                 <Button
                   variant="ghost"
                   size="icon"
@@ -149,17 +188,21 @@ export default function Header() {
                 </Button>
               </Link>
 
-              {/* Become a Seller */}
-              <Link to="/vendor/apply" className="hidden md:flex">
-                <Button variant="secondary" className="gap-2 rounded-full">
-                  <Store className="w-4 h-4" />
-                  {t("header.becomeSeller")}
-                </Button>
-              </Link>
+              {/* Seller CTA */}
+              {isSellerActionLoading ? (
+                <Skeleton className="hidden md:flex h-10 w-40 rounded-full" />
+              ) : (
+                <a href={sellerAction.href} className="hidden md:flex">
+                  <Button variant="secondary" className="gap-2 rounded-full">
+                    <Store className="w-4 h-4" />
+                    {t(sellerAction.labelKey)}
+                  </Button>
+                </a>
+              )}
 
               {/* Account */}
-              {isPending ? (
-                 <Skeleton className="h-10 w-24 rounded-full" />
+              {isSessionPending ? (
+                 <Skeleton className="h-9 w-9 sm:h-10 sm:w-24 rounded-full" />
               ) : isLoggedIn ? (
                 <UserMenu />
               ) : (
@@ -225,10 +268,6 @@ export default function Header() {
               </Link>
 
               <div className="flex-1" />
-
-              <Button variant="ghost" className="gap-2 rounded-full shrink-0 text-primary font-semibold">
-                ✨ {t("header.choice")}
-              </Button>
             </div>
           </div>
         </nav>

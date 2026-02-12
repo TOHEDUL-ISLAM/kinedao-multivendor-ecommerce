@@ -5,6 +5,7 @@ import { useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
@@ -12,7 +13,17 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
+export default function SignInForm({
+  onSwitchToSignUp,
+  redirectTo = "/",
+  className,
+  hideTitle = false,
+}: {
+  onSwitchToSignUp: () => void;
+  redirectTo?: string;
+  className?: string;
+  hideTitle?: boolean;
+}) {
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -27,13 +38,13 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         {
           email: value.email,
           password: value.password,
-          callbackURL: window.location.origin,
+          callbackURL: `${window.location.origin}${redirectTo}`,
         },
         {
           onSuccess: () => {
             toast.success("Welcome back!");
-            // Use window.location for reliable redirect after auth
-            window.location.href = "/";
+            // Use window.location for reliable redirect after auth.
+            window.location.href = redirectTo;
           },
           onError: () => {
             setServerError("Invalid email or password");
@@ -54,8 +65,10 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+    <div className={cn("mx-auto w-full mt-10 max-w-md p-6", className)}>
+      {!hideTitle ? (
+        <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+      ) : null}
 
       {serverError && (
         <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
@@ -149,7 +162,7 @@ export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () 
         </div>
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton redirectTo={redirectTo} />
       {/* <FacebookSignInButton /> */}
 
       <div className="mt-4 text-center">

@@ -16,9 +16,12 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "build": "bun run --filter '*' build",
-    "check-types": "bun run --filter '*' check-types",
+    "dev": "bun run --workspaces --if-present dev",
+    "build": "bun run --workspaces --if-present build",
+    "check-types": "bun run --workspaces --if-present check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,md}\"",
+    "lint:fix": "eslint . --fix",
     "dev:native": "bun run --filter native dev",
     "dev:web": "bun run --filter web dev",
     "dev:server": "bun run --filter server dev",
@@ -26,6 +29,7 @@
     "db:studio": "bun run --filter @kineDao.com/db db:studio",
     "db:generate": "bun run --filter @kineDao.com/db db:generate",
     "db:migrate": "bun run --filter @kineDao.com/db db:migrate",
+    "db:baseline": "bun run --filter @kineDao.com/db db:baseline",
     "db:seed": "bun run --filter server seed",
     "prepare": "husky"
   },
@@ -37,11 +41,20 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@kineDao.com/config": "workspace:*",
     "@types/bun": "catalog:",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.0",
+    "globals": "^17.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
-    "typescript": "catalog:"
+    "prettier": "^3.8.1",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.55.0"
   },
   "lint-staged": {
     "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": "echo 'Linting skipped (no linter configured)'"

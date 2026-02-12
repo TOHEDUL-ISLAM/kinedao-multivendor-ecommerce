@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PackageX, Truck, RotateCcw } from "lucide-react";
@@ -11,7 +11,14 @@ import { toast } from "sonner";
 import type { ProductDetailDTO } from "@kineDao.com/api-types/catalog";
 
 // Components
-import { Breadcrumb, type BreadcrumbItem } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageGallery } from "@/components/product/image-gallery";
@@ -39,6 +46,12 @@ async function fetchProductDetail(slug: string): Promise<ProductDetailDTO> {
 
   return await response.json();
 }
+
+type BreadcrumbEntry = {
+  label: string;
+  labelBn?: string | null;
+  href?: string;
+};
 
 function ProductDetailPage() {
   const { t, language } = useTranslation();
@@ -108,8 +121,8 @@ function ProductDetailPage() {
   };
 
   // Build breadcrumb items
-  const buildBreadcrumbs = (): BreadcrumbItem[] => {
-    const items: BreadcrumbItem[] = [
+  const buildBreadcrumbs = (): BreadcrumbEntry[] => {
+    const items: BreadcrumbEntry[] = [
       { label: t("breadcrumb.home"), labelBn: language === "bn" ? "হোম" : undefined, href: "/" },
     ];
 
@@ -189,7 +202,26 @@ function ProductDetailPage() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
         {/* Breadcrumb */}
-        <Breadcrumb items={buildBreadcrumbs()} className="mb-6" />
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            {buildBreadcrumbs().map((item, index, arr) => (
+              <Fragment key={`${item.href ?? "current"}-${index}`}>
+                <BreadcrumbItem>
+                  {item.href ? (
+                    <BreadcrumbLink href={item.href}>
+                      {language === "bn" && item.labelBn ? item.labelBn : item.label}
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage>
+                      {language === "bn" && item.labelBn ? item.labelBn : item.label}
+                    </BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {index < arr.length - 1 && <BreadcrumbSeparator />}
+              </Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
 
         {/* Main product section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">

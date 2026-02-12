@@ -82,8 +82,10 @@ export function FileUpload({
         const formData = new FormData();
         formData.append("file", file);
 
-        // Use fetch directly for file uploads (RPC client doesn't handle FormData well)
-        const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/upload`, {
+        // Use fetch directly for file uploads with explicit category.
+        const serverUrl = (import.meta.env.VITE_SERVER_URL || "").replace(/\/$/, "");
+        const uploadUrl = `${serverUrl}/api/upload?category=vendor-documents`;
+        const response = await fetch(uploadUrl, {
           method: "POST",
           body: formData,
           credentials: "include",
@@ -92,13 +94,29 @@ export function FileUpload({
         clearInterval(progressInterval);
         setUploadProgress(100);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Upload failed");
+        const raw = await response.text();
+        let payload: { url?: string; error?: string } | null = null;
+
+        try {
+          payload = raw ? (JSON.parse(raw) as { url?: string; error?: string }) : null;
+        } catch {
+          if (!response.ok) {
+            throw new Error(
+              `Upload failed (${response.status}). Please check server connection and try again.`
+            );
+          }
+          throw new Error("Upload failed due to an invalid server response.");
         }
 
-        const data = await response.json();
-        onChange(data.url);
+        if (!response.ok) {
+          throw new Error(payload?.error || "Upload failed");
+        }
+
+        if (!payload?.url) {
+          throw new Error("Upload failed: server response missing file URL.");
+        }
+
+        onChange(payload.url);
       } catch (err) {
         setUploadError(
           err instanceof Error ? err.message : t("vendor.form.upload.failed")

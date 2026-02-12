@@ -393,3 +393,38 @@ html.lenis, html.lenis body {
     animation: fade-in 0.4s ease-out both;
   }
 }
+
+/* Print styles */
+@media print {
+  header, footer, nav, .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Expand containers for printing */
+  .container {
+    max-width: 100% !important;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Ensure page breaks are handled well */
+  .page-break {
+    page-break-after: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}

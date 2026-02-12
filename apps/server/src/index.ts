@@ -18,7 +18,42 @@ import { recommendationsRouter } from "./routes/recommendations";
 import { cartRouter } from "./routes/cart";
 import { vendorRouter } from "./routes/vendor";
 import { uploadRouter } from "./routes/upload";
+import { shippingAddressesRouter } from "./routes/shipping-addresses";
+import { ordersRouter } from "./routes/orders";
+import { vendorDashboardRouter } from "./routes/vendor-dashboard";
+import { adminRouter } from "./routes/admin";
+import { adminManagementRouter } from "./routes/admin-management";
+import { bannersRouter } from "./routes/banners";
+import { notificationsRouter } from "./routes/notifications";
+import { wishlistRouter } from "./routes/wishlist";
+import { accountRouter } from "./routes/account";
+import { reviewsRouter } from "./routes/reviews";
+import { vendorDashboardReviewsRouter } from "./routes/vendor-dashboard-reviews";
+import { adminReviewsRouter } from "./routes/admin-reviews";
 import { openAPIRouteHandler } from 'hono-openapi';
+import { db } from "@kineDao.com/db";
+import { user } from "@kineDao.com/db/schema/auth";
+import { and, eq, isNotNull, lt } from "drizzle-orm";
+
+const normalizeOrigin = (value: string) => value.replace(/\/+$/, "");
+
+const getAllowedCorsOrigins = () => {
+  const configured = (env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(
+    new Set([
+      normalizeOrigin(env.CORS_ORIGIN),
+      normalizeOrigin(env.FRONTEND_URL),
+      normalizeOrigin(env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL),
+      ...configured.map(normalizeOrigin),
+    ])
+  );
+};
+
+const allowedCorsOrigins = getAllowedCorsOrigins();
 
 export type AppEnv = {
   Variables: {
@@ -30,9 +65,67 @@ const app = new Hono<AppEnv>()
   .use(logger())
   .use("*", async (c, next) => {
     try {
+      const now = new Date();
+      await db
+        .delete(user)
+        .where(
+          and(
+            isNotNull(user.deletedAt),
+            isNotNull(user.recoverUntil),
+            lt(user.recoverUntil, now),
+          ),
+        );
+
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (session) {
+        const dbUser = await db
+          .select({
+            id: user.id,
+            deletedAt: user.deletedAt,
+            recoverUntil: user.recoverUntil,
+          })
+          .from(user)
+          .where(eq(user.id, session.user.id))
+          .limit(1);
+
+        const currentUser = dbUser[0];
+        if (!currentUser) {
+          c.set("user", null);
+          await next();
+          return;
+        }
+
+        // Recover account automatically if user signs in again within 14-day window.
+        if (
+          currentUser.deletedAt &&
+          currentUser.recoverUntil &&
+          currentUser.recoverUntil >= now
+        ) {
+          await db
+            .update(user)
+            .set({ deletedAt: null, recoverUntil: null, updatedAt: now })
+            .where(eq(user.id, currentUser.id));
+        }
+
+        // Purge account lazily after recovery window expires.
+        if (
+          currentUser.deletedAt &&
+          currentUser.recoverUntil &&
+          currentUser.recoverUntil < now
+        ) {
+          await db.delete(user).where(eq(user.id, currentUser.id));
+          c.set("user", null);
+          await next();
+          return;
+        }
+
+        console.log(`[Session] Found session for user: ${session.user.email}`);
+      } else {
+        console.log("[Session] No session found for request");
+      }
       c.set("user", session?.user ?? null);
-    } catch {
+    } catch (error) {
+      console.error("[Session] Error retrieving session:", error);
       c.set("user", null);
     }
     await next();
@@ -41,7 +134,7 @@ const app = new Hono<AppEnv>()
   .use(
     "/*",
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: allowedCorsOrigins,
       allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization", "x-guest-id"],
       credentials: true,
@@ -60,6 +153,18 @@ const app = new Hono<AppEnv>()
   .route("/api/cart", cartRouter)
   .route("/api/vendor", vendorRouter)
   .route("/api/upload", uploadRouter)
+  .route("/api/shipping-addresses", shippingAddressesRouter)
+  .route("/api/orders", ordersRouter)
+  .route("/api/vendor-dashboard", vendorDashboardRouter)
+  .route("/api/admin", adminRouter)
+  .route("/api/admin-management", adminManagementRouter)
+  .route("/api/banners", bannersRouter)
+  .route("/api/notifications", notificationsRouter)
+  .route("/api/wishlist", wishlistRouter)
+  .route("/api/account", accountRouter)
+  .route("/api/reviews", reviewsRouter)
+  .route("/api/vendor-dashboard", vendorDashboardReviewsRouter)
+  .route("/api/admin", adminReviewsRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))

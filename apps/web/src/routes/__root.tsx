@@ -1,8 +1,9 @@
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import { ReactLenis } from "@studio-freight/react-lenis";
+import { MantineProvider } from "@mantine/core";
 
 import { Toaster } from "@/components/ui/sonner";
 import { QuickViewModal } from "@/components/quick-view-modal";
@@ -10,6 +11,7 @@ import { ClientOnly } from "@/components/client-only";
 
 import Header from "../components/header";
 import Footer from "../components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import appCss from "../index.css?url";
 
 export interface RouterAppContext {}
@@ -51,6 +53,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     links: [
       {
         rel: "stylesheet",
+        href: "https://unpkg.com/@mantine/core@8.3.14/styles.css",
+      },
+      {
+        rel: "stylesheet",
         href: appCss,
       },
       {
@@ -72,9 +78,69 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootDocument,
 });
 
+function MantineThemeBridge({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme } = useTheme();
+  const forceColorScheme = resolvedTheme === "dark" ? "dark" : "light";
+
+  return (
+    <MantineProvider
+      forceColorScheme={forceColorScheme}
+      theme={{
+        components: {
+          Select: {
+            defaultProps: {
+              withScrollArea: false,
+              maxDropdownHeight: 280,
+              comboboxProps: { withinPortal: true, zIndex: 400 },
+            },
+          },
+          MultiSelect: {
+            defaultProps: {
+              withScrollArea: false,
+              maxDropdownHeight: 280,
+              comboboxProps: { withinPortal: true, zIndex: 400 },
+            },
+          },
+        },
+      }}
+    >
+      {children}
+    </MantineProvider>
+  );
+}
+
 function RootDocument() {
   const location = useLocation();
+  const locationHref =
+    typeof (location as { href?: unknown }).href === "string"
+      ? ((location as { href: string }).href)
+      : location.pathname;
+  const isVendorLogin = location.pathname === "/login" &&
+    /(?:\?|&)portal=vendor(?:&|$)/.test(locationHref);
   const isVendorForm = location.pathname === "/vendor/apply/form";
+  const isVendorDashboard = location.pathname.startsWith("/vendor/") &&
+    !location.pathname.startsWith("/vendor/apply");
+  const isAdminPanel = location.pathname.startsWith("/admin");
+  const hideMainChrome = isVendorLogin || isVendorForm || isVendorDashboard || isAdminPanel;
+  const lenisOptions = {
+    lerp: 0.1,
+    duration: 1.2,
+    allowNestedScroll: true,
+    prevent: (node: Node) => {
+      if (!(node instanceof HTMLElement)) return false;
+      return Boolean(
+        node.closest(
+          [
+            "[data-lenis-prevent]",
+            ".mantine-Combobox-dropdown",
+            ".mantine-Select-dropdown",
+            ".mantine-MultiSelect-dropdown",
+            "[role='listbox']",
+          ].join(","),
+        ),
+      );
+    },
+  };
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -88,34 +154,38 @@ function RootDocument() {
           enableSystem
           disableTransitionOnChange={false}
         >
-          <QueryClientProvider client={queryClient}>
-            <ClientOnly
-              fallback={
-                <div className="min-h-svh flex flex-col">
-                  {!isVendorForm && <Header />}
-                  <main className="flex-1">
-                    <Outlet />
-                  </main>
-                  {!isVendorForm && <Footer />}
-                </div>
-              }
-            >
-              <ReactLenis root options={{ lerp: 0.1, duration: 1.2 }}>
-                <div className="min-h-svh flex flex-col">
-                  {!isVendorForm && <Header />}
-                  <main className="flex-1">
-                    <Outlet />
-                  </main>
-                  {!isVendorForm && <Footer />}
-                </div>
+          <MantineThemeBridge>
+            <QueryClientProvider client={queryClient}>
+              <ClientOnly
+                fallback={
+                  <div className="min-h-svh flex flex-col">
+                    {!hideMainChrome && <Header />}
+                    <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>
+                      <Outlet />
+                    </main>
+                    {!hideMainChrome && <Footer />}
+                    {!hideMainChrome && <MobileBottomNav />}
+                  </div>
+                }
+              >
+                <ReactLenis root options={lenisOptions}>
+                  <div className="min-h-svh flex flex-col">
+                    {!hideMainChrome && <Header />}
+                    <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>
+                      <Outlet />
+                    </main>
+                    {!hideMainChrome && <Footer />}
+                    {!hideMainChrome && <MobileBottomNav />}
+                  </div>
 
-                {/* Global Modals */}
-                <QuickViewModal />
+                  {/* Global Modals */}
+                  <QuickViewModal />
 
-                <Toaster richColors position="bottom-right" expand={true} />
-              </ReactLenis>
-            </ClientOnly>
-          </QueryClientProvider>
+                  <Toaster richColors position="bottom-right" expand={true} />
+                </ReactLenis>
+              </ClientOnly>
+            </QueryClientProvider>
+          </MantineThemeBridge>
         </ThemeProvider>
 
         <TanStackRouterDevtools position="bottom-left" />

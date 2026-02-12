@@ -49,7 +49,7 @@ export function HeroSection() {
           </p>
 
           <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in"
+            className="flex flex-col items-center justify-center gap-3 animate-fade-in"
             style={{ animationDelay: "300ms" }}
           >
             <Button

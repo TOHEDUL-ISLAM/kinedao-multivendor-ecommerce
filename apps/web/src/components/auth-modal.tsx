@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Mail, Lock, User, Eye, EyeOff, Baby } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 import { authClient } from "@/lib/auth-client";
 import Loader from "@/components/loader";
+import { KineDaoLogo } from "@/components/kinedao-logo";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -122,7 +123,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <Baby className="h-10 w-10 text-pink-500" />
+            <KineDaoLogo showText={false} iconClassName="h-10 w-10" />
           </div>
           <DialogTitle className="text-2xl font-heading bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent inline-block pb-1">
             Welcome to কিনেদাও

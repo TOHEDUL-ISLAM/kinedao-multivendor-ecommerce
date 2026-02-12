@@ -6,6 +6,9 @@ import { ChevronLeft, ChevronRight, X, Heart, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { useTranslation } from "@/hooks/use-translation";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 interface ProductImage {
   id: string;
@@ -22,12 +25,14 @@ interface ImageGalleryProps {
 }
 
 export function ImageGallery({ images, productTitle, productId, className }: ImageGalleryProps) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const { toggle: toggleFavorite, isFavorite } = useFavoritesStore();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const { data: session } = authClient.useSession();
   const isFav = productId ? isFavorite(productId) : false;
 
   // Minimum swipe distance for navigation
@@ -100,9 +105,21 @@ export function ImageGallery({ images, productTitle, productId, className }: Ima
     }
   };
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (productId) {
-      toggleFavorite(productId);
+      const previous = isFav;
+      const next = await toggleFavorite(productId, !!session);
+
+      if (next === previous) {
+        toast.error(t("wishlist.addFailed"), {
+          position: "bottom-right",
+        });
+        return;
+      }
+
+      toast.success(next ? t("wishlist.added") : t("wishlist.removed"), {
+        position: "bottom-right",
+      });
     }
   };
 
@@ -182,7 +199,7 @@ export function ImageGallery({ images, productTitle, productId, className }: Ima
                   "p-2 rounded-full bg-white/90 dark:bg-card/90 shadow-sm transition-colors",
                   isFav ? "text-red-500" : "text-muted-foreground hover:text-red-500"
                 )}
-                aria-label="Add to favorites"
+                aria-label={isFav ? t("wishlist.remove") : t("header.wishlist")}
               >
                 <Heart className={cn("h-5 w-5", isFav && "fill-current")} />
               </button>

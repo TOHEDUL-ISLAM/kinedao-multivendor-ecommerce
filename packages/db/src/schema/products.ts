@@ -55,8 +55,15 @@ export const products = pgTable(
     isHot: boolean("is_hot").default(false),
     status: varchar("status", { length: 20 })
       .default("pending")
-      .$type<"pending" | "approved" | "rejected">()
+      .$type<"draft" | "pending" | "approved" | "rejected">()
       .notNull(),
+    pendingReason: varchar("pending_reason", { length: 32 })
+      .$type<"new_submission" | "vendor_update" | null>()
+      .default("new_submission"),
+    submittedAt: timestamp("submitted_at"),
+    reviewNotes: text("review_notes"),
+    lastReviewedAt: timestamp("last_reviewed_at"),
+    lastReviewedBy: text("last_reviewed_by"),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -83,12 +90,21 @@ export const productImages = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    url: text("url").notNull(),
+    // Store S3 key, NOT full URL (URLs are generated on-demand)
+    s3Key: text("s3_key").notNull(), // e.g., "products/123/images/original/uuid.jpg"
+    variant: varchar("variant", { length: 20 })
+      .default("original")
+      .$type<"original" | "medium" | "thumbnail">()
+      .notNull(),
     alt: varchar("alt", { length: 200 }),
     sortOrder: integer("sort_order").default(0),
+    isPrimary: boolean("is_primary").default(false), // For main product image
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("product_images_product_idx").on(table.productId)]
+  (table) => [
+    index("product_images_product_idx").on(table.productId),
+    index("product_images_variant_idx").on(table.variant),
+  ]
 );
 
 // Product options table (e.g., Size, Color)

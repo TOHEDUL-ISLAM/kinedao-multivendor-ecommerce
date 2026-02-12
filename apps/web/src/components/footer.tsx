@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Baby, Mail, Phone, MapPin, Facebook, Instagram, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
+import { KineDaoLogo } from "@/components/kinedao-logo";
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -14,10 +15,7 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="space-y-6 flex flex-col items-start text-left">
             <Link to="/" className="flex items-center gap-2 group">
-              <Baby className="h-8 w-8 text-pink-500 transition-transform group-hover:scale-110" />
-              <span className="font-bold text-2xl bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent pb-1">
-                কিনেদাও
-              </span>
+              <KineDaoLogo iconClassName="transition-transform group-hover:scale-110" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {t("footer.description")}

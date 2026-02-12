@@ -4,15 +4,56 @@ import { auth } from "@kineDao.com/auth";
 import { env } from "@kineDao.com/env/server";
 import { signUpSchema, forgotPasswordSchema } from "@kineDao.com/api-types/auth";
 
-const frontendBaseUrl = env.FRONTEND_URL.replace(/\/+$/, "");
-const frontendOrigin = new URL(frontendBaseUrl).origin;
+const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
-const resolveFrontendUrl = (value: string | undefined, fallbackPath: string) => {
-  const fallback = new URL(fallbackPath, frontendBaseUrl).toString();
+const parseCommaSeparatedUrls = (value: string | undefined) =>
+  (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .flatMap((item) => {
+      try {
+        return [normalizeBaseUrl(new URL(item).toString())];
+      } catch {
+        return [];
+      }
+    });
+
+const frontendBaseUrl = normalizeBaseUrl(env.FRONTEND_URL);
+const trustedFrontendUrls = Array.from(
+  new Set([
+    frontendBaseUrl,
+    normalizeBaseUrl(env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL),
+    normalizeBaseUrl(env.CORS_ORIGIN),
+    ...parseCommaSeparatedUrls(env.CORS_ORIGINS),
+  ])
+);
+const trustedFrontendOrigins = new Set(
+  trustedFrontendUrls.map((url) => new URL(url).origin)
+);
+
+const resolveBaseUrlFromOrigin = (origin: string | undefined) => {
+  if (!origin) {
+    return frontendBaseUrl;
+  }
+
+  const normalizedOrigin = normalizeBaseUrl(origin);
+  return trustedFrontendOrigins.has(normalizedOrigin)
+    ? normalizedOrigin
+    : frontendBaseUrl;
+};
+
+const resolveFrontendUrl = (
+  value: string | undefined,
+  fallbackPath: string,
+  requestOrigin: string | undefined
+) => {
+  const baseUrl = resolveBaseUrlFromOrigin(requestOrigin);
+  const fallback = new URL(fallbackPath, baseUrl).toString();
   if (!value) return fallback;
   try {
-    const parsed = new URL(value, frontendBaseUrl);
-    return parsed.origin === frontendOrigin ? parsed.toString() : fallback;
+    const parsed = new URL(value, baseUrl);
+    return trustedFrontendOrigins.has(parsed.origin) ? parsed.toString() : fallback;
   } catch {
     return fallback;
   }
@@ -35,7 +76,11 @@ const buildAuthRequest = (path: string, body: unknown, original: Request) => {
 const authRouter = new Hono()
   .post("/sign-up", zValidator("json", signUpSchema), async (c) => {
     const data = c.req.valid("json");
-    const callbackURL = resolveFrontendUrl(data.callbackURL, "/login");
+    const callbackURL = resolveFrontendUrl(
+      data.callbackURL,
+      "/login",
+      c.req.header("origin")
+    );
 
     const request = buildAuthRequest(
       "/api/auth/sign-up/email",
@@ -53,7 +98,11 @@ const authRouter = new Hono()
   })
   .post("/forgot-password", zValidator("json", forgotPasswordSchema), async (c) => {
     const data = c.req.valid("json");
-    const redirectTo = resolveFrontendUrl(data.redirectTo, "/reset-password");
+    const redirectTo = resolveFrontendUrl(
+      data.redirectTo,
+      "/reset-password",
+      c.req.header("origin")
+    );
 
     const request = buildAuthRequest(
       "/api/auth/request-password-reset",

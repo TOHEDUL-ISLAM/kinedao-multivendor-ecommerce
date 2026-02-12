@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "@/lib/api-client";
 import { useTranslation } from "@/hooks/use-translation";
@@ -11,6 +11,9 @@ import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-s
 import { StickyFilterContainer } from "@/components/catalog/sticky-filter-container";
 import { SortBar } from "@/components/catalog/sort-bar";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import { Pagination, CompactPagination } from "@/components/catalog/pagination";
+
+const PAGE_SIZE = 20;
 
 // Search params schema
 const catalogSearchSchema = z.object({
@@ -26,6 +29,7 @@ const catalogSearchSchema = z.object({
   max: z.coerce.number().optional(),
   rating: z.coerce.number().optional(),
   sort: z.enum(["price_asc", "price_desc", "newest", "bestseller", "rating"]).optional(),
+  page: z.coerce.number().min(1).default(1),
 });
 
 type CatalogSearch = z.infer<typeof catalogSearchSchema>;
@@ -41,7 +45,7 @@ async function fetchFacets(): Promise<CatalogFacetsResponse> {
   return await response.json();
 }
 
-async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promise<CatalogProductsResponse> {
+async function fetchProducts(params: CatalogSearch): Promise<CatalogProductsResponse> {
   const response = await api.catalog.products.$get({
     query: {
       q: params.q,
@@ -53,8 +57,8 @@ async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promi
       max: params.max?.toString(),
       rating: params.rating?.toString(),
       sort: params.sort,
-      cursor: params.cursor,
-      limit: "20",
+      page: params.page?.toString(),
+      limit: PAGE_SIZE.toString(),
     },
   });
   if (!response.ok) throw new Error("Failed to fetch products");
@@ -62,11 +66,11 @@ async function fetchProducts(params: CatalogSearch & { cursor?: string }): Promi
 }
 
 function CatalogPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   // const isMobile = useIsMobile();
   const navigate = useNavigate();
   const search = Route.useSearch();
-
+  const currentPage = search.page ?? 1;
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Fetch facets (categories, vendors, price range)
@@ -77,23 +81,15 @@ function CatalogPage() {
   });
 
   // Fetch products with infinite query for pagination
-  const {
-    data: productsData,
-    isLoading: productsLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
+  const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ["catalog-products", search],
-    queryFn: ({ pageParam }) => fetchProducts({ ...search, cursor: pageParam }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined as string | undefined,
+    queryFn: () => fetchProducts(search),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Flatten products from all pages
-  const products = productsData?.pages.flatMap((page) => page.items) ?? [];
-  const totalCount = productsData?.pages[0]?.total ?? 0;
+  const products = productsData?.items ?? [];
+  const totalCount = productsData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // Update URL with filters
   const updateSearch = useCallback(
@@ -102,6 +98,9 @@ function CatalogPage() {
         from: Route.fullPath,
         search: (prev) => {
           const newSearch = { ...prev, ...updates };
+          if (!("page" in updates)) {
+            newSearch.page = 1;
+          }
           // Remove undefined values
           Object.keys(newSearch).forEach((key) => {
             if (newSearch[key as keyof CatalogSearch] === undefined) {
@@ -156,10 +155,14 @@ function CatalogPage() {
     updateSearch({ sort });
   };
 
+  const handlePageChange = (page: number) => {
+    updateSearch({ page });
+  };
+
   const handleClearFilters = () => {
     navigate({
       from: Route.fullPath,
-      search: search.q ? { q: search.q } : {},
+      search: search.q ? { q: search.q, page: 1 } : { page: 1 },
     });
   };
 
@@ -181,14 +184,29 @@ function CatalogPage() {
   const selectedBrands = search.brand?.split(",").filter(Boolean) ?? [];
   const selectedAgeRanges = search.ageRange?.split(",").filter(Boolean) ?? [];
 
+  const selectedCategoryNames = useMemo(() => {
+    if (!facets?.categories || selectedCategories.length === 0) return [];
+    const nameBySlug = new Map(
+      facets.categories.map((category) => [
+        category.slug,
+        language === "bn" && category.nameBn ? category.nameBn : category.name,
+      ])
+    );
+    return selectedCategories.map((slug) => nameBySlug.get(slug) ?? slug);
+  }, [facets?.categories, language, selectedCategories]);
+
+  const pageTitle = search.q
+    ? `"${search.q}"`
+    : selectedCategoryNames.length > 0
+      ? selectedCategoryNames.join(", ")
+      : t("catalog.title");
+
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
         {/* Page Header */}
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
-            {search.q ? `"${search.q}"` : t("catalog.title")}
-          </h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{pageTitle}</h1>
           {search.q && (
             <p className="text-sm text-muted-foreground mt-1">
               Search results for "{search.q}"
@@ -250,10 +268,27 @@ function CatalogPage() {
             <ProductGrid
               products={products}
               isLoading={productsLoading}
-              hasMore={!!hasNextPage}
-              onLoadMore={() => fetchNextPage()}
-              isLoadingMore={isFetchingNextPage}
+              showLoadMore={false}
             />
+
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <div className="hidden sm:block">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+                <div className="sm:hidden">
+                  <CompactPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

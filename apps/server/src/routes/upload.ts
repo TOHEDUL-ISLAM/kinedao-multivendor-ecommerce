@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import type { UploadResponse } from "@kineDao.com/api-types/vendor";
 import type { AppEnv } from "../index";
 import { uploadFile } from "../lib/file-upload";
 
@@ -83,16 +82,37 @@ const uploadRouter = new Hono<AppEnv>()
         return c.json({ error: "No file provided" }, 400);
       }
 
+      // Get upload category from query param (default: vendor-documents)
+      const validCategories = ["vendor-documents", "vendor-logos", "product-images", "banners"] as const;
+      const categoryParam = c.req.query("category") || "vendor-documents";
+      const category = (validCategories as readonly string[]).includes(categoryParam)
+        ? (categoryParam as (typeof validCategories)[number])
+        : "vendor-documents";
+
+      // Get optional context parameters
+      const productId = c.req.query("productId");
+      const vendorId = c.req.query("vendorId");
+      const variant = c.req.query("variant") as "thumbnail" | "medium" | "original" | undefined;
+
+      // For new product creation (no productId), use userId as temporary folder
+      // The images will be re-organized when the product is created
+      const effectiveProductId = productId || `temp-${userId}`;
+
       try {
-        // Upload file to S3 with UUID-based filename
+        // Upload file to S3 with structured path
         const result = await uploadFile(file, {
           userId,
-          category: "vendor-documents",
+          category,
+          productId: effectiveProductId,
+          vendorId,
+          variant,
         });
 
-        const response: UploadResponse = {
+        const response = {
+          s3Key: result.s3Key,
           url: result.url,
           filename: result.filename,
+          variant: result.variant,
         };
 
         return c.json(response, 200);

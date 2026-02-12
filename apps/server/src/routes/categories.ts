@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   categories,
   products,
@@ -56,7 +56,7 @@ const categoriesRouter = new Hono().get(
     .from(categories)
     .leftJoin(
       products,
-      and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+      and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder));
@@ -118,6 +118,7 @@ const categoriesRouter = new Hono().get(
               FROM ${products}
               WHERE ${products.categoryId} = ${categories.id}
               AND ${products.isActive} = true
+              AND ${products.status} = 'approved'
             )`
           : sql<number>`0`,
       })
@@ -160,13 +161,17 @@ const categoriesRouter = new Hono().get(
       }
     }
 
-    // Optionally load featured products for root categories
-    if (shouldIncludeFeaturedProducts) {
-      for (const rootNode of rootCategories) {
-        const featuredProducts = await getFeaturedProductsForCategory(rootNode.id, 4);
-        rootNode.featuredProducts = featuredProducts;
-      }
-    }
+	    // Optionally load featured products for root categories
+	    if (shouldIncludeFeaturedProducts) {
+	      await Promise.all(
+	        rootCategories.map(async (rootNode) => {
+	          rootNode.featuredProducts = await getFeaturedProductsForCategory(
+	            rootNode.id,
+	            4,
+	          );
+	        }),
+	      );
+	    }
 
     const response: CategoryTreeResponse = {
       tree: rootCategories,
@@ -244,7 +249,9 @@ async function getFeaturedProductsForCategory(
   const featuredRows = await db
     .select({
       product: products,
-      image: productImages,
+      image: {
+        s3Key: productImages.s3Key,
+      },
       sku: productSkus,
     })
     .from(megaMenuFeaturedProducts)
@@ -265,6 +272,7 @@ async function getFeaturedProductsForCategory(
         eq(megaMenuFeaturedProducts.categoryId, categoryId),
         eq(megaMenuFeaturedProducts.isActive, true),
         eq(products.isActive, true),
+        eq(products.status, "approved"),
         sql`(${megaMenuFeaturedProducts.startsAt} IS NULL OR ${megaMenuFeaturedProducts.startsAt} <= ${now})`,
         sql`(${megaMenuFeaturedProducts.endsAt} IS NULL OR ${megaMenuFeaturedProducts.endsAt} >= ${now})`
       )
@@ -284,7 +292,7 @@ async function getFeaturedProductsForCategory(
           title: row.product.title,
           titleBn: row.product.titleBn,
           slug: row.product.slug,
-          imageUrl: row.image?.url || null,
+          imageUrl: row.image?.s3Key ? getS3Url(row.image.s3Key) : null,
           priceAmount: row.sku?.priceAmount || 0,
           currency: row.sku?.currency || "BDT",
           isNew: row.product.isNew,
@@ -298,7 +306,9 @@ async function getFeaturedProductsForCategory(
   const fallbackRows = await db
     .select({
       product: products,
-      image: productImages,
+      image: {
+        s3Key: productImages.s3Key,
+      },
       sku: productSkus,
     })
     .from(products)
@@ -316,7 +326,8 @@ async function getFeaturedProductsForCategory(
     .where(
       and(
         eq(products.categoryId, categoryId),
-        eq(products.isActive, true)
+        eq(products.isActive, true),
+        eq(products.status, "approved")
       )
     )
     .orderBy(sql`${products.bestSellerScore} DESC NULLS LAST`)
@@ -332,7 +343,7 @@ async function getFeaturedProductsForCategory(
         title: row.product.title,
         titleBn: row.product.titleBn,
         slug: row.product.slug,
-        imageUrl: row.image?.url || null,
+        imageUrl: row.image?.s3Key ? getS3Url(row.image.s3Key) : null,
         priceAmount: row.sku?.priceAmount || 0,
         currency: row.sku?.currency || "BDT",
         isNew: row.product.isNew,

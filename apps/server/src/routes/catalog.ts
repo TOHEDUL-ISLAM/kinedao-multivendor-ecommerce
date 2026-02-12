@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   productImages,
@@ -29,7 +29,10 @@ async function formatProductCard(
   }
 ): Promise<ProductCardDTO> {
   const [image] = await db
-    .select()
+    .select({
+      s3Key: productImages.s3Key,
+      alt: productImages.alt,
+    })
     .from(productImages)
     .where(eq(productImages.productId, product.id))
     .orderBy(asc(productImages.sortOrder))
@@ -76,7 +79,7 @@ async function formatProductCard(
     ratingCount: product.ratingCount,
     isNew: product.isNew,
     isHot: product.isHot,
-    imageUrl: image?.url || null,
+    imageUrl: image ? getS3Url(image.s3Key) : null,
     imageAlt: image?.alt || null,
     priceAmount: anySku?.priceAmount || 0,
     compareAtAmount: anySku?.compareAtAmount || null,
@@ -124,10 +127,10 @@ const catalogRouter = new Hono().get(
   }),
   zValidator("query", catalogQuerySchema),
   async (c) => {
-  const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit } = c.req.valid("query");
+  const { q, category, vendor, brand, ageRange, isBpaFree, isOrganic, isHypoallergenic, min, max, rating, sort, cursor, limit, page } = c.req.valid("query");
 
   // Build base conditions (exclude cursor for total count)
-  const conditions = [eq(products.isActive, true)];
+  const conditions = [eq(products.isActive, true), eq(products.status, "approved")];
   const cursorConditions: typeof conditions = [];
 
   // Text search
@@ -272,8 +275,8 @@ const catalogRouter = new Hono().get(
     );
   }
 
-  // Cursor-based pagination
-  if (cursor) {
+  // Cursor-based pagination (ignored when page is provided)
+  if (!page && cursor) {
     try {
       const [cursorId, cursorValue] = cursor.split("_");
       if (!cursorId) throw new Error("Invalid cursor");
@@ -329,8 +332,13 @@ const catalogRouter = new Hono().get(
       queryBuilder = queryBuilder.orderBy(asc(products.id)) as any;
   }
 
-  // Limit + 1 to check for more
-  const rows = await (queryBuilder as any).limit(limit + 1);
+  // Apply limit/offset
+  const pageOffset = page ? (Math.max(1, page) - 1) * limit : 0;
+
+  // Limit + 1 to check for more (cursor-based only)
+  const rows = await (queryBuilder as any)
+    .limit(page ? limit : limit + 1)
+    .offset(page ? pageOffset : 0);
 
   // Format products
   let formattedProducts = await Promise.all(
@@ -351,7 +359,7 @@ const catalogRouter = new Hono().get(
   }
 
   // Calculate next cursor
-  const hasMore = rows.length > limit;
+  const hasMore = !page && rows.length > limit;
   let nextCursor: string | null = null;
 
   if (hasMore && formattedProducts.length > 0) {
@@ -430,7 +438,7 @@ const catalogRouter = new Hono().get(
     .from(categories)
     .leftJoin(
       products,
-      and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+      and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(
       categories.id,
@@ -502,7 +510,7 @@ const catalogRouter = new Hono().get(
     .from(vendors)
     .leftJoin(
       products,
-      and(eq(products.vendorId, vendors.id), eq(products.isActive, true))
+      and(eq(products.vendorId, vendors.id), eq(products.isActive, true), eq(products.status, "approved"))
     )
     .groupBy(
       vendors.id,
@@ -537,7 +545,7 @@ const catalogRouter = new Hono().get(
       count: sql<number>`count(*)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true))
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")))
     .groupBy(products.brand)
     .orderBy(desc(sql`count(*)`));
 
@@ -553,7 +561,7 @@ const catalogRouter = new Hono().get(
       count: sql<number>`count(*)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true))
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")))
     .groupBy(products.ageRange)
     .orderBy(desc(sql`count(*)`));
 
@@ -572,7 +580,7 @@ const catalogRouter = new Hono().get(
       isHypoallergenic: sql<number>`count(*) filter (where ${products.isHypoallergenic} = true)::int`,
     })
     .from(products)
-    .where(eq(products.isActive, true));
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")));
 
   // Price range from SKUs
   const [priceRange] = await db
@@ -582,7 +590,7 @@ const catalogRouter = new Hono().get(
     })
     .from(productSkus)
     .innerJoin(products, eq(productSkus.productId, products.id))
-    .where(eq(products.isActive, true));
+    .where(and(eq(products.isActive, true), eq(products.status, "approved")));
 
   const response: CatalogFacetsResponse = {
     categories: categoryDTOs,

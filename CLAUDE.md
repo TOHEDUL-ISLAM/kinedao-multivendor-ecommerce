@@ -15,7 +15,7 @@ For detailed product requirements and user stories, see [initial-prd.md](initial
 - **Backend**: Hono (lightweight server framework) with Hono RPC for type-safe APIs
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Better-Auth (email + Google/Facebook OAuth)
-- **UI**: TailwindCSS 4 + shadcn/ui components
+- **UI**: TailwindCSS 4 + Mantine UI (`@mantine/core`) as the primary component system (recommended replacement for shadcn/ui)
 - **Database Setup**: Supabase (local development)
 - **Type Safety**: End-to-end type safety via Hono RPC + Zod validation
 
@@ -467,9 +467,12 @@ Check `.env` files in `apps/web/` and `apps/server/` directories.
 
 ### UI Components
 
-- Base components: [apps/web/src/components/ui/](apps/web/src/components/ui/) (shadcn/ui)
-- Styling: TailwindCSS 4 with utility classes
-- Theme: `next-themes` for dark mode support
+- Why Mantine is preferred here: faster MVP delivery with high-quality, accessible, production-ready components (forms, modals, pagination, drawers, notifications)
+- Primary UI library for new development: Mantine (`@mantine/core`, `@mantine/hooks`)
+- Styling: TailwindCSS 4 for layout/utilities + Mantine theme tokens for component-level consistency
+- Legacy base components: [apps/web/src/components/ui/](apps/web/src/components/ui/) (shadcn/ui, existing code only)
+- Migration rule: Do not add new shadcn/ui components; build new screens/components with Mantine and replace legacy shadcn components incrementally
+- Theme: `next-themes` remains in use until Mantine color-scheme handling fully replaces it
 - Icons: `lucide-react`
 - Notifications: `sonner` toast library
 
@@ -479,6 +482,98 @@ The MVP requires **Bangla/English toggle** for all user-facing text. Implement i
 - Language state management (context or global state)
 - Translation objects for static text
 - LocalStorage persistence of language preference
+
+### Vendor Dashboard
+
+The vendor dashboard is a complete management interface for approved vendors to manage their products, orders, and earnings.
+
+**Authentication & Authorization:**
+- Vendor auth middleware: [apps/server/src/middleware/vendor-auth.ts](apps/server/src/middleware/vendor-auth.ts)
+- Checks user is approved vendor via `vendor_applications` table
+- **Auto-creates vendor records**: If approved application has `vendorId: null`, middleware automatically creates a vendor record and links it
+- Injects `vendorId` and `vendorName` into request context
+- All vendor routes protected by `vendorAuthMiddleware`
+- Returns 401 if not authenticated, 403 if not an approved vendor
+
+**Backend Routes:**
+- Location: [apps/server/src/routes/vendor-dashboard.ts](apps/server/src/routes/vendor-dashboard.ts)
+- Mounted at: `/api/vendor-dashboard`
+- Key endpoints:
+  - `GET /overview` - Dashboard stats, recent orders, low stock alerts
+  - `GET /products` - Paginated product list with filters
+  - `GET /products/:productId` - Product detail for editing
+  - `POST /products` - Create product (transaction: product + images + options + SKUs)
+  - `PUT /products/:productId` - Update product (transaction)
+  - `DELETE /products/:productId` - Soft delete (set isActive=false)
+  - `GET /orders` - Vendor's orders with filters
+  - `GET /orders/:orderId` - Order detail with ownership verification
+  - `PATCH /orders/:orderId/status` - Update order status (validates transitions)
+  - `GET /earnings` - Earnings summary from delivered orders
+
+**Frontend Routes:**
+- Base layout: [apps/web/src/routes/vendor/_dashboard.tsx](apps/web/src/routes/vendor/_dashboard.tsx)
+- Layout component: [apps/web/src/components/vendor-dashboard/vendor-dashboard-layout.tsx](apps/web/src/components/vendor-dashboard/vendor-dashboard-layout.tsx)
+- Pages:
+  - `/vendor/dashboard` - Overview with stat cards
+  - `/vendor/products` - Product list with search/filters
+  - `/vendor/products/new` - Create product form
+  - `/vendor/products/:productId/edit` - Edit product form
+  - `/vendor/orders` - Order list with detail drawer
+  - `/vendor/earnings` - Earnings summary
+  - `/vendor/settings` - Settings (placeholder)
+
+**UI Components:**
+- Uses Mantine UI (`@mantine/core`) exclusively
+- AppShell layout with responsive sidebar
+- Gradient backgrounds using OKLCH color space
+- Navigation items with active states and hover effects
+- Stat cards with color-coded gradients
+- Data tables with enhanced styling
+- Form components with Mantine Accordion sections
+
+**Dark Mode Support:**
+- Uses `next-themes` for theme management (same as customer homepage)
+- Theme toggle button (Sun/Moon icon) in header
+- All components respond to theme changes via `useTheme()` hook
+- Color scheme:
+  - Light mode: oklch(0.96-0.99) backgrounds, oklch(0.3-0.4) text
+  - Dark mode: oklch(0.16-0.25) backgrounds, oklch(0.85-0.9) text
+  - Accent color: oklch(0.65 0.15 175) teal (brighter in dark mode)
+- Gradients automatically adjust for both themes
+- Proper contrast ratios maintained for accessibility
+
+**Key Features:**
+- Real-time dashboard statistics
+- Product management with image upload (S3)
+- SKU/variant support with options (size, color, etc.)
+- Order status management with tracking
+- Baby-specific product fields (age range, safety, certifications)
+- Bilingual support (Bangla/English)
+- Responsive design (desktop, tablet, mobile)
+
+**Product Upload:**
+- Uses existing Bun S3Client infrastructure
+- Upload route: `POST /api/upload?category=product-images`
+- Supports up to 5 images per product
+- Image reordering and primary image selection
+- Location: [apps/server/src/routes/upload.ts](apps/server/src/routes/upload.ts)
+
+**Routing Best Practices:**
+- **Layout route pattern**: Use `_dashboard.tsx` for pathless layout routes (TanStack Router convention)
+- **Single auth check**: Authenticate once in layout loader, not in every child route
+- **Simplified loaders**: Avoid complex loader chains and preloading - let queries handle data fetching
+- **Redirect logic**: Approved vendors redirect to `/vendor/dashboard`, pending to `/vendor/apply/status`
+- **Error handling**: Use route-level error boundaries sparingly; prefer query error states
+- **SSR safety**: Ensure all imports resolve during SSR (avoid client-only dependencies in loaders)
+
+**Common Pitfalls to Avoid:**
+- ❌ Don't add auth checks in both layout AND child route loaders (causes redundant API calls)
+- ❌ Don't create complex helper functions for access checks (keep logic in loaders)
+- ❌ Don't preload data with `initialData` unless absolutely necessary (adds complexity)
+- ❌ Don't import deleted/missing files in route loaders (causes SSR 500 errors)
+- ✅ Do keep loaders simple and focused on redirects/auth
+- ✅ Do let TanStack Query handle data fetching and caching
+- ✅ Do handle errors at the query level with error states
 
 ## Key Implementation Notes
 
@@ -504,6 +599,109 @@ The MVP requires **Bangla/English toggle** for all user-facing text. Implement i
    ```
 
 7. **Hono RPC Benefits**: The RPC setup provides end-to-end type safety, IDE autocomplete for all API routes, compile-time errors when endpoints change, and runtime validation with Zod schemas. This ensures the frontend and backend always stay in sync.
+
+## Troubleshooting Common Issues
+
+### 500 HTTPError on Frontend (SSR Errors)
+
+**Symptom**: `{"status":500,"unhandled":true,"message":"HTTPError"}` when accessing any route
+
+**Common Causes:**
+1. **Missing import**: Route loaders importing a deleted/non-existent file
+2. **Client-only code in SSR**: Libraries that access `window` or DOM during server-side rendering
+3. **Failed API calls in loaders**: API calls failing during SSR without proper error handling
+
+**Debugging Steps:**
+```bash
+# 1. Check TypeScript errors
+bun run check-types
+
+# 2. Look for import errors in route files
+# Check apps/web/src/routes/**/*.tsx for broken imports
+
+# 3. Check server logs when accessing the route
+# Errors during SSR will appear in the web server logs
+
+# 4. Test if backend is accessible
+curl http://localhost:3000/
+```
+
+**Solution Pattern:**
+- Fix broken imports in route loaders
+- Move client-only code inside `ClientOnly` component or use dynamic imports
+- Add proper error handling in loaders that make API calls
+
+### 403 Forbidden on Vendor Dashboard
+
+**Symptom**: Cannot access `/vendor/dashboard`, getting 403 error
+
+**Common Causes:**
+1. User not logged in (should redirect to `/login`)
+2. User logged in but no vendor application
+3. Vendor application exists but not approved
+4. Vendor application approved but `vendorId` is null (should auto-create)
+
+**Debugging Steps:**
+```bash
+# Check user's vendor application status
+cd apps/server
+bun run -e "
+import { db } from '@kineDao.com/db';
+import { vendorApplications, user } from '@kineDao.com/db/schema';
+import { eq } from 'drizzle-orm';
+
+const userId = 'USER_ID_HERE';
+const app = await db.select().from(vendorApplications).where(eq(vendorApplications.userId, userId));
+console.log('Application:', JSON.stringify(app, null, 2));
+process.exit(0);
+"
+```
+
+**Solution:**
+- Ensure user has approved application
+- Check vendor auth middleware auto-creates vendor if `vendorId` is null
+- Verify middleware is applied to all `/api/vendor-dashboard/*` routes
+
+### Port Already in Use
+
+**Symptom**: `EADDRINUSE` error when starting dev servers
+
+**Solution:**
+```bash
+# Kill processes on ports 3000 and 3001
+lsof -ti:3000 | xargs kill -9 2>/dev/null
+lsof -ti:3001 | xargs kill -9 2>/dev/null
+
+# Or kill all bun dev processes
+pkill -9 -f "bun.*dev"
+
+# Then restart
+bun run dev
+```
+
+### TypeScript Errors in Vendor Routes
+
+**Common Issues:**
+- `Cannot find module '@/lib/vendor-dashboard-access'` - File was deleted, remove import
+- `Property 'vendorId' does not exist` - Check vendor auth middleware types
+- Route loader type mismatches - Ensure loader return type matches `useLoaderData()`
+
+**Fix Pattern:**
+```typescript
+// ❌ Bad: Complex helper that might get deleted
+import { checkVendorDashboardAccess } from "@/lib/vendor-dashboard-access";
+
+// ✅ Good: Direct API call in loader
+loader: async () => {
+  const response = await api.vendor.application.status.$get();
+  if (response.ok) {
+    const data = await response.json();
+    if (data.application?.status === "approved") {
+      throw redirect({ to: "/vendor/dashboard" });
+    }
+  }
+}
+```
 
 ## Project Context
 

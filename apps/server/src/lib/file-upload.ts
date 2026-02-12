@@ -19,26 +19,36 @@ const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB
 /**
  * Upload categories for organizing files in S3
  */
-export type UploadCategory = "vendor-documents" | "vendor-logos";
+export type UploadCategory = "vendor-documents" | "vendor-logos" | "product-images" | "banners";
 
 /**
  * Options for file upload
  */
 export interface UploadOptions {
-  /** User ID for organizing files by user */
+  /** User ID for organizing files by user (for vendor applications) */
   userId: string;
   /** Category for organizing files by type */
   category: UploadCategory;
+  /** Product ID for organizing product images (optional, required for product-images) */
+  productId?: string;
+  /** Vendor ID for organizing vendor files (optional) */
+  vendorId?: string;
+  /** Image variant for organizing different sizes (optional: 'thumbnail', 'medium', 'original') */
+  variant?: "thumbnail" | "medium" | "original";
 }
 
 /**
  * Result of a successful file upload
  */
 export interface UploadResult {
-  /** Presigned URL for accessing the file (expires in 7 days) */
+  /** S3 key (path) for the uploaded file */
+  s3Key: string;
+  /** Public URL for accessing the file (generated from S3 key) */
   url: string;
   /** Generated filename (UUID-based) */
   filename: string;
+  /** Image variant (for product images) */
+  variant?: "original" | "medium" | "thumbnail";
 }
 
 /**
@@ -84,7 +94,41 @@ export async function uploadFile(
   // Original filename extension is preserved but original name is discarded
   const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
   const uuid = randomUUID();
-  const s3Key = `${options.category}/${options.userId}/${uuid}.${ext}`;
+
+  // Build S3 key based on category and context
+  let s3Key: string;
+
+  switch (options.category) {
+    case "product-images":
+      // Product images: products/{productId}/images/{variant}/{uuid}.{ext}
+      if (!options.productId) {
+        throw new Error("productId is required for product-images category");
+      }
+      const variant = options.variant || "original";
+      s3Key = `products/${options.productId}/images/${variant}/${uuid}.${ext}`;
+      break;
+
+    case "vendor-logos":
+      // Vendor logos: vendors/{vendorId}/logo/{uuid}.{ext}
+      const vendorId = options.vendorId || options.userId;
+      s3Key = `vendors/${vendorId}/logo/${uuid}.${ext}`;
+      break;
+
+    case "vendor-documents":
+      // Vendor documents: vendors/{vendorId}/documents/{uuid}.{ext}
+      const vendorDocId = options.vendorId || options.userId;
+      s3Key = `vendors/${vendorDocId}/documents/${uuid}.${ext}`;
+      break;
+
+    case "banners":
+      // Banners: banners/{uuid}.{ext}
+      s3Key = `banners/${uuid}.${ext}`;
+      break;
+
+    default:
+      // Fallback (shouldn't happen)
+      s3Key = `uploads/${options.userId}/${uuid}.${ext}`;
+  }
 
   try {
     // Upload file to S3
@@ -99,8 +143,10 @@ export async function uploadFile(
     });
 
     return {
+      s3Key,
       url,
       filename: `${uuid}.${ext}`,
+      variant: options.variant,
     };
   } catch (error) {
     console.error("S3 upload error:", error);
@@ -144,4 +190,53 @@ export function isDocumentType(mimeType: string): boolean {
  */
 export function getMaxFileSize(mimeType: string): number {
   return isDocumentType(mimeType) ? MAX_DOCUMENT_SIZE : MAX_IMAGE_SIZE;
+}
+
+/**
+ * Delete all images for a product
+ * Useful when deleting a product to clean up S3 storage
+ *
+ * @param productId - The product ID
+ * @returns Promise resolving to number of files deleted
+ *
+ * TODO: Implement when Bun S3Client list() API is documented
+ * For now, track image keys in database and delete individually
+ */
+export async function deleteProductImages(productId: string): Promise<number> {
+  // TODO: Check Bun S3Client documentation for list() return type
+  // const response = await s3.list({ prefix: `products/${productId}/images/` });
+  console.warn(`deleteProductImages not yet implemented for product ${productId}`);
+  return 0;
+}
+
+/**
+ * Delete all documents for a vendor
+ * Useful when removing vendor access
+ *
+ * @param vendorId - The vendor ID
+ * @returns Promise resolving to number of files deleted
+ *
+ * TODO: Implement when Bun S3Client list() API is documented
+ * For now, track document keys in database and delete individually
+ */
+export async function deleteVendorDocuments(vendorId: string): Promise<number> {
+  // TODO: Check Bun S3Client documentation for list() return type
+  // const response = await s3.list({ prefix: `vendors/${vendorId}/documents/` });
+  console.warn(`deleteVendorDocuments not yet implemented for vendor ${vendorId}`);
+  return 0;
+}
+
+/**
+ * Delete a single file from S3
+ *
+ * @param s3Key - The S3 key of the file to delete
+ * @returns Promise resolving when file is deleted
+ */
+export async function deleteFile(s3Key: string): Promise<void> {
+  try {
+    await s3.delete(s3Key);
+  } catch (error) {
+    console.error(`Failed to delete file ${s3Key}:`, error);
+    throw new Error("Failed to delete file");
+  }
 }

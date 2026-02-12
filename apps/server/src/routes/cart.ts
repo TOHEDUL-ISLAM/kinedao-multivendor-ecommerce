@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   carts,
   cartItems,
@@ -74,9 +74,11 @@ const selectSkuForProduct = async (productId: string, skuId?: string) => {
     .select({
       id: productSkus.id,
       productId: productSkus.productId,
+      sku: productSkus.sku,
       priceAmount: productSkus.priceAmount,
       stockQty: productSkus.stockQty,
       isAvailable: productSkus.isAvailable,
+      optionValues: productSkus.optionValues,
     })
     .from(productSkus)
     .where(eq(productSkus.productId, productId))
@@ -97,6 +99,7 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   const itemRows = await db
     .select({
       itemId: cartItems.id,
+      skuId: cartItems.skuId,
       quantity: cartItems.quantity,
       unitPrice: cartItems.unitPrice,
       productId: products.id,
@@ -157,7 +160,7 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   const imageRows = await db
     .select({
       productId: productImages.productId,
-      url: productImages.url,
+      s3Key: productImages.s3Key,
       alt: productImages.alt,
       sortOrder: productImages.sortOrder,
     })
@@ -171,25 +174,31 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   >();
   for (const image of imageRows) {
     if (!imageByProduct.has(image.productId)) {
-      imageByProduct.set(image.productId, { url: image.url, alt: image.alt });
+      imageByProduct.set(image.productId, { url: getS3Url(image.s3Key), alt: image.alt });
     }
   }
 
   const skuRows = await db
     .select({
+      id: productSkus.id,
       productId: productSkus.productId,
+      sku: productSkus.sku,
       priceAmount: productSkus.priceAmount,
       stockQty: productSkus.stockQty,
       isAvailable: productSkus.isAvailable,
+      optionValues: productSkus.optionValues,
     })
     .from(productSkus)
     .where(inArray(productSkus.productId, productIds))
     .orderBy(asc(productSkus.priceAmount));
 
+  // Map SKU by ID for direct lookup when cart item has a skuId
+  const skuById = new Map<string, typeof skuRows[number]>();
   const preferredSkuByProduct = new Map<string, typeof skuRows[number]>();
   const fallbackSkuByProduct = new Map<string, typeof skuRows[number]>();
 
   for (const sku of skuRows) {
+    skuById.set(sku.id, sku);
     if (!fallbackSkuByProduct.has(sku.productId)) {
       fallbackSkuByProduct.set(sku.productId, sku);
     }
@@ -203,15 +212,19 @@ const buildCartResponse = async (cart: CartRow): Promise<CartResponse> => {
   }
 
   const items: CartItem[] = validRows.map((row) => {
-    const sku =
+    // Prefer the specific SKU the user selected; fallback to cheapest available
+    const sku = (row.skuId ? skuById.get(row.skuId) : null) ??
       preferredSkuByProduct.get(row.productId) ??
       fallbackSkuByProduct.get(row.productId);
     const image = imageByProduct.get(row.productId);
     const currentPrice = sku?.priceAmount ?? row.unitPrice;
     const stock = sku?.stockQty ?? 0;
+    const optionValues = sku?.optionValues as Record<string, string> | null;
 
     return {
       id: row.itemId,
+      skuId: row.skuId ?? null,
+      selectedOptions: optionValues ?? null,
       product: {
         id: row.productId,
         title: row.productTitle,
@@ -349,10 +362,19 @@ const cartRouter = new Hono<AppEnv>()
         return c.json({ error: "Failed to create cart" }, 500);
       }
 
+      // Check for existing item with same product AND same SKU
+      const existingConditions = [
+        eq(cartItems.cartId, cart.id),
+        eq(cartItems.productId, productId),
+      ];
+      if (sku.id) {
+        existingConditions.push(eq(cartItems.skuId, sku.id));
+      }
+
       const [existing] = await db
         .select()
         .from(cartItems)
-        .where(and(eq(cartItems.cartId, cart.id), eq(cartItems.productId, productId)))
+        .where(and(...existingConditions))
         .limit(1);
 
       if (existing) {
@@ -363,7 +385,7 @@ const cartRouter = new Hono<AppEnv>()
 
         await db
           .update(cartItems)
-          .set({ quantity: nextQty })
+          .set({ quantity: nextQty, skuId: sku.id })
           .where(eq(cartItems.id, existing.id));
       } else {
         if (quantity > sku.stockQty) {
@@ -373,6 +395,7 @@ const cartRouter = new Hono<AppEnv>()
         await db.insert(cartItems).values({
           cartId: cart.id,
           productId,
+          skuId: sku.id,
           quantity,
           unitPrice: sku.priceAmount,
         });
@@ -570,19 +593,23 @@ const cartRouter = new Hono<AppEnv>()
         .where(eq(cartItems.cartId, guestCart.id));
 
       for (const guestItem of guestItems) {
-        const sku = await selectSkuForProduct(guestItem.productId);
+        const sku = await selectSkuForProduct(guestItem.productId, guestItem.skuId ?? undefined);
         if (!sku) {
           continue;
         }
+        // Match by product AND SKU
+        const mergeConditions = [
+          eq(cartItems.cartId, userCart.id),
+          eq(cartItems.productId, guestItem.productId),
+        ];
+        if (guestItem.skuId) {
+          mergeConditions.push(eq(cartItems.skuId, guestItem.skuId));
+        }
+
         const [existing] = await db
           .select()
           .from(cartItems)
-          .where(
-            and(
-              eq(cartItems.cartId, userCart.id),
-              eq(cartItems.productId, guestItem.productId)
-            )
-          )
+          .where(and(...mergeConditions))
           .limit(1);
 
         if (existing) {
@@ -600,6 +627,7 @@ const cartRouter = new Hono<AppEnv>()
           await db.insert(cartItems).values({
             cartId: userCart.id,
             productId: guestItem.productId,
+            skuId: guestItem.skuId,
             quantity: nextQty,
             unitPrice: guestItem.unitPrice,
           });

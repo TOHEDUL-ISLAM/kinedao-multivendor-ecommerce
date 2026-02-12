@@ -37,13 +37,33 @@ export function BabySafetySection({
   // Calculate months until expiry
   const getExpiryWarning = () => {
     if (!expiryDate) return null;
-    const expiry = new Date(expiryDate);
+
+    const datePart = expiryDate.slice(0, 10);
+    let expiry: Date;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      const [year, month, day] = datePart.split("-").map(Number);
+      expiry = new Date(year, month - 1, day, 23, 59, 59, 999);
+    } else {
+      const parsed = new Date(expiryDate);
+      if (Number.isNaN(parsed.getTime())) return null;
+      expiry = new Date(parsed);
+      expiry.setHours(23, 59, 59, 999);
+    }
+
     const now = new Date();
-    const monthsUntilExpiry = Math.floor(
-      (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    );
-    if (monthsUntilExpiry <= 0) return { text: t("product.expired"), isExpired: true };
-    if (monthsUntilExpiry <= 3) return { text: `${t("product.expiresIn")} ${monthsUntilExpiry} ${t("product.months")}`, isExpired: false };
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / msPerDay);
+
+    if (daysUntilExpiry <= 0) return { text: t("product.expired"), isExpired: true };
+    if (daysUntilExpiry <= 90) {
+      const monthsUntilExpiry = Math.max(1, Math.ceil(daysUntilExpiry / 30));
+      return {
+        text: `${t("product.expiresIn")} ${monthsUntilExpiry} ${t("product.months")}`,
+        isExpired: false,
+      };
+    }
+
     return null;
   };
 

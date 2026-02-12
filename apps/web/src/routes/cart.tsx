@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ShoppingCart, ShieldCheck, X, Trash2, Lock, RotateCcw, CheckCircle } from "lucide-react";
+import { AlertTriangle, ShoppingCart, ShieldCheck, Trash2, Lock, RotateCcw, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuantitySelector } from "@/components/product/quantity-selector";
@@ -22,7 +22,6 @@ function CartPage() {
   const { t, language } = useTranslation();
   const cart = useCartStore((state) => state.cart);
   const isLoading = useCartStore((state) => state.isLoading);
-  const isSyncing = useCartStore((state) => state.isSyncing);
   const error = useCartStore((state) => state.error);
   const fetchCart = useCartStore((state) => state.fetchCart);
   const removeItem = useCartStore((state) => state.removeItem);
@@ -235,7 +234,7 @@ function CartPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 sm:h-10 sm:w-10 -mr-2 sm:mr-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
-                              onClick={() => void removeItem(item.id, t)}
+                              onClick={() => void removeItem(item.id, t as any)}
                               aria-label={t("cart.remove")}
                             >
                               <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />

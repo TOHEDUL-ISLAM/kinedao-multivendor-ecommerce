@@ -6,6 +6,7 @@ import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 import GoogleSignInButton from "./google-sign-in-button";
 import Loader from "./loader";
@@ -25,7 +26,17 @@ const signUpSchema = z
     path: ["confirmPassword"],
   });
 
-export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+export default function SignUpForm({
+  onSwitchToSignIn,
+  redirectTo = "/",
+  className,
+  hideTitle = false,
+}: {
+  onSwitchToSignIn: () => void;
+  redirectTo?: string;
+  className?: string;
+  hideTitle?: boolean;
+}) {
   const navigate = useNavigate();
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -45,7 +56,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
             email: value.email,
             password: value.password,
             name: value.name,
-            callbackURL: `${window.location.origin}/login`,
+            callbackURL: `${window.location.origin}${redirectTo}`,
           },
         });
 
@@ -73,8 +84,10 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
+    <div className={cn("mx-auto w-full mt-10 max-w-md p-6", className)}>
+      {!hideTitle ? (
+        <h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
+      ) : null}
 
       {serverError && (
         <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
@@ -207,7 +220,7 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
         </div>
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton redirectTo={redirectTo} />
       {/* <FacebookSignInButton /> */}
 
       <div className="mt-4 text-center">

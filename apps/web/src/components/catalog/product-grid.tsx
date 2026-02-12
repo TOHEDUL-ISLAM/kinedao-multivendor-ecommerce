@@ -12,18 +12,20 @@ import { Link } from "@tanstack/react-router";
 interface ProductGridProps {
   products: ProductCardData[];
   isLoading: boolean;
-  hasMore: boolean;
-  onLoadMore: () => void;
-  isLoadingMore: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  showLoadMore?: boolean;
   className?: string;
 }
 
 export function ProductGrid({
   products,
   isLoading,
-  hasMore,
+  hasMore = false,
   onLoadMore,
-  isLoadingMore,
+  isLoadingMore = false,
+  showLoadMore = true,
   className,
 }: ProductGridProps) {
   const { t } = useTranslation();
@@ -92,7 +94,7 @@ export function ProductGrid({
       </motion.div>
 
       {/* Load More Button */}
-      {hasMore && !isLoadingMore && (
+      {showLoadMore && hasMore && !isLoadingMore && onLoadMore && (
         <div className="flex justify-center mt-8">
           <Button
             variant="outline"

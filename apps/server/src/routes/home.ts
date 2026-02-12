@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import {
   products,
   campaigns,
@@ -23,21 +23,89 @@ import type {
 } from "@kineDao.com/api-types/catalog";
 import { z } from "zod";
 
-// Helper to format product card from relational data
-function formatProductFromRelation(
-  product: typeof products.$inferSelect & {
-    vendor: { id: string; name: string; slug: string; isVerified: boolean | null };
-    category: { id: string; name: string; slug: string };
-    images: { url: string; alt: string | null; sortOrder: number | null }[];
+type HomeProductCardRow = {
+  id: string;
+  title: string;
+  titleBn: string | null;
+  slug: string;
+  brand: string | null;
+  ageRange: string | null;
+  ageRangeMin: number | null;
+  ageRangeMax: number | null;
+  isBpaFree: boolean;
+  isOrganic: boolean;
+  isHypoallergenic: boolean;
+  ratingAvg: number | null;
+  ratingCount: number | null;
+  isNew: boolean | null;
+  isHot: boolean | null;
+  vendor: { id: string; name: string; slug: string; isVerified: boolean | null };
+  category: { id: string; name: string; slug: string };
+  images: { s3Key: string; alt: string | null; sortOrder: number | null }[];
+  skus: {
+    priceAmount: number;
+    compareAtAmount: number | null;
+    currency: string;
+    isAvailable: boolean | null;
+    optionValues?: Record<string, string> | null;
+  }[];
+};
+
+const productCardSelect = {
+  columns: {
+    id: true,
+    title: true,
+    titleBn: true,
+    slug: true,
+    brand: true,
+    ageRange: true,
+    ageRangeMin: true,
+    ageRangeMax: true,
+    isBpaFree: true,
+    isOrganic: true,
+    isHypoallergenic: true,
+    ratingAvg: true,
+    ratingCount: true,
+    isNew: true,
+    isHot: true,
+  },
+  with: {
+    vendor: {
+      columns: {
+        id: true,
+        name: true,
+        slug: true,
+        isVerified: true,
+      },
+    },
+    category: {
+      columns: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    },
+    images: {
+      columns: {
+        s3Key: true,
+        alt: true,
+        sortOrder: true,
+      },
+    },
     skus: {
-      priceAmount: number;
-      compareAtAmount: number | null;
-      currency: string;
-      isAvailable: boolean | null;
-      optionValues?: Record<string, string> | null;
-    }[];
-  }
-): ProductCardDTO {
+      columns: {
+        priceAmount: true,
+        compareAtAmount: true,
+        currency: true,
+        isAvailable: true,
+        optionValues: true,
+      },
+    },
+  },
+} as const;
+
+// Helper to format product card from relational data
+function formatProductFromRelation(product: HomeProductCardRow): ProductCardDTO {
   // Get first image
   const image = product.images.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))[0];
 
@@ -45,7 +113,7 @@ function formatProductFromRelation(
   // Filter for available ones first
   const availableSkus = product.skus.filter((s) => s.isAvailable);
   const skusToCheck = availableSkus.length > 0 ? availableSkus : product.skus;
-  
+
   const sku = skusToCheck.sort((a, b) => a.priceAmount - b.priceAmount)[0];
   const hasVariants =
     product.skus.length > 1 ||
@@ -69,7 +137,7 @@ function formatProductFromRelation(
     ratingCount: product.ratingCount,
     isNew: product.isNew,
     isHot: product.isHot,
-    imageUrl: image?.url || null,
+    imageUrl: image ? getS3Url(image.s3Key) : null,
     imageAlt: image?.alt || null,
     priceAmount: sku?.priceAmount || 0,
     compareAtAmount: sku?.compareAtAmount || null,
@@ -189,22 +257,42 @@ const homeRouter = new Hono().get(
         endsAt: c.endsAt?.toISOString() || null,
       }));
 
-    // Fetch products with relations - OPTIMIZED
-    const productsRaw = await db.query.products.findMany({
-      where: eq(products.isActive, true),
-      with: {
-        vendor: true,
-        category: true,
-        images: true,
-        skus: true,
-      },
-    });
+    const baseProductWhere = and(
+      eq(products.isActive, true),
+      eq(products.status, "approved"),
+    );
 
-    // Format all products
-    const allProducts = productsRaw.map(formatProductFromRelation);
+    // Fetch only the rows needed per section instead of loading all products.
+    const [flashDealsRaw, bestSellersRaw, newArrivalsRaw] = await Promise.all([
+      db.query.products.findMany({
+        ...productCardSelect,
+        where: baseProductWhere,
+        orderBy: (productTable, { desc }) => [
+          desc(productTable.bestSellerScore),
+          desc(productTable.createdAt),
+        ],
+        limit: 120,
+      }),
+      db.query.products.findMany({
+        ...productCardSelect,
+        where: baseProductWhere,
+        orderBy: (productTable, { desc }) => [
+          desc(productTable.ratingCount),
+          desc(productTable.bestSellerScore),
+          desc(productTable.createdAt),
+        ],
+        limit: 12,
+      }),
+      db.query.products.findMany({
+        ...productCardSelect,
+        where: and(baseProductWhere, eq(products.isNew, true)),
+        orderBy: (productTable, { desc }) => [desc(productTable.createdAt)],
+        limit: 12,
+      }),
+    ]);
 
-    // Filter by criteria
-    const flashDeals = allProducts
+    const flashDeals = flashDealsRaw
+      .map(formatProductFromRelation)
       .filter((p) => p.compareAtAmount !== null)
       .sort((a, b) => {
         const discountA = a.compareAtAmount
@@ -217,11 +305,9 @@ const homeRouter = new Hono().get(
       })
       .slice(0, 12);
 
-    const bestSellers = [...allProducts]
-      .sort((a, b) => (b.ratingCount || 0) - (a.ratingCount || 0))
-      .slice(0, 12);
+    const bestSellers = bestSellersRaw.map(formatProductFromRelation).slice(0, 12);
 
-    const newArrivals = allProducts.filter((p) => p.isNew).slice(0, 12);
+    const newArrivals = newArrivalsRaw.map(formatProductFromRelation).slice(0, 12);
 
     // Fetch top categories (parent categories with product counts)
     const categoriesWithCounts = await db
@@ -232,7 +318,7 @@ const homeRouter = new Hono().get(
       .from(categories)
       .leftJoin(
         products,
-        and(eq(products.categoryId, categories.id), eq(products.isActive, true))
+        and(eq(products.categoryId, categories.id), eq(products.isActive, true), eq(products.status, "approved"))
       )
       .where(sql`${categories.parentId} IS NULL`)
       .groupBy(categories.id)

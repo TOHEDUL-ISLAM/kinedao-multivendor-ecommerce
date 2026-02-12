@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { describeRoute, resolver } from "hono-openapi";
-import { db } from "@kineDao.com/db";
+import { db, getS3Url } from "@kineDao.com/db";
 import { categories, categoryMetrics, products, productImages, productSkus, vendors } from "@kineDao.com/db/schema";
-import { and, eq, sql, desc, arrayContains, inArray } from "drizzle-orm";
+import { and, eq, sql, desc, arrayContains, inArray, notInArray } from "drizzle-orm";
 import {
   recommendationsQuerySchema,
   cartRecommendationsQuerySchema,
@@ -72,6 +72,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -94,6 +95,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -128,6 +130,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -150,6 +153,7 @@ const recommendationsRouter = new Hono().get(
           FROM ${products}
           WHERE ${products.categoryId} = ${categories.id}
           AND ${products.isActive} = true
+          AND ${products.status} = 'approved'
         )`,
       })
       .from(categories)
@@ -234,7 +238,8 @@ const recommendationsRouter = new Hono().get(
         and(
           inArray(products.categoryId, categoryIds),
           eq(products.isActive, true),
-          sql`${products.id} NOT IN (${sql.join(productIds.map((id) => sql`${id}`), sql`, `)})`
+          eq(products.status, "approved"),
+          notInArray(products.id, productIds)
         )
       )
       .orderBy(desc(products.ratingAvg))
@@ -244,9 +249,13 @@ const recommendationsRouter = new Hono().get(
     const recommendedProductIds = recommendedProductRows.map((r) => r.product.id);
     const recommendedImages = recommendedProductIds.length > 0
       ? await db
-          .select()
+          .select({
+            productId: productImages.productId,
+            s3Key: productImages.s3Key,
+            alt: productImages.alt,
+          })
           .from(productImages)
-          .where(sql`${productImages.productId} IN ${recommendedProductIds}`)
+          .where(inArray(productImages.productId, recommendedProductIds))
       : [];
 
     // Fetch SKUs for recommended products
@@ -254,7 +263,7 @@ const recommendationsRouter = new Hono().get(
       ? await db
           .select()
           .from(productSkus)
-          .where(sql`${productSkus.productId} IN ${recommendedProductIds}`)
+          .where(inArray(productSkus.productId, recommendedProductIds))
       : [];
 
     // Build recommended products DTOs
@@ -288,7 +297,7 @@ const recommendationsRouter = new Hono().get(
         ratingCount: row.product.ratingCount,
         isNew: row.product.isNew,
         isHot: row.product.isHot,
-        imageUrl: prodImages[0]?.url || null,
+        imageUrl: prodImages[0] ? getS3Url(prodImages[0].s3Key) : null,
         imageAlt: prodImages[0]?.alt || null,
         priceAmount: lowestSku?.priceAmount || 0,
         compareAtAmount: lowestSku?.compareAtAmount || null,

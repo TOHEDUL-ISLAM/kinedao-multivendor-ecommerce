@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Fragment, useState, useCallback } from "react";
 import { createFileRoute, useNavigate, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -17,7 +17,14 @@ import { FilterSidebar, MobileFilterDrawer } from "@/components/catalog/filter-s
 import { StickyFilterContainer } from "@/components/catalog/sticky-filter-container";
 import { ProductCard, ProductCardSkeleton, type ProductCardData } from "@/components/product-card";
 import { Pagination, CompactPagination } from "@/components/catalog/pagination";
-import { Breadcrumb, type BreadcrumbItem } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 
 // Search params schema for category page
@@ -32,6 +39,11 @@ const categorySearchSchema = z.object({
 });
 
 type CategorySearch = z.infer<typeof categorySearchSchema>;
+type BreadcrumbEntry = {
+  label: string;
+  labelBn?: string | null;
+  href?: string;
+};
 
 export const Route = createFileRoute("/category/$slug")({
   validateSearch: categorySearchSchema,
@@ -152,7 +164,7 @@ function CategoryPage() {
     search.rating !== undefined;
 
   // Build breadcrumb items
-  const breadcrumbItems: BreadcrumbItem[] = [
+  const breadcrumbItems: BreadcrumbEntry[] = [
     { label: t("breadcrumb.home"), labelBn: language === "bn" ? "হোম" : undefined, href: "/" },
   ];
 
@@ -195,7 +207,26 @@ function CategoryPage() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
         {/* Breadcrumb */}
-        <Breadcrumb items={breadcrumbItems} className="mb-4" />
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            {breadcrumbItems.map((item, index) => (
+              <Fragment key={`${item.href ?? "current"}-${index}`}>
+                <BreadcrumbItem>
+                  {item.href ? (
+                    <BreadcrumbLink href={item.href}>
+                      {language === "bn" && item.labelBn ? item.labelBn : item.label}
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage>
+                      {language === "bn" && item.labelBn ? item.labelBn : item.label}
+                    </BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
+              </Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
 
         {/* Category Header */}
         <div className="mb-6">

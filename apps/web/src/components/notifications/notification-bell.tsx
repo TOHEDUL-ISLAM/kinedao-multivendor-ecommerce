@@ -1,0 +1,157 @@
+import { Bell } from "lucide-react";
+import { Indicator, Popover, ScrollArea, ActionIcon, Text, Stack, Group, Badge, Button } from "@mantine/core";
+import { useNotifications } from "@/hooks/use-notifications";
+import { formatDistanceToNow } from "date-fns";
+import type { NotificationDTO } from "@kineDao.com/api-types";
+import { useNavigate } from "@tanstack/react-router";
+
+// Helper to get navigation URL from notification
+function getNotificationUrl(notification: NotificationDTO): string {
+	const data = notification.data as Record<string, unknown> | null;
+	const type = notification.type;
+
+	// Customer notifications - go to orders page
+	if (["order_placed", "order_confirmed", "order_processing", "order_shipped", "order_delivered", "order_cancelled"].includes(type)) {
+		return data?.orderId ? `/account/orders/${data.orderId}` : "/account/orders";
+	}
+
+	// Vendor notifications - go to vendor orders
+	if (["new_order", "cod_verified"].includes(type)) {
+		return data?.orderId ? `/vendor/orders?orderId=${data.orderId}` : "/vendor/orders";
+	}
+
+	// Product notifications - go to vendor products
+	if (["product_approved", "product_rejected"].includes(type)) {
+		return data?.productId ? `/vendor/products/${data.productId}/edit` : "/vendor/products";
+	}
+
+	// Vendor application approved
+	if (type === "vendor_approved") {
+		return "/vendor/dashboard";
+	}
+
+	// Low stock - go to vendor products
+	if (type === "low_stock") {
+		return "/vendor/products";
+	}
+
+	if (["new_review", "review_moderated"].includes(type)) {
+		return data?.reviewId ? `/vendor/reviews?reviewId=${data.reviewId}` : "/vendor/reviews";
+	}
+
+	// Default fallback
+	return "/";
+}
+
+export function NotificationBell() {
+	const { unreadCount, notifications, markAsRead, markAllAsRead, isMarkingAllAsRead } = useNotifications();
+	const navigate = useNavigate();
+
+	return (
+		<Popover width={360} position="bottom-end" shadow="md">
+			<Popover.Target>
+				<ActionIcon variant="subtle" size="lg" aria-label="Notifications">
+					<Indicator disabled={unreadCount === 0} label={unreadCount} size={16} color="red">
+						<Bell size={20} />
+					</Indicator>
+				</ActionIcon>
+			</Popover.Target>
+
+			<Popover.Dropdown p={0}>
+				<Stack gap={0}>
+					{/* Header */}
+					<Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}>
+						<Text fw={600} size="sm">Notifications</Text>
+						{notifications.length > 0 && (
+							<Button
+								variant="subtle"
+								size="compact-xs"
+								onClick={() => markAllAsRead()}
+								loading={isMarkingAllAsRead}
+							>
+								Mark all read
+							</Button>
+						)}
+					</Group>
+
+					{/* Notification List */}
+					<ScrollArea h={400}>
+						{notifications.length === 0 ? (
+							<Stack align="center" justify="center" h={200} gap="xs">
+								<Bell size={40} strokeWidth={1.5} opacity={0.3} />
+								<Text size="sm" c="dimmed">No notifications yet</Text>
+							</Stack>
+						) : (
+							<Stack gap={0}>
+									{notifications.map((notification: NotificationDTO) => (
+										<button
+											type="button"
+											key={notification.id}
+											onClick={() => {
+											// Mark as read if unread
+											if (!notification.isRead) {
+												markAsRead(notification.id);
+											}
+											// Navigate to relevant page
+											const url = getNotificationUrl(notification);
+											navigate({ to: url });
+										}}
+										style={{
+											all: "unset",
+											cursor: "pointer",
+											display: "block",
+											padding: "12px 16px",
+											borderBottom: "1px solid var(--mantine-color-gray-2)",
+											backgroundColor: notification.isRead
+												? "transparent"
+												: "var(--mantine-color-blue-0)",
+											transition: "background-color 0.2s",
+										}}
+										onMouseEnter={(e) => {
+											e.currentTarget.style.backgroundColor = "var(--mantine-color-gray-1)";
+										}}
+											onMouseLeave={(e) => {
+												e.currentTarget.style.backgroundColor = notification.isRead
+													? "transparent"
+													: "var(--mantine-color-blue-0)";
+											}}
+											onFocus={(e) => {
+												e.currentTarget.style.backgroundColor = "var(--mantine-color-gray-1)";
+												e.currentTarget.style.outline = "2px solid var(--mantine-color-blue-6)";
+												e.currentTarget.style.outlineOffset = "-2px";
+											}}
+											onBlur={(e) => {
+												e.currentTarget.style.backgroundColor = notification.isRead
+													? "transparent"
+													: "var(--mantine-color-blue-0)";
+												e.currentTarget.style.outline = "none";
+											}}
+										>
+										<Group justify="space-between" align="flex-start" wrap="nowrap">
+											<Stack gap={4} style={{ flex: 1 }}>
+												<Group gap="xs">
+													<Text size="sm" fw={notification.isRead ? 400 : 600} lineClamp={1}>
+														{notification.title}
+													</Text>
+													{!notification.isRead && (
+														<Badge size="xs" variant="filled" color="blue" circle />
+													)}
+												</Group>
+												<Text size="xs" c="dimmed" lineClamp={2}>
+													{notification.body}
+												</Text>
+												<Text size="xs" c="dimmed">
+													{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+												</Text>
+											</Stack>
+										</Group>
+									</button>
+								))}
+							</Stack>
+						)}
+					</ScrollArea>
+				</Stack>
+			</Popover.Dropdown>
+		</Popover>
+	);
+}
