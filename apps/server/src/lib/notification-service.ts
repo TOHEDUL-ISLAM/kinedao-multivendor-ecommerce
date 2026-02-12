@@ -1,14 +1,16 @@
 import { db } from "@kineDao.com/db";
 import {
+	adminUsers,
 	notifications,
 	notificationPreferences,
+	user,
 	vendorApplications,
 } from "@kineDao.com/db/schema";
 import type {
 	NotificationChannel,
 	NotificationType,
 } from "@kineDao.com/api-types";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { SSEStreamingApi } from "hono/streaming";
 import * as NotificationEmails from "./notification-emails";
 import { sendPushNotification } from "./web-push";
@@ -98,6 +100,11 @@ function getNotificationUrl(
 		// Low stock - go to vendor products
 		case "low_stock":
 			return "/vendor/products";
+		case "new_review":
+		case "review_moderated":
+			return data?.reviewId
+				? `/vendor/reviews?reviewId=${data.reviewId}`
+				: "/vendor/reviews";
 
 		// Admin notifications
 		case "failed_delivery":
@@ -126,6 +133,8 @@ const EMAIL_NOTIFICATION_MAP: Record<NotificationType, boolean> = {
 	product_rejected: true,
 	vendor_approved: true,
 	low_stock: true,
+	new_review: false,
+	review_moderated: false,
 	// Admin notifications
 	failed_delivery: true,
 	high_rejection_rate: true,
@@ -353,9 +362,31 @@ export async function notifyAdmin(
 	params: Omit<NotifyParams, "userId" | "channel">,
 ): Promise<void> {
 	try {
-		// TODO: Query admin users from database when admin role system exists
-		// For now, this is a no-op placeholder
-		console.log("Admin notification (not implemented):", params);
+		let admins = await db
+			.select({ userId: user.id })
+			.from(user)
+			.where(sql`${user.roles} && ARRAY['admin', 'super_admin']::text[]`);
+
+		// Backward compatibility fallback while admin_users is still present.
+		if (admins.length === 0) {
+			admins = await db
+				.select({ userId: adminUsers.userId })
+				.from(adminUsers);
+		}
+
+		if (admins.length === 0) {
+			return;
+		}
+
+		await Promise.all(
+			admins.map((admin) =>
+				notify({
+					...params,
+					userId: admin.userId,
+					channel: "admin",
+				}),
+			),
+		);
 	} catch (error) {
 		console.error("notifyAdmin error:", error);
 	}

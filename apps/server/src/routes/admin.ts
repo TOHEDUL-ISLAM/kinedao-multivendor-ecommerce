@@ -55,6 +55,7 @@ import {
 } from "../middleware/admin-auth";
 import { notify } from "../lib/notification-service";
 import { deleteFile } from "../lib/file-upload";
+import { grantRole, revokeRole } from "../lib/role-service";
 
 // Helper: generate slug from name
 function generateSlug(name: string): string {
@@ -109,6 +110,7 @@ export const adminRouter = new Hono<AdminEnv>()
 			return c.json({
 				user: c.var.user,
 				adminUserId: c.var.adminUserId,
+				isSuperAdmin: c.var.isSuperAdmin,
 			}, 200);
 		}
 	)
@@ -597,6 +599,9 @@ export const adminRouter = new Hono<AdminEnv>()
 					})
 					.where(eq(vendorApplications.id, applicationId));
 
+				// Role sync: approved vendors must carry vendor role in auth session.
+				await grantRole(application.userId, "vendor");
+
 				// Log action
 				await logAdminAction(
 					adminUserId,
@@ -647,6 +652,13 @@ export const adminRouter = new Hono<AdminEnv>()
 						reviewNotes: reviewNotes || null,
 					})
 					.where(eq(vendorApplications.id, applicationId));
+
+				// Ensure rejected vendors lose vendor role if previously granted.
+				try {
+					await revokeRole(application.userId, "vendor");
+				} catch (error) {
+					console.error("[ADMIN] Failed to revoke vendor role:", error);
+				}
 
 				// Log action
 				await logAdminAction(

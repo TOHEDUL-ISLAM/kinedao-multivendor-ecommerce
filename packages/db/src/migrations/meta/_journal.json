@@ -29,6 +29,20 @@
       "when": 1770837600000,
       "tag": "0003_account_recovery_window",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770985800000,
+      "tag": "0004_review_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771048800000,
+      "tag": "0005_multi_role_auth",
+      "breakpoints": true
     }
   ]
 }

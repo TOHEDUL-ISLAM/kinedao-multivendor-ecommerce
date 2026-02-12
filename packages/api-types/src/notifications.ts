@@ -20,6 +20,8 @@ export const NOTIFICATION_TYPES = [
 	"product_rejected",
 	"vendor_approved",
 	"low_stock",
+	"new_review",
+	"review_moderated",
 	// Admin notifications
 	"failed_delivery",
 	"high_rejection_rate",

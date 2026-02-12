@@ -30,8 +30,8 @@ import { useTheme } from "next-themes";
 import { AuthModal } from "@/components/auth-modal";
 import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
-import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api-client";
+import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
 import { SearchBar } from "./search-bar";
 
 export default function Header() {
@@ -46,7 +46,12 @@ export default function Header() {
   const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
   const mergeGuestWishlist = useFavoritesStore((state) => state.mergeGuestToServer);
 
-  const { data: session, isPending } = authClient.useSession();
+  const {
+    session,
+    isSessionPending,
+    action: sellerAction,
+    isLoading: isSellerActionLoading,
+  } = useHeaderSellerAction();
   const isLoggedIn = !!session;
 
   useEffect(() => {
@@ -179,16 +184,20 @@ export default function Header() {
                 </Button>
               </Link>
 
-              {/* Become a Seller */}
-              <Link to="/vendor/apply" className="hidden md:flex">
-                <Button variant="secondary" className="gap-2 rounded-full">
-                  <Store className="w-4 h-4" />
-                  {t("header.becomeSeller")}
-                </Button>
-              </Link>
+              {/* Seller CTA */}
+              {isSellerActionLoading ? (
+                <Skeleton className="hidden md:flex h-10 w-40 rounded-full" />
+              ) : (
+                <a href={sellerAction.href} className="hidden md:flex">
+                  <Button variant="secondary" className="gap-2 rounded-full">
+                    <Store className="w-4 h-4" />
+                    {t(sellerAction.labelKey)}
+                  </Button>
+                </a>
+              )}
 
               {/* Account */}
-              {isPending ? (
+              {isSessionPending ? (
                  <Skeleton className="h-10 w-24 rounded-full" />
               ) : isLoggedIn ? (
                 <UserMenu />

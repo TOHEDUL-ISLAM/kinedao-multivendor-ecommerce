@@ -32,6 +32,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VendorDashboardRouteImport } from './routes/vendor/_dashboard'
 import { Route as ProductSlugRouteImport } from './routes/product/$slug'
 import { Route as CategorySlugRouteImport } from './routes/category/$slug'
+import { Route as AdminAcceptInviteRouteImport } from './routes/admin/accept-invite'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as AccountLayoutRouteImport } from './routes/account/_layout'
 import { Route as VendorApplyIndexRouteImport } from './routes/vendor/apply/index'
@@ -39,16 +40,19 @@ import { Route as AccountLayoutIndexRouteImport } from './routes/account/_layout
 import { Route as VendorApplyStatusRouteImport } from './routes/vendor/apply/status'
 import { Route as VendorApplyFormRouteImport } from './routes/vendor/apply/form'
 import { Route as VendorDashboardSettingsRouteImport } from './routes/vendor/_dashboard/settings'
+import { Route as VendorDashboardReviewsRouteImport } from './routes/vendor/_dashboard/reviews'
 import { Route as VendorDashboardEarningsRouteImport } from './routes/vendor/_dashboard/earnings'
 import { Route as VendorDashboardDashboardRouteImport } from './routes/vendor/_dashboard/dashboard'
 import { Route as AdminLayoutVendorsRouteImport } from './routes/admin/_layout/vendors'
 import { Route as AdminLayoutUsersRouteImport } from './routes/admin/_layout/users'
+import { Route as AdminLayoutReviewsRouteImport } from './routes/admin/_layout/reviews'
 import { Route as AdminLayoutProductsRouteImport } from './routes/admin/_layout/products'
 import { Route as AdminLayoutPayoutsRouteImport } from './routes/admin/_layout/payouts'
 import { Route as AdminLayoutOrdersRouteImport } from './routes/admin/_layout/orders'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutCategoriesRouteImport } from './routes/admin/_layout/categories'
 import { Route as AdminLayoutBannersRouteImport } from './routes/admin/_layout/banners'
+import { Route as AdminLayoutAdminsRouteImport } from './routes/admin/_layout/admins'
 import { Route as AccountLayoutSettingsRouteImport } from './routes/account/_layout/settings'
 import { Route as AccountLayoutNotificationsRouteImport } from './routes/account/_layout/notifications'
 import { Route as AccountLayoutNotificationSettingsRouteImport } from './routes/account/_layout/notification-settings'
@@ -175,6 +179,11 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAcceptInviteRoute = AdminAcceptInviteRouteImport.update({
+  id: '/admin/accept-invite',
+  path: '/admin/accept-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLayoutRoute = AdminLayoutRouteImport.update({
   id: '/admin/_layout',
   path: '/admin',
@@ -210,6 +219,11 @@ const VendorDashboardSettingsRoute = VendorDashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => VendorDashboardRoute,
 } as any)
+const VendorDashboardReviewsRoute = VendorDashboardReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => VendorDashboardRoute,
+} as any)
 const VendorDashboardEarningsRoute = VendorDashboardEarningsRouteImport.update({
   id: '/earnings',
   path: '/earnings',
@@ -229,6 +243,11 @@ const AdminLayoutVendorsRoute = AdminLayoutVendorsRouteImport.update({
 const AdminLayoutUsersRoute = AdminLayoutUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
+const AdminLayoutReviewsRoute = AdminLayoutReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
 const AdminLayoutProductsRoute = AdminLayoutProductsRouteImport.update({
@@ -259,6 +278,11 @@ const AdminLayoutCategoriesRoute = AdminLayoutCategoriesRouteImport.update({
 const AdminLayoutBannersRoute = AdminLayoutBannersRouteImport.update({
   id: '/banners',
   path: '/banners',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
+const AdminLayoutAdminsRoute = AdminLayoutAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
 const AccountLayoutSettingsRoute = AccountLayoutSettingsRouteImport.update({
@@ -343,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof WishlistRoute
   '/account': typeof AccountLayoutRouteWithChildren
   '/admin': typeof AdminLayoutRouteWithChildren
+  '/admin/accept-invite': typeof AdminAcceptInviteRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor': typeof VendorDashboardRouteWithChildren
@@ -350,16 +375,19 @@ export interface FileRoutesByFullPath {
   '/account/notification-settings': typeof AccountLayoutNotificationSettingsRoute
   '/account/notifications': typeof AccountLayoutNotificationsRoute
   '/account/settings': typeof AccountLayoutSettingsRoute
+  '/admin/admins': typeof AdminLayoutAdminsRoute
   '/admin/banners': typeof AdminLayoutBannersRoute
   '/admin/categories': typeof AdminLayoutCategoriesRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/orders': typeof AdminLayoutOrdersRoute
   '/admin/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/products': typeof AdminLayoutProductsRoute
+  '/admin/reviews': typeof AdminLayoutReviewsRoute
   '/admin/users': typeof AdminLayoutUsersRoute
   '/admin/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/dashboard': typeof VendorDashboardDashboardRoute
   '/vendor/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/reviews': typeof VendorDashboardReviewsRoute
   '/vendor/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
@@ -394,6 +422,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/wishlist': typeof WishlistRoute
   '/admin': typeof AdminLayoutRouteWithChildren
+  '/admin/accept-invite': typeof AdminAcceptInviteRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor': typeof VendorDashboardRouteWithChildren
@@ -401,16 +430,19 @@ export interface FileRoutesByTo {
   '/account/notification-settings': typeof AccountLayoutNotificationSettingsRoute
   '/account/notifications': typeof AccountLayoutNotificationsRoute
   '/account/settings': typeof AccountLayoutSettingsRoute
+  '/admin/admins': typeof AdminLayoutAdminsRoute
   '/admin/banners': typeof AdminLayoutBannersRoute
   '/admin/categories': typeof AdminLayoutCategoriesRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/orders': typeof AdminLayoutOrdersRoute
   '/admin/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/products': typeof AdminLayoutProductsRoute
+  '/admin/reviews': typeof AdminLayoutReviewsRoute
   '/admin/users': typeof AdminLayoutUsersRoute
   '/admin/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/dashboard': typeof VendorDashboardDashboardRoute
   '/vendor/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/reviews': typeof VendorDashboardReviewsRoute
   '/vendor/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
@@ -447,6 +479,7 @@ export interface FileRoutesById {
   '/wishlist': typeof WishlistRoute
   '/account/_layout': typeof AccountLayoutRouteWithChildren
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
+  '/admin/accept-invite': typeof AdminAcceptInviteRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$slug': typeof ProductSlugRoute
   '/vendor/_dashboard': typeof VendorDashboardRouteWithChildren
@@ -454,16 +487,19 @@ export interface FileRoutesById {
   '/account/_layout/notification-settings': typeof AccountLayoutNotificationSettingsRoute
   '/account/_layout/notifications': typeof AccountLayoutNotificationsRoute
   '/account/_layout/settings': typeof AccountLayoutSettingsRoute
+  '/admin/_layout/admins': typeof AdminLayoutAdminsRoute
   '/admin/_layout/banners': typeof AdminLayoutBannersRoute
   '/admin/_layout/categories': typeof AdminLayoutCategoriesRoute
   '/admin/_layout/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/_layout/orders': typeof AdminLayoutOrdersRoute
   '/admin/_layout/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/_layout/products': typeof AdminLayoutProductsRoute
+  '/admin/_layout/reviews': typeof AdminLayoutReviewsRoute
   '/admin/_layout/users': typeof AdminLayoutUsersRoute
   '/admin/_layout/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/_dashboard/dashboard': typeof VendorDashboardDashboardRoute
   '/vendor/_dashboard/earnings': typeof VendorDashboardEarningsRoute
+  '/vendor/_dashboard/reviews': typeof VendorDashboardReviewsRoute
   '/vendor/_dashboard/settings': typeof VendorDashboardSettingsRoute
   '/vendor/apply/form': typeof VendorApplyFormRoute
   '/vendor/apply/status': typeof VendorApplyStatusRoute
@@ -501,6 +537,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/account'
     | '/admin'
+    | '/admin/accept-invite'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor'
@@ -508,16 +545,19 @@ export interface FileRouteTypes {
     | '/account/notification-settings'
     | '/account/notifications'
     | '/account/settings'
+    | '/admin/admins'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/dashboard'
     | '/admin/orders'
     | '/admin/payouts'
     | '/admin/products'
+    | '/admin/reviews'
     | '/admin/users'
     | '/admin/vendors'
     | '/vendor/dashboard'
     | '/vendor/earnings'
+    | '/vendor/reviews'
     | '/vendor/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
@@ -552,6 +592,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/wishlist'
     | '/admin'
+    | '/admin/accept-invite'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor'
@@ -559,16 +600,19 @@ export interface FileRouteTypes {
     | '/account/notification-settings'
     | '/account/notifications'
     | '/account/settings'
+    | '/admin/admins'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/dashboard'
     | '/admin/orders'
     | '/admin/payouts'
     | '/admin/products'
+    | '/admin/reviews'
     | '/admin/users'
     | '/admin/vendors'
     | '/vendor/dashboard'
     | '/vendor/earnings'
+    | '/vendor/reviews'
     | '/vendor/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
@@ -604,6 +648,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/account/_layout'
     | '/admin/_layout'
+    | '/admin/accept-invite'
     | '/category/$slug'
     | '/product/$slug'
     | '/vendor/_dashboard'
@@ -611,16 +656,19 @@ export interface FileRouteTypes {
     | '/account/_layout/notification-settings'
     | '/account/_layout/notifications'
     | '/account/_layout/settings'
+    | '/admin/_layout/admins'
     | '/admin/_layout/banners'
     | '/admin/_layout/categories'
     | '/admin/_layout/dashboard'
     | '/admin/_layout/orders'
     | '/admin/_layout/payouts'
     | '/admin/_layout/products'
+    | '/admin/_layout/reviews'
     | '/admin/_layout/users'
     | '/admin/_layout/vendors'
     | '/vendor/_dashboard/dashboard'
     | '/vendor/_dashboard/earnings'
+    | '/vendor/_dashboard/reviews'
     | '/vendor/_dashboard/settings'
     | '/vendor/apply/form'
     | '/vendor/apply/status'
@@ -657,6 +705,7 @@ export interface RootRouteChildren {
   WishlistRoute: typeof WishlistRoute
   AccountLayoutRoute: typeof AccountLayoutRouteWithChildren
   AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
+  AdminAcceptInviteRoute: typeof AdminAcceptInviteRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ProductSlugRoute: typeof ProductSlugRoute
   VendorDashboardRoute: typeof VendorDashboardRouteWithChildren
@@ -828,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/accept-invite': {
+      id: '/admin/accept-invite'
+      path: '/admin/accept-invite'
+      fullPath: '/admin/accept-invite'
+      preLoaderRoute: typeof AdminAcceptInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/_layout': {
       id: '/admin/_layout'
       path: '/admin'
@@ -877,6 +933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorDashboardSettingsRouteImport
       parentRoute: typeof VendorDashboardRoute
     }
+    '/vendor/_dashboard/reviews': {
+      id: '/vendor/_dashboard/reviews'
+      path: '/reviews'
+      fullPath: '/vendor/reviews'
+      preLoaderRoute: typeof VendorDashboardReviewsRouteImport
+      parentRoute: typeof VendorDashboardRoute
+    }
     '/vendor/_dashboard/earnings': {
       id: '/vendor/_dashboard/earnings'
       path: '/earnings'
@@ -903,6 +966,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminLayoutUsersRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/admin/_layout/reviews': {
+      id: '/admin/_layout/reviews'
+      path: '/reviews'
+      fullPath: '/admin/reviews'
+      preLoaderRoute: typeof AdminLayoutReviewsRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
     '/admin/_layout/products': {
@@ -945,6 +1015,13 @@ declare module '@tanstack/react-router' {
       path: '/banners'
       fullPath: '/admin/banners'
       preLoaderRoute: typeof AdminLayoutBannersRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/admin/_layout/admins': {
+      id: '/admin/_layout/admins'
+      path: '/admins'
+      fullPath: '/admin/admins'
+      preLoaderRoute: typeof AdminLayoutAdminsRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
     '/account/_layout/settings': {
@@ -1046,23 +1123,27 @@ const AccountLayoutRouteWithChildren = AccountLayoutRoute._addFileChildren(
 )
 
 interface AdminLayoutRouteChildren {
+  AdminLayoutAdminsRoute: typeof AdminLayoutAdminsRoute
   AdminLayoutBannersRoute: typeof AdminLayoutBannersRoute
   AdminLayoutCategoriesRoute: typeof AdminLayoutCategoriesRoute
   AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
   AdminLayoutOrdersRoute: typeof AdminLayoutOrdersRoute
   AdminLayoutPayoutsRoute: typeof AdminLayoutPayoutsRoute
   AdminLayoutProductsRoute: typeof AdminLayoutProductsRoute
+  AdminLayoutReviewsRoute: typeof AdminLayoutReviewsRoute
   AdminLayoutUsersRoute: typeof AdminLayoutUsersRoute
   AdminLayoutVendorsRoute: typeof AdminLayoutVendorsRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
+  AdminLayoutAdminsRoute: AdminLayoutAdminsRoute,
   AdminLayoutBannersRoute: AdminLayoutBannersRoute,
   AdminLayoutCategoriesRoute: AdminLayoutCategoriesRoute,
   AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
   AdminLayoutOrdersRoute: AdminLayoutOrdersRoute,
   AdminLayoutPayoutsRoute: AdminLayoutPayoutsRoute,
   AdminLayoutProductsRoute: AdminLayoutProductsRoute,
+  AdminLayoutReviewsRoute: AdminLayoutReviewsRoute,
   AdminLayoutUsersRoute: AdminLayoutUsersRoute,
   AdminLayoutVendorsRoute: AdminLayoutVendorsRoute,
 }
@@ -1074,6 +1155,7 @@ const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
 interface VendorDashboardRouteChildren {
   VendorDashboardDashboardRoute: typeof VendorDashboardDashboardRoute
   VendorDashboardEarningsRoute: typeof VendorDashboardEarningsRoute
+  VendorDashboardReviewsRoute: typeof VendorDashboardReviewsRoute
   VendorDashboardSettingsRoute: typeof VendorDashboardSettingsRoute
   VendorDashboardProductsNewRoute: typeof VendorDashboardProductsNewRoute
   VendorDashboardOrdersIndexRoute: typeof VendorDashboardOrdersIndexRoute
@@ -1084,6 +1166,7 @@ interface VendorDashboardRouteChildren {
 const VendorDashboardRouteChildren: VendorDashboardRouteChildren = {
   VendorDashboardDashboardRoute: VendorDashboardDashboardRoute,
   VendorDashboardEarningsRoute: VendorDashboardEarningsRoute,
+  VendorDashboardReviewsRoute: VendorDashboardReviewsRoute,
   VendorDashboardSettingsRoute: VendorDashboardSettingsRoute,
   VendorDashboardProductsNewRoute: VendorDashboardProductsNewRoute,
   VendorDashboardOrdersIndexRoute: VendorDashboardOrdersIndexRoute,
@@ -1119,6 +1202,7 @@ const rootRouteChildren: RootRouteChildren = {
   WishlistRoute: WishlistRoute,
   AccountLayoutRoute: AccountLayoutRouteWithChildren,
   AdminLayoutRoute: AdminLayoutRouteWithChildren,
+  AdminAcceptInviteRoute: AdminAcceptInviteRoute,
   CategorySlugRoute: CategorySlugRoute,
   ProductSlugRoute: ProductSlugRoute,
   VendorDashboardRoute: VendorDashboardRouteWithChildren,

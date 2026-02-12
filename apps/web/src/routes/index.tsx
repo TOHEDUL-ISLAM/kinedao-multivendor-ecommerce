@@ -17,6 +17,7 @@ import { NewsletterSection } from "@/components/home/newsletter-section";
 import { HeroBanners } from "@/components/homepage/hero-banners";
 import { PromotionalBanners } from "@/components/homepage/promotional-banners";
 import { TopTrendsPanel } from "@/components/homepage/top-trends-panel";
+import { NewArrivalsBanners } from "@/components/homepage/new-arrivals-banners";
 import type { BannerDTO } from "@kineDao.com/api-types/catalog";
 
 export const Route = createFileRoute("/")({
@@ -89,6 +90,13 @@ function HomePage() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Fetch configurable "New Arrivals" sidebar banners
+  const { data: sidebarBanners = [] } = useQuery({
+    queryKey: ["banners", "sidebar"],
+    queryFn: () => fetchBanners("sidebar"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -120,7 +128,11 @@ function HomePage() {
 
           {/* Right: New Arrivals / Top Trends (desktop only) */}
           <div className="hidden lg:block lg:col-span-3">
-            <TopTrendsPanel products={data?.newArrivals || []} />
+            {sidebarBanners.length > 0 ? (
+              <NewArrivalsBanners banners={sidebarBanners} />
+            ) : (
+              <TopTrendsPanel products={data?.newArrivals || []} />
+            )}
           </div>
         </div>
 

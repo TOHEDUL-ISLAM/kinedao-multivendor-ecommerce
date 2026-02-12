@@ -40,3 +40,6 @@ export * from "./banners";
 
 // Notifications schema
 export * from "./notifications";
+
+// Reviews schema
+export * from "./reviews";

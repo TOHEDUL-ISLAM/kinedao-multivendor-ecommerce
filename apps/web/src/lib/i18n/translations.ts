@@ -12,11 +12,21 @@ export const translations = {
     "header.hotline": "Hotline",
     "header.tagline": "Your trusted baby store",
     "header.becomeSeller": "Become a Seller",
+    "header.vendorDashboard": "Vendor Dashboard",
+    "header.applicationStatus": "Application Status",
+    "header.updateApplication": "Update Application",
     "header.trackOrder": "Track Order",
     "header.helpCenter": "Help Center",
     "header.account": "Account",
     "header.choice": "KineDao Choice",
     "header.wishlist": "Wishlist",
+    "vendorLogin.title": "Welcome to Vendor Selling Center",
+    "vendorLogin.subtitle": "Sign in or create an account to start selling on KineDao.",
+    "vendorLogin.platformTitle": "A Trusted Platform",
+    "vendorLogin.platformDescription":
+      "Join Bangladesh's growing baby marketplace and manage products, orders, and payouts in one place.",
+    "vendorLogin.terms":
+      "By continuing, you agree to KineDao's Terms of Service and Privacy Policy.",
 
     // Navigation
     "nav.home": "Home",
@@ -101,6 +111,8 @@ export const translations = {
     "reviews.writeReview": "Write a Review",
     "reviews.helpful": "Helpful",
     "reviews.share": "Share",
+    "reviews.verifiedPurchase": "Verified Purchase",
+    "reviews.replyFrom": "Reply from {vendor}",
 
     // Homepage
     "home.flashDeals": "Flash Deals",
@@ -415,6 +427,7 @@ export const translations = {
     "userMenu.welcome": "Welcome",
     "userMenu.myOrders": "My Orders",
     "userMenu.myAccount": "My Account",
+    "userMenu.vendorDashboard": "Vendor Dashboard",
     "userMenu.wishlist": "Wishlist",
     "userMenu.notifications": "Notifications",
     "userMenu.continueShopping": "Continue Shopping",
@@ -800,11 +813,22 @@ export const translations = {
     "header.hotline": "হটলাইন",
     "header.tagline": "আপনার বিশ্বস্ত শিশু পণ্যের দোকান",
     "header.becomeSeller": "বিক্রেতা হন",
+    "header.vendorDashboard": "বিক্রেতা ড্যাশবোর্ড",
+    "header.applicationStatus": "আবেদনের অবস্থা",
+    "header.updateApplication": "আবেদন আপডেট করুন",
     "header.trackOrder": "অর্ডার ট্র্যাক করুন",
     "header.helpCenter": "সহায়তা কেন্দ্র",
     "header.account": "অ্যাকাউন্ট",
     "header.choice": "কিনেদাও চয়েস",
     "header.wishlist": "উইশলিস্ট",
+    "vendorLogin.title": "ভেন্ডর সেলিং সেন্টারে স্বাগতম",
+    "vendorLogin.subtitle":
+      "KineDao-তে বিক্রি শুরু করতে সাইন ইন করুন অথবা নতুন অ্যাকাউন্ট তৈরি করুন।",
+    "vendorLogin.platformTitle": "বিশ্বস্ত প্ল্যাটফর্ম",
+    "vendorLogin.platformDescription":
+      "বাংলাদেশের বেবি মার্কেটপ্লেসে যুক্ত হয়ে এক জায়গা থেকে পণ্য, অর্ডার ও পেআউট ম্যানেজ করুন।",
+    "vendorLogin.terms":
+      "চালিয়ে গেলে আপনি KineDao-এর Terms of Service এবং Privacy Policy-তে সম্মত হচ্ছেন।",
 
     // Navigation
     "nav.home": "হোম",
@@ -889,6 +913,8 @@ export const translations = {
     "reviews.writeReview": "রিভিউ লিখুন",
     "reviews.helpful": "সহায়ক",
     "reviews.share": "শেয়ার",
+    "reviews.verifiedPurchase": "যাচাইকৃত ক্রয়",
+    "reviews.replyFrom": "{vendor} এর উত্তর",
 
     // Homepage
     "home.flashDeals": "ফ্ল্যাশ ডিল",
@@ -1203,6 +1229,7 @@ export const translations = {
     "userMenu.welcome": "স্বাগতম",
     "userMenu.myOrders": "আমার অর্ডার",
     "userMenu.myAccount": "আমার অ্যাকাউন্ট",
+    "userMenu.vendorDashboard": "বিক্রেতা ড্যাশবোর্ড",
     "userMenu.wishlist": "উইশলিস্ট",
     "userMenu.notifications": "নোটিফিকেশন",
     "userMenu.continueShopping": "কেনাকাটা চালিয়ে যান",

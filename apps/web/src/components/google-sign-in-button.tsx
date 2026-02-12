@@ -31,7 +31,11 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export default function GoogleSignInButton() {
+export default function GoogleSignInButton({
+  redirectTo = "/",
+}: {
+  redirectTo?: string;
+}) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -39,7 +43,7 @@ export default function GoogleSignInButton() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: window.location.origin,
+        callbackURL: `${window.location.origin}${redirectTo}`,
       });
     } catch (error) {
       toast.error("Failed to sign in with Google. Please try again.");

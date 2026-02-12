@@ -86,14 +86,17 @@ function MantineThemeBridge({ children }: { children: React.ReactNode }) {
 
 function RootDocument() {
   const location = useLocation();
+  const locationHref =
+    typeof (location as { href?: unknown }).href === "string"
+      ? ((location as { href: string }).href)
+      : location.pathname;
+  const isVendorLogin = location.pathname === "/login" &&
+    /(?:\?|&)portal=vendor(?:&|$)/.test(locationHref);
   const isVendorForm = location.pathname === "/vendor/apply/form";
-  const isVendorDashboard = location.pathname.startsWith("/vendor/dashboard") ||
-    location.pathname.startsWith("/vendor/products") ||
-    location.pathname.startsWith("/vendor/orders") ||
-    location.pathname.startsWith("/vendor/earnings") ||
-    location.pathname.startsWith("/vendor/settings");
+  const isVendorDashboard = location.pathname.startsWith("/vendor/") &&
+    !location.pathname.startsWith("/vendor/apply");
   const isAdminPanel = location.pathname.startsWith("/admin");
-  const hideMainChrome = isVendorForm || isVendorDashboard || isAdminPanel;
+  const hideMainChrome = isVendorLogin || isVendorForm || isVendorDashboard || isAdminPanel;
 
   return (
     <html lang="en" suppressHydrationWarning>

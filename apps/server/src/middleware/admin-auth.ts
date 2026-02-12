@@ -1,8 +1,9 @@
 import { createMiddleware } from "hono/factory";
 import { db } from "@kineDao.com/db";
-import { adminUsers } from "@kineDao.com/db/schema";
+import { adminUsers, user as authUserTable } from "@kineDao.com/db/schema";
 import { eq } from "drizzle-orm";
 import type { AppEnv } from "../index";
+import { grantRole, hasAnyRole, hasRole } from "../lib/role-service";
 
 /**
  * Extended environment with adminUserId injected by middleware
@@ -10,6 +11,7 @@ import type { AppEnv } from "../index";
 export type AdminEnv = {
 	Variables: AppEnv["Variables"] & {
 		adminUserId: string;
+		isSuperAdmin: boolean;
 	};
 };
 
@@ -31,6 +33,25 @@ export const adminAuthMiddleware = createMiddleware<AdminEnv>(
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
+		const sessionRoles = (user as { roles?: string[] | null }).roles;
+
+		// Use database roles as source of truth (handles stale session role snapshots).
+		const [dbUser] = await db
+			.select({ roles: authUserTable.roles })
+			.from(authUserTable)
+			.where(eq(authUserTable.id, user.id))
+			.limit(1);
+		const effectiveRoles = dbUser?.roles ?? sessionRoles;
+
+		if (hasAnyRole(effectiveRoles, ["admin", "super_admin"])) {
+			const isSuperAdmin = hasRole(effectiveRoles, "super_admin");
+			console.log(`[AdminAuth] Access GRANTED via roles for ${user.email}`);
+			c.set("adminUserId", user.id);
+			c.set("isSuperAdmin", isSuperAdmin);
+			await next();
+			return;
+		}
+
 		const [adminUser] = await db
 			.select({
 				id: adminUsers.id,
@@ -45,8 +66,12 @@ export const adminAuthMiddleware = createMiddleware<AdminEnv>(
 			return c.json({ error: "Not an admin user" }, 403);
 		}
 
-		console.log(`[AdminAuth] Access GRANTED for Admin ${user.email}`);
+		// Backward compatibility: if legacy admin record exists, sync role once.
+		await grantRole(user.id, "admin");
+
+		console.log(`[AdminAuth] Access GRANTED for Admin ${user.email} via legacy table fallback`);
 		c.set("adminUserId", user.id);
+		c.set("isSuperAdmin", false);
 		await next();
 	},
 );

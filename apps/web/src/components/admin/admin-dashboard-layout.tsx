@@ -21,6 +21,7 @@ import {
   Image,
   Package,
   FolderTree,
+  MessageSquare,
   Sun,
   Moon,
   type LucideIcon,
@@ -30,6 +31,7 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import type { Language } from "@/lib/i18n/translations";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { LanguageToggle } from "@/components/language-toggle";
+import { RoleSwitcher } from "@/components/auth/role-switcher";
 
 interface NavItem {
   icon: LucideIcon;
@@ -74,6 +76,11 @@ const navItems: NavItem[] = [
     href: "/admin/products",
   },
   {
+    icon: MessageSquare,
+    label: { en: "Reviews", bn: "রিভিউ" },
+    href: "/admin/reviews",
+  },
+  {
     icon: FolderTree,
     label: { en: "Categories", bn: "বিভাগ" },
     href: "/admin/categories",
@@ -83,11 +90,13 @@ const navItems: NavItem[] = [
 interface AdminDashboardLayoutProps {
   children: React.ReactNode;
   adminName: string;
+  isSuperAdmin: boolean;
 }
 
 export function AdminDashboardLayout({
   children,
   adminName,
+  isSuperAdmin,
 }: AdminDashboardLayoutProps) {
   const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
@@ -111,6 +120,16 @@ export function AdminDashboardLayout({
   };
 
   const isDark = mounted ? resolvedTheme === "dark" : false;
+  const visibleNavItems = isSuperAdmin
+    ? [
+        ...navItems,
+        {
+          icon: Users,
+          label: { en: "Admin Management", bn: "অ্যাডমিন ব্যবস্থাপনা" } as Record<Language, string>,
+          href: "/admin/admins",
+        },
+      ]
+    : navItems;
 
   return (
     <AppShell
@@ -203,6 +222,9 @@ export function AdminDashboardLayout({
           </Group>
 
           <Group gap="md">
+            <Box visibleFrom="md">
+              <RoleSwitcher />
+            </Box>
             <NotificationBell />
             <Box visibleFrom="sm">
               <LanguageToggle />
@@ -279,7 +301,7 @@ export function AdminDashboardLayout({
             {language === "bn" ? "প্রধান মেনু" : "Main Menu"}
           </Text>
           <Stack gap={6}>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = isActive(item.href);
               return (
                 <UnstyledButton

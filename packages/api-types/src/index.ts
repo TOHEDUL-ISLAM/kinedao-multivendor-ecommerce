@@ -27,3 +27,9 @@ export * from "./notifications";
 
 // Re-export all types from wishlist
 export * from "./wishlist";
+
+// Re-export all types from reviews
+export * from "./reviews";
+
+// Re-export all types from admin management
+export * from "./admin-management";

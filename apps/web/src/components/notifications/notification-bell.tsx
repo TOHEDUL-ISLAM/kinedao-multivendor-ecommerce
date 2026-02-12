@@ -35,6 +35,10 @@ function getNotificationUrl(notification: NotificationDTO): string {
 		return "/vendor/products";
 	}
 
+	if (["new_review", "review_moderated"].includes(type)) {
+		return data?.reviewId ? `/vendor/reviews?reviewId=${data.reviewId}` : "/vendor/reviews";
+	}
+
 	// Default fallback
 	return "/";
 }

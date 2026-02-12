@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   Wallet,
   Settings,
+  MessageSquare,
   Baby,
   Sun,
   Moon,
@@ -28,6 +29,7 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import type { Language } from "@/lib/i18n/translations";
 import { LanguageToggle } from "@/components/language-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { RoleSwitcher } from "@/components/auth/role-switcher";
 
 interface NavItem {
   icon: LucideIcon;
@@ -55,6 +57,11 @@ const navItems: NavItem[] = [
     icon: Wallet,
     label: { en: "Earnings", bn: "আয়" },
     href: "/vendor/earnings",
+  },
+  {
+    icon: MessageSquare,
+    label: { en: "Reviews", bn: "রিভিউ" },
+    href: "/vendor/reviews",
   },
   {
     icon: Settings,
@@ -188,6 +195,9 @@ export function VendorDashboardLayout({
           </Group>
 
           <Group gap="md">
+            <Box visibleFrom="md">
+              <RoleSwitcher />
+            </Box>
             <NotificationBell />
             <Box visibleFrom="sm">
               <LanguageToggle />

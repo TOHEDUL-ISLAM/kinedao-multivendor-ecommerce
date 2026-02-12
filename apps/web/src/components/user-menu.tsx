@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Store,
   User,
   UserCircle,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { useTranslation } from "@/hooks/use-translation";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
 import { Skeleton } from "./ui/skeleton";
 
 function getDisplayName(name: string | null | undefined, email: string): string {
@@ -42,6 +44,7 @@ export default function UserMenu() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { data: session, isPending } = authClient.useSession();
+  const { isVendorApproved } = useHeaderSellerAction();
   const canHover = useMediaQuery("(hover: hover) and (pointer: fine)");
 
   const [open, setOpen] = useState(false);
@@ -151,6 +154,15 @@ export default function UserMenu() {
               <span>{t("userMenu.myOrders")}</span>
             </Link>
           </DropdownMenuItem>
+
+          {isVendorApproved ? (
+            <DropdownMenuItem asChild>
+              <Link to="/vendor/dashboard" className="gap-2">
+                <Store className="h-4 w-4" />
+                <span>{t("userMenu.vendorDashboard")}</span>
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
 
           <DropdownMenuItem asChild>
             <Link to="/wishlist" className="gap-2">

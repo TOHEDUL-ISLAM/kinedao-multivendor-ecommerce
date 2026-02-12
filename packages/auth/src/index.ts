@@ -38,6 +38,16 @@ export const auth = betterAuth({
     provider: "pg",
     schema: schema,
   }),
+  user: {
+    additionalFields: {
+      roles: {
+        type: "string[]",
+        required: true,
+        input: false,
+        defaultValue: ["customer"],
+      },
+    },
+  },
   trustedOrigins: Array.from(
     new Set([env.CORS_ORIGIN, env.FRONTEND_URL, env.BETTER_AUTH_URL])
   ),

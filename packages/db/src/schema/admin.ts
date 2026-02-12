@@ -46,6 +46,38 @@ export const adminAuditLog = pgTable(
 	],
 );
 
+export const adminInvitations = pgTable(
+	"admin_invitations",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		email: varchar("email", { length: 255 }).notNull(),
+		role: varchar("role", { length: 20 })
+			.notNull()
+			.$type<"admin" | "super_admin">(),
+		invitedBy: text("invited_by")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		tokenHash: text("token_hash").notNull().unique(),
+		expiresAt: timestamp("expires_at").notNull(),
+		acceptedAt: timestamp("accepted_at"),
+		status: varchar("status", { length: 20 })
+			.notNull()
+			.default("pending")
+			.$type<"pending" | "accepted" | "expired" | "revoked">(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("admin_invitations_email_idx").on(table.email),
+		index("admin_invitations_status_idx").on(table.status),
+		index("admin_invitations_expires_at_idx").on(table.expiresAt),
+		index("admin_invitations_invited_by_idx").on(table.invitedBy),
+	],
+);
+
 // Relations
 export const adminUsersRelations = relations(adminUsers, ({ one }) => ({
 	user: one(user, {
@@ -61,7 +93,19 @@ export const adminAuditLogRelations = relations(adminAuditLog, ({ one }) => ({
 	}),
 }));
 
+export const adminInvitationsRelations = relations(
+	adminInvitations,
+	({ one }) => ({
+		inviter: one(user, {
+			fields: [adminInvitations.invitedBy],
+			references: [user.id],
+		}),
+	}),
+);
+
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type NewAdminUser = typeof adminUsers.$inferInsert;
 export type AdminAuditLogEntry = typeof adminAuditLog.$inferSelect;
 export type NewAdminAuditLogEntry = typeof adminAuditLog.$inferInsert;
+export type AdminInvitation = typeof adminInvitations.$inferSelect;
+export type NewAdminInvitation = typeof adminInvitations.$inferInsert;

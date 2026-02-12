@@ -3,6 +3,7 @@ import { db } from "@kineDao.com/db";
 import { vendorApplications, vendors } from "@kineDao.com/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AppEnv } from "../index";
+import { getUserRoles, hasRole, syncVendorRole } from "../lib/role-service";
 
 /**
  * Extended environment with vendorId injected by middleware
@@ -39,9 +40,22 @@ function generateSlug(name: string): string {
  */
 export const vendorAuthMiddleware = createMiddleware<VendorEnv>(
 	async (c, next) => {
-		const userId = c.var.user?.id;
+		const authUser = c.var.user as { id?: string; roles?: string[] | null } | null;
+		const userId = authUser?.id;
 		if (!userId) {
 			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		if (!hasRole(authUser?.roles, "vendor")) {
+			const synced = await syncVendorRole(userId);
+			if (!synced) {
+				return c.json({ error: "Not an approved vendor" }, 403);
+			}
+
+			const latestRoles = await getUserRoles(userId);
+			if (!hasRole(latestRoles, "vendor")) {
+				return c.json({ error: "Not an approved vendor" }, 403);
+			}
 		}
 
 		const [application] = await db
