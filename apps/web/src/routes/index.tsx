@@ -144,7 +144,7 @@ function HomePage() {
         </div>
 
         {/* Mobile + small tablet: Promo cards row */}
-        <div className="xl:hidden mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="xl:hidden mt-3 flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
           <PromotionalBanners
             banners={promoBanners}
             layout="horizontal"

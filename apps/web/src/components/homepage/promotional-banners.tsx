@@ -85,7 +85,7 @@ export function PromotionalBanners({
 					{[0, 1, 2].map((idx) => (
 						<div
 							key={`promo-skeleton-${idx}`}
-							className="h-[92px] sm:h-[100px] rounded-lg bg-zinc-200/70 animate-pulse dark:bg-zinc-800/70"
+							className="h-[120px] sm:h-[100px] rounded-lg bg-zinc-200/70 animate-pulse dark:bg-zinc-800/70"
 						/>
 					))}
 				</>
@@ -150,7 +150,7 @@ function PromoCard({
 	const isInternalLink = linkUrl.startsWith("/") && !linkUrl.startsWith("//");
 	const isExternalLink = /^https?:\/\//i.test(linkUrl);
 	const cardClassName = `group relative overflow-hidden rounded-lg ${
-		compact ? "h-[92px] sm:h-[100px]" : "flex-1 min-h-[110px] sm:min-h-[120px]"
+		compact ? "h-[120px] sm:h-[100px]" : "flex-1 min-h-[110px] sm:min-h-[120px]"
 	}`;
 
 	const cardContent = (

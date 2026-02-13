@@ -17,9 +17,11 @@ import {
   Image,
   Button,
   Skeleton,
+  Card,
+  Box,
 } from "@mantine/core";
 import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
-import { Search, Eye, Check, X, Ban, RotateCcw } from "lucide-react";
+import { Search, Eye, Check, X, Ban, RotateCcw, Store, Tag, Calendar } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -324,12 +326,16 @@ function AdminProductsPage() {
 
   return (
     <Stack gap="xl">
-      <Title order={2} style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}>
+      <Title
+        order={2}
+        className="text-xl sm:text-2xl"
+        style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}
+      >
         {t.title}
       </Title>
 
       <Paper
-        p="lg"
+        p={{ base: "sm", sm: "lg" }}
         radius="lg"
         style={{
           background: isDark
@@ -348,14 +354,14 @@ function AdminProductsPage() {
           />
 
           <Tabs value={activeTab} onChange={setActiveTab}>
-            <Tabs.List>
-              <Tabs.Tab value="pending" rightSection={counts && <Badge size="sm">{counts.pending}</Badge>}>
+            <Tabs.List grow>
+              <Tabs.Tab value="pending" rightSection={counts && <Badge size="xs">{counts.pending}</Badge>}>
                 {t.pending}
               </Tabs.Tab>
-              <Tabs.Tab value="approved" rightSection={counts && <Badge size="sm">{counts.approved}</Badge>}>
+              <Tabs.Tab value="approved" rightSection={counts && <Badge size="xs">{counts.approved}</Badge>}>
                 {t.approved}
               </Tabs.Tab>
-              <Tabs.Tab value="rejected" rightSection={counts && <Badge size="sm">{counts.rejected}</Badge>}>
+              <Tabs.Tab value="rejected" rightSection={counts && <Badge size="xs">{counts.rejected}</Badge>}>
                 {t.rejected}
               </Tabs.Tab>
             </Tabs.List>
@@ -368,109 +374,222 @@ function AdminProductsPage() {
                   ))}
                 </Stack>
               ) : products && products.products.length > 0 ? (
-                <Table highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t.thumbnail}</Table.Th>
-                      <Table.Th>{t.productName}</Table.Th>
-                      <Table.Th>{t.vendor}</Table.Th>
-                      <Table.Th>{t.category}</Table.Th>
-                      <Table.Th>{t.price}</Table.Th>
-                      <Table.Th>{t.status}</Table.Th>
-                      <Table.Th>{t.submitted}</Table.Th>
-                      <Table.Th>{t.actions}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
+                <>
+                  {/* Desktop table view */}
+                  <Box visibleFrom="md">
+                    <Table.ScrollContainer minWidth={900}>
+                      <Table highlightOnHover>
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>{t.thumbnail}</Table.Th>
+                            <Table.Th>{t.productName}</Table.Th>
+                            <Table.Th>{t.vendor}</Table.Th>
+                            <Table.Th>{t.category}</Table.Th>
+                            <Table.Th>{t.price}</Table.Th>
+                            <Table.Th>{t.status}</Table.Th>
+                            <Table.Th>{t.submitted}</Table.Th>
+                            <Table.Th>{t.actions}</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {products.products.map((product) => (
+                            <Table.Tr key={product.id}>
+                              <Table.Td>
+                                <Image
+                                  src={product.imageUrl || undefined}
+                                  alt={product.title}
+                                  w={50}
+                                  h={50}
+                                  radius="md"
+                                  fit="cover"
+                                />
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" fw={500} lineClamp={2} maw={300}>
+                                  {product.title}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{product.vendorName}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{product.categoryName}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" fw={500}>
+                                  {formatBDT(product.priceAmount)}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Group gap="xs">
+                                  <StatusBadge status={product.status} />
+                                  <Badge size="sm" color={product.isActive ? "green" : "gray"} variant="light">
+                                    {product.isActive ? t.active : t.inactive}
+                                  </Badge>
+                                  {product.hasVendorUpdate && (
+                                    <Badge size="sm" color="violet" variant="light">
+                                      {t.updatedSubmission}
+                                    </Badge>
+                                  )}
+                                </Group>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{formatDate(product.submittedAt || product.createdAt)}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Group gap="xs">
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="blue"
+                                    onClick={() => handleViewDetails(product)}
+                                    title={t.viewDetails}
+                                  >
+                                    <Eye size={18} />
+                                  </ActionIcon>
+                                  {product.status === "pending" && (
+                                    <>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="green"
+                                        onClick={() => handleApproveClick(product.id)}
+                                        title={t.approve}
+                                      >
+                                        <Check size={18} />
+                                      </ActionIcon>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => handleRejectClick(product.id)}
+                                        title={t.reject}
+                                      >
+                                        <X size={18} />
+                                      </ActionIcon>
+                                    </>
+                                  )}
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color={product.isActive ? "red" : "teal"}
+                                    onClick={() => handleToggleActive(product.id, product.isActive)}
+                                    title={product.isActive ? t.deactivate : t.reactivate}
+                                    loading={toggleActiveMutation.isPending}
+                                  >
+                                    {product.isActive ? <Ban size={18} /> : <RotateCcw size={18} />}
+                                  </ActionIcon>
+                                </Group>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </Table.ScrollContainer>
+                  </Box>
+
+                  {/* Mobile card view */}
+                  <Stack gap="sm" hiddenFrom="md">
                     {products.products.map((product) => (
-                      <Table.Tr key={product.id}>
-                        <Table.Td>
+                      <Card
+                        key={product.id}
+                        padding="sm"
+                        radius="md"
+                        style={{
+                          background: isDark ? "oklch(0.2 0.02 260)" : "oklch(0.99 0.005 260)",
+                          border: isDark
+                            ? "1px solid oklch(0.3 0.02 260 / 0.3)"
+                            : "1px solid oklch(0.92 0.01 260 / 0.2)",
+                        }}
+                      >
+                        <Group gap="sm" mb="xs" align="flex-start">
                           <Image
                             src={product.imageUrl || undefined}
                             alt={product.title}
-                            w={50}
-                            h={50}
+                            w={56}
+                            h={56}
                             radius="md"
                             fit="cover"
+                            style={{ flexShrink: 0 }}
                           />
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm" fw={500} lineClamp={2} maw={300}>
-                            {product.title}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{product.vendorName}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{product.categoryName}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm" fw={500}>
-                            {formatBDT(product.priceAmount)}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap="xs">
-                            <StatusBadge status={product.status} />
-                            <Badge size="sm" color={product.isActive ? "green" : "gray"} variant="light">
-                              {product.isActive ? t.active : t.inactive}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text size="sm" fw={600} lineClamp={2}>
+                              {product.title}
+                            </Text>
+                            <Text size="sm" fw={600} mt={2} style={{ color: "oklch(0.65 0.15 175)" }}>
+                              {formatBDT(product.priceAmount)}
+                            </Text>
+                          </div>
+                        </Group>
+
+                        <Group gap={4} mb="xs" wrap="wrap">
+                          <StatusBadge status={product.status} />
+                          <Badge size="xs" color={product.isActive ? "green" : "gray"} variant="light">
+                            {product.isActive ? t.active : t.inactive}
+                          </Badge>
+                          {product.hasVendorUpdate && (
+                            <Badge size="xs" color="violet" variant="light">
+                              {t.updatedSubmission}
                             </Badge>
-                            {product.hasVendorUpdate && (
-                              <Badge size="sm" color="violet" variant="light">
-                                {t.updatedSubmission}
-                              </Badge>
-                            )}
+                          )}
+                        </Group>
+
+                        <Group gap="md" mb="xs" wrap="wrap">
+                          <Group gap={4}>
+                            <Store size={12} style={{ opacity: 0.5 }} />
+                            <Text size="xs" c="dimmed">{product.vendorName}</Text>
                           </Group>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{formatDate(product.submittedAt || product.createdAt)}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap="xs">
-                            <ActionIcon
-                              variant="subtle"
-                              color="blue"
-                              onClick={() => handleViewDetails(product)}
-                              title={t.viewDetails}
-                            >
-                              <Eye size={18} />
-                            </ActionIcon>
-                            {product.status === "pending" && (
-                              <>
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="green"
-                                  onClick={() => handleApproveClick(product.id)}
-                                  title={t.approve}
-                                >
-                                  <Check size={18} />
-                                </ActionIcon>
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="red"
-                                  onClick={() => handleRejectClick(product.id)}
-                                  title={t.reject}
-                                >
-                                  <X size={18} />
-                                </ActionIcon>
-                              </>
-                            )}
-                            <ActionIcon
-                              variant="subtle"
-                              color={product.isActive ? "red" : "teal"}
-                              onClick={() => handleToggleActive(product.id, product.isActive)}
-                              title={product.isActive ? t.deactivate : t.reactivate}
-                              loading={toggleActiveMutation.isPending}
-                            >
-                              {product.isActive ? <Ban size={18} /> : <RotateCcw size={18} />}
-                            </ActionIcon>
+                          <Group gap={4}>
+                            <Tag size={12} style={{ opacity: 0.5 }} />
+                            <Text size="xs" c="dimmed">{product.categoryName}</Text>
                           </Group>
-                        </Table.Td>
-                      </Table.Tr>
+                          <Group gap={4}>
+                            <Calendar size={12} style={{ opacity: 0.5 }} />
+                            <Text size="xs" c="dimmed">
+                              {formatDate(product.submittedAt || product.createdAt)}
+                            </Text>
+                          </Group>
+                        </Group>
+
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleViewDetails(product)}
+                            title={t.viewDetails}
+                          >
+                            <Eye size={16} />
+                          </ActionIcon>
+                          {product.status === "pending" && (
+                            <>
+                              <ActionIcon
+                                variant="light"
+                                color="green"
+                                onClick={() => handleApproveClick(product.id)}
+                                title={t.approve}
+                              >
+                                <Check size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                color="red"
+                                onClick={() => handleRejectClick(product.id)}
+                                title={t.reject}
+                              >
+                                <X size={16} />
+                              </ActionIcon>
+                            </>
+                          )}
+                          <ActionIcon
+                            variant="light"
+                            color={product.isActive ? "red" : "teal"}
+                            onClick={() => handleToggleActive(product.id, product.isActive)}
+                            title={product.isActive ? t.deactivate : t.reactivate}
+                            loading={toggleActiveMutation.isPending}
+                          >
+                            {product.isActive ? <Ban size={16} /> : <RotateCcw size={16} />}
+                          </ActionIcon>
+                        </Group>
+                      </Card>
                     ))}
-                  </Table.Tbody>
-                </Table>
+                  </Stack>
+                </>
               ) : (
                 <Text c="dimmed" ta="center" py="xl">
                   {t.noResults}
@@ -489,18 +608,20 @@ function AdminProductsPage() {
         position="right"
         size="xl"
         styles={{
+          content: { maxWidth: "100vw" },
           body: {
             maxHeight: "calc(100vh - 72px)",
             overflowY: "auto",
             paddingBottom: 24,
           },
         }}
+        className="[&_.mantine-Drawer-content]:w-full [&_.mantine-Drawer-content]:sm:w-auto"
       >
         {productDetail && (
           <Stack gap="lg" data-lenis-prevent onWheelCapture={(event) => event.stopPropagation()}>
             {/* Status and Actions */}
-            <Group justify="space-between">
-              <Group gap="xs">
+            <Stack gap="sm">
+              <Group gap="xs" wrap="wrap">
                 <StatusBadge status={productDetail.status} size="lg" />
                 <Badge size="lg" color={productDetail.isActive ? "green" : "gray"} variant="light">
                   {productDetail.isActive ? t.active : t.inactive}
@@ -511,12 +632,13 @@ function AdminProductsPage() {
                   </Badge>
                 )}
               </Group>
-              <Group gap="xs">
+              <Group gap="xs" wrap="wrap">
                 {productDetail.status === "pending" && (
                   <>
                     <Button
                       leftSection={<Check size={18} />}
                       color="green"
+                      size="sm"
                       onClick={() => handleApproveClick(productDetail.id)}
                     >
                       {t.approve}
@@ -524,6 +646,7 @@ function AdminProductsPage() {
                     <Button
                       leftSection={<X size={18} />}
                       color="red"
+                      size="sm"
                       onClick={() => handleRejectClick(productDetail.id)}
                     >
                       {t.reject}
@@ -532,6 +655,7 @@ function AdminProductsPage() {
                 )}
                 <Button
                   variant="light"
+                  size="sm"
                   color={productDetail.isActive ? "red" : "teal"}
                   leftSection={productDetail.isActive ? <Ban size={16} /> : <RotateCcw size={16} />}
                   onClick={() => handleToggleActive(productDetail.id, productDetail.isActive)}
@@ -540,12 +664,12 @@ function AdminProductsPage() {
                   {productDetail.isActive ? t.deactivate : t.reactivate}
                 </Button>
               </Group>
-            </Group>
+            </Stack>
 
             {/* Images */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.images}</Text>
-              <SimpleGrid cols={3} spacing="md">
+              <SimpleGrid cols={{ base: 2, xs: 3 }} spacing="md">
                 {productDetail.images.map((img) => (
                   <Image
                     key={img.id}
@@ -560,7 +684,7 @@ function AdminProductsPage() {
             </Paper>
 
             {/* Basic Info */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.basicInfo}</Text>
               <Stack gap="sm">
                 <div>
@@ -612,9 +736,9 @@ function AdminProductsPage() {
             </Paper>
 
             {/* Baby Info */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.babyInfo}</Text>
-              <SimpleGrid cols={2} spacing="md">
+              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
                 {productDetail.ageRange && (
                   <div>
                     <Text size="xs" c="dimmed">{t.ageRange}</Text>
@@ -649,7 +773,7 @@ function AdminProductsPage() {
               {productDetail.safetyCertifications && productDetail.safetyCertifications.length > 0 && (
                 <div>
                   <Text size="xs" c="dimmed" mt="sm">{t.safetyCertifications}</Text>
-                  <Group gap="xs" mt="xs">
+                  <Group gap="xs" mt="xs" wrap="wrap">
                     {productDetail.safetyCertifications.map((cert, i) => (
                       <Badge key={i} size="sm">{cert}</Badge>
                     ))}
@@ -659,43 +783,45 @@ function AdminProductsPage() {
             </Paper>
 
             {/* SKUs */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.variants}</Text>
-              <Table>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t.sku}</Table.Th>
-                    <Table.Th>{t.price}</Table.Th>
-                    <Table.Th>{t.stock}</Table.Th>
-                    <Table.Th>{t.available}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {productDetail.skus.map((sku) => (
-                    <Table.Tr key={sku.id}>
-                      <Table.Td>
-                        <Text size="sm">{sku.sku}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" fw={500}>{formatBDT(sku.priceAmount)}</Text>
-                        {sku.compareAtAmount && (
-                          <Text size="xs" c="dimmed" td="line-through">
-                            {formatBDT(sku.compareAtAmount)}
-                          </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{sku.stockQty}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={sku.isAvailable ? "green" : "red"} size="sm">
-                          {sku.isAvailable ? "Yes" : "No"}
-                        </Badge>
-                      </Table.Td>
+              <Table.ScrollContainer minWidth={400}>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>{t.sku}</Table.Th>
+                      <Table.Th>{t.price}</Table.Th>
+                      <Table.Th>{t.stock}</Table.Th>
+                      <Table.Th>{t.available}</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {productDetail.skus.map((sku) => (
+                      <Table.Tr key={sku.id}>
+                        <Table.Td>
+                          <Text size="sm">{sku.sku}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>{formatBDT(sku.priceAmount)}</Text>
+                          {sku.compareAtAmount && (
+                            <Text size="xs" c="dimmed" td="line-through">
+                              {formatBDT(sku.compareAtAmount)}
+                            </Text>
+                          )}
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{sku.stockQty}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={sku.isAvailable ? "green" : "red"} size="sm">
+                            {sku.isAvailable ? "Yes" : "No"}
+                          </Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
             </Paper>
           </Stack>
         )}

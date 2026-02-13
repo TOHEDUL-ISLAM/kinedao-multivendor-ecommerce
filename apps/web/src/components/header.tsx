@@ -49,8 +49,6 @@ export default function Header() {
   const {
     session,
     isSessionPending,
-    action: sellerAction,
-    isLoading: isSellerActionLoading,
   } = useHeaderSellerAction();
   const isLoggedIn = !!session;
 
@@ -187,18 +185,6 @@ export default function Header() {
                   )}
                 </Button>
               </Link>
-
-              {/* Seller CTA */}
-              {isSellerActionLoading ? (
-                <Skeleton className="hidden md:flex h-10 w-40 rounded-full" />
-              ) : (
-                <a href={sellerAction.href} className="hidden md:flex">
-                  <Button variant="secondary" className="gap-2 rounded-full">
-                    <Store className="w-4 h-4" />
-                    {t(sellerAction.labelKey)}
-                  </Button>
-                </a>
-              )}
 
               {/* Account */}
               {isSessionPending ? (

@@ -22,7 +22,7 @@ function getNotificationUrl(notification: NotificationDTO): string {
 
 	// Product notifications - go to vendor products
 	if (["product_approved", "product_rejected"].includes(type)) {
-		return data?.productId ? `/vendor/products/${data.productId}/edit` : "/vendor/products";
+		return "/vendor/products";
 	}
 
 	// Vendor application approved

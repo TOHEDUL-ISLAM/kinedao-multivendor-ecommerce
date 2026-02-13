@@ -123,7 +123,7 @@ function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+    <div className="container mx-auto px-4 py-8 pb-40 md:pb-8">
       <div className="flex flex-row items-center justify-between mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold">{t("cart.title")}</h1>
         <Button variant="ghost" size="sm" className="h-9 px-2 text-sm sm:h-10 sm:px-4" asChild>
@@ -366,7 +366,7 @@ function CartPage() {
       </div>
 
       {/* Mobile sticky summary */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+      <div className="md:hidden fixed bottom-20 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur">
         <div
           role="button"
           tabIndex={0}
