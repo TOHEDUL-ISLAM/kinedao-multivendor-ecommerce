@@ -12,6 +12,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api-client";
 import Loader from "@/components/loader";
 import { KineDaoLogo } from "@/components/kinedao-logo";
 
@@ -36,7 +37,69 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const { isPending } = authClient.useSession();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [lastEmail, setLastEmail] = useState("");
+  const [canUseForgotPassword, setCanUseForgotPassword] = useState<boolean | null>(null);
+  const [forgotPasswordHint, setForgotPasswordHint] = useState<string | null>(null);
+  const [checkingForgotPassword, setCheckingForgotPassword] = useState(false);
   const navigate = useNavigate();
+  const isEmailVerificationError = (error: { message?: string; code?: string; status?: number }) => {
+    const message = (error.message ?? "").toLowerCase();
+    const code = (error.code ?? "").toLowerCase();
+    const statusSuggestsVerification = error.status === 403 && message.includes("verif");
+    return (
+      statusSuggestsVerification ||
+      code.includes("email_not_verified") ||
+      code.includes("email-not-verified") ||
+      (message.includes("email") && message.includes("verif"))
+    );
+  };
+
+  const checkForgotPasswordEligibility = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const parsed = z.string().email().safeParse(normalizedEmail);
+    if (!parsed.success) {
+      setCanUseForgotPassword(null);
+      setForgotPasswordHint(null);
+      return;
+    }
+
+    setCheckingForgotPassword(true);
+    try {
+      const response = await api.auth["password-reset-eligibility"].$post({
+        json: { email: normalizedEmail },
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        eligible?: boolean;
+        message?: string;
+      };
+
+      setCanUseForgotPassword(data.eligible === true);
+      setForgotPasswordHint(data.eligible === false ? data.message ?? null : null);
+    } catch {
+      setCanUseForgotPassword(null);
+      setForgotPasswordHint(null);
+    } finally {
+      setCheckingForgotPassword(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const normalizedEmail = lastEmail.trim().toLowerCase();
+    if (!normalizedEmail) return;
+    setResending(true);
+    try {
+      await authClient.sendVerificationEmail({
+        email: normalizedEmail,
+        callbackURL: `${window.location.origin}/login`,
+      });
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch {
+      toast.error("Failed to send verification email. Please try again.");
+    }
+    setResending(false);
+  };
 
   // Login Form
   const loginForm = useForm({
@@ -46,9 +109,12 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     },
     onSubmit: async ({ value }) => {
       setServerError(null);
+      setEmailNotVerified(false);
+      const normalizedEmail = value.email.trim().toLowerCase();
+      setLastEmail(normalizedEmail);
       await authClient.signIn.email(
         {
-          email: value.email,
+          email: normalizedEmail,
           password: value.password,
         },
         {
@@ -57,8 +123,12 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             onClose();
             window.location.reload(); // Ensure session state updates across app
           },
-          onError: () => {
-            setServerError("Invalid email or password");
+          onError: (ctx) => {
+            if (isEmailVerificationError(ctx.error)) {
+              setEmailNotVerified(true);
+            } else {
+              setServerError(ctx.error.message || "Invalid email or password");
+            }
           },
         },
       );
@@ -80,9 +150,10 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     },
     onSubmit: async ({ value }) => {
       setServerError(null);
+      const normalizedEmail = value.email.trim().toLowerCase();
       await authClient.signUp.email(
         {
-          email: value.email,
+          email: normalizedEmail,
           password: value.password,
           name: value.name,
         },
@@ -144,6 +215,25 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               <TabsTrigger value="signup" className="rounded-full">Sign Up</TabsTrigger>
             </TabsList>
 
+            {emailNotVerified && (
+              <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm">
+                <p className="font-medium text-amber-800">Email not verified</p>
+                <p className="mt-1 text-amber-700">
+                  Please check your inbox and click the verification link before signing in.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  disabled={resending}
+                  onClick={handleResendVerification}
+                >
+                  {resending ? "Sending..." : "Resend verification email"}
+                </Button>
+              </div>
+            )}
+
             {serverError && (
               <div className="mt-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded text-center">
                 {serverError}
@@ -171,8 +261,16 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                           placeholder="Enter your email"
                           className="pl-10 rounded-full"
                           value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={() => {
+                            field.handleBlur();
+                            void checkForgotPasswordEligibility(field.state.value);
+                          }}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.handleChange(nextValue);
+                            setCanUseForgotPassword(null);
+                            setForgotPasswordHint(null);
+                          }}
                         />
                       </div>
                       {field.state.meta.errors.map((error) => (
@@ -187,18 +285,25 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="login-password">Password</Label>
-                        <Button 
-                          variant="link" 
-                          className="p-0 h-auto text-xs text-primary"
-                          type="button"
-                          onClick={() => {
-                             onClose();
-                             navigate({ to: "/forgot-password" });
-                          }}
-                        >
-                          Forgot password?
-                        </Button>
+                        {checkingForgotPassword ? (
+                          <span className="text-xs text-muted-foreground">Checking...</span>
+                        ) : canUseForgotPassword !== false ? (
+                          <Button 
+                            variant="link" 
+                            className="p-0 h-auto text-xs text-primary"
+                            type="button"
+                            onClick={() => {
+                               onClose();
+                               navigate({ to: "/forgot-password" });
+                            }}
+                          >
+                            Forgot password?
+                          </Button>
+                        ) : null}
                       </div>
+                      {forgotPasswordHint ? (
+                        <p className="text-xs text-amber-700">{forgotPasswordHint}</p>
+                      ) : null}
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
