@@ -51,9 +51,10 @@ export default function SignUpForm({
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
+        const normalizedEmail = value.email.trim().toLowerCase();
         const response = await api.auth["sign-up"].$post({
           json: {
-            email: value.email,
+            email: normalizedEmail,
             password: value.password,
             name: value.name,
             callbackURL: `${window.location.origin}${redirectTo}`,

@@ -2,11 +2,11 @@ import { s3 } from "./s3-client";
 import { randomUUID } from "crypto";
 
 /**
- * Allowed file types for vendor document uploads
+ * Allowed file types for uploads
+ * - Any image/* MIME type (supports phone formats like HEIC/HEIF)
+ * - PDF documents
  */
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ALLOWED_DOCUMENT_TYPES = ["application/pdf"];
-const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
 
 /**
  * File size limits based on user requirements
@@ -19,7 +19,12 @@ const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB
 /**
  * Upload categories for organizing files in S3
  */
-export type UploadCategory = "vendor-documents" | "vendor-logos" | "product-images" | "banners";
+export type UploadCategory =
+  | "vendor-documents"
+  | "vendor-logos"
+  | "product-images"
+  | "banners"
+  | "profile-images";
 
 /**
  * Options for file upload
@@ -70,17 +75,18 @@ export async function uploadFile(
   file: File,
   options: UploadOptions
 ): Promise<UploadResult> {
+  const isImage = file.type.startsWith("image/");
+  const isPdf = ALLOWED_DOCUMENT_TYPES.includes(file.type);
+
   // Validate file type
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isImage && !isPdf) {
     throw new Error(
-      `Invalid file type: ${file.type}. Allowed types: ${ALLOWED_TYPES.join(", ")}`
+      `Invalid file type: ${file.type}. Allowed types: image/* or application/pdf`
     );
   }
 
   // Determine max size based on file type
-  const maxSize = ALLOWED_DOCUMENT_TYPES.includes(file.type)
-    ? MAX_DOCUMENT_SIZE
-    : MAX_IMAGE_SIZE;
+  const maxSize = isPdf ? MAX_DOCUMENT_SIZE : MAX_IMAGE_SIZE;
 
   // Validate file size
   if (file.size > maxSize) {
@@ -123,6 +129,11 @@ export async function uploadFile(
     case "banners":
       // Banners: banners/{uuid}.{ext}
       s3Key = `banners/${uuid}.${ext}`;
+      break;
+
+    case "profile-images":
+      // Profile images: users/{userId}/profile/{uuid}.{ext}
+      s3Key = `users/${options.userId}/profile/${uuid}.${ext}`;
       break;
 
     default:
@@ -171,7 +182,7 @@ export function getFileExtension(filename: string): string {
  * @returns True if the MIME type is an image
  */
 export function isImageType(mimeType: string): boolean {
-  return ALLOWED_IMAGE_TYPES.includes(mimeType);
+  return mimeType.startsWith("image/");
 }
 
 /**

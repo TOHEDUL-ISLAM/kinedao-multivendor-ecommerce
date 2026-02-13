@@ -6,7 +6,7 @@ import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Loader from "@/components/loader";
-import { env } from "@/lib/env";
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/verify-email")({
   validateSearch: z.object({
@@ -24,19 +24,14 @@ function VerifyEmailComponent() {
     if (!token) return;
 
     const verify = async () => {
-      const params = new URLSearchParams({ token });
-      if (callbackURL) {
-        params.set("callbackURL", callbackURL);
-      }
-
-      const response = await fetch(
-        `${env.VITE_SERVER_URL}/api/auth/verify-email?${params.toString()}`,
-        {
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
+      try {
+        await authClient.verifyEmail({
+          query: {
+            token,
+            callbackURL,
+          },
+        });
+      } catch {
         navigate({ to: "/login" });
         return;
       }

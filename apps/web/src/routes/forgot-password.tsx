@@ -26,18 +26,23 @@ function ForgotPasswordComponent() {
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        console.log("[FORGOT-PASSWORD] Attempting to send reset email to:", value.email);
+        const normalizedEmail = value.email.trim().toLowerCase();
+        console.log("[FORGOT-PASSWORD] Attempting to send reset email to:", normalizedEmail);
         const response = await api.auth["forgot-password"].$post({
           json: {
-            email: value.email,
+            email: normalizedEmail,
             redirectTo: `${window.location.origin}/reset-password`,
           },
         });
 
         if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
+          const data = await response.json().catch(() => ({} as { message?: string; error?: string }));
           console.error("[FORGOT-PASSWORD] Error:", data);
-          setServerError("Failed to send reset email. Please try again.");
+          setServerError(
+            (data as { message?: string; error?: string }).message ||
+              (data as { message?: string; error?: string }).error ||
+              "Failed to send reset email. Please try again."
+          );
           return;
         }
 

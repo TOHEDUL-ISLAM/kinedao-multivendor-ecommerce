@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { auth } from "@kineDao.com/auth";
+import { db } from "@kineDao.com/db";
+import { account, user } from "@kineDao.com/db/schema/auth";
 import { env } from "@kineDao.com/env/server";
+import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { signUpSchema, forgotPasswordSchema } from "@kineDao.com/api-types/auth";
 
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
@@ -71,11 +75,42 @@ const buildAuthRequest = (path: string, body: unknown, original: Request) => {
   });
 };
 
+const passwordResetEligibilitySchema = z.object({
+  email: z.string().email(),
+});
+
+async function getPasswordCapabilityByEmail(email: string): Promise<{
+  userExists: boolean;
+  hasCredentialAccount: boolean;
+}> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const accounts = await db
+    .select({ providerId: account.providerId, password: account.password })
+    .from(user)
+    .innerJoin(account, eq(account.userId, user.id))
+    .where(sql`lower(${user.email}) = ${normalizedEmail}`);
+
+  if (accounts.length === 0) {
+    return { userExists: false, hasCredentialAccount: false };
+  }
+
+  return {
+    userExists: true,
+    hasCredentialAccount: accounts.some(
+      (row) =>
+        row.providerId === "credential" &&
+        typeof row.password === "string" &&
+        row.password.length > 0
+    ),
+  };
+}
+
 // POST /api/auth/sign-up - Custom sign-up handler
 // POST /api/auth/forgot-password - Custom forgot password handler
 const authRouter = new Hono()
   .post("/sign-up", zValidator("json", signUpSchema), async (c) => {
     const data = c.req.valid("json");
+    const normalizedEmail = data.email.trim().toLowerCase();
     const callbackURL = resolveFrontendUrl(
       data.callbackURL,
       "/login",
@@ -86,7 +121,7 @@ const authRouter = new Hono()
       "/api/auth/sign-up/email",
       {
         name: data.name,
-        email: data.email,
+        email: normalizedEmail,
         password: data.password,
         callbackURL,
         rememberMe: data.rememberMe,
@@ -98,6 +133,24 @@ const authRouter = new Hono()
   })
   .post("/forgot-password", zValidator("json", forgotPasswordSchema), async (c) => {
     const data = c.req.valid("json");
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    const { userExists, hasCredentialAccount } =
+      await getPasswordCapabilityByEmail(normalizedEmail);
+
+    // If account exists but is OAuth-only (e.g. Google), block password reset.
+    // Once user sets a password from account settings, providerId "credential"
+    // exists and reset becomes allowed.
+    if (userExists && !hasCredentialAccount) {
+      return c.json(
+        {
+          message:
+            "This account uses Google sign-in. Please set a password from My Account first.",
+        },
+        400
+      );
+    }
+
     const redirectTo = resolveFrontendUrl(
       data.redirectTo,
       "/reset-password",
@@ -107,14 +160,38 @@ const authRouter = new Hono()
     const request = buildAuthRequest(
       "/api/auth/request-password-reset",
       {
-        email: data.email,
+        email: normalizedEmail,
         redirectTo,
       },
       c.req.raw
     );
 
     return auth.handler(request);
-  });
+  })
+  .post(
+    "/password-reset-eligibility",
+    zValidator("json", passwordResetEligibilitySchema),
+    async (c) => {
+      const data = c.req.valid("json");
+      const normalizedEmail = data.email.trim().toLowerCase();
+      const { userExists, hasCredentialAccount } =
+        await getPasswordCapabilityByEmail(normalizedEmail);
+
+      if (userExists && !hasCredentialAccount) {
+        return c.json(
+          {
+            eligible: false,
+            message:
+              "This account uses Google sign-in. Please set a password from My Account first.",
+          },
+          200
+        );
+      }
+
+      // Keep non-existing users eligible to avoid account enumeration.
+      return c.json({ eligible: true }, 200);
+    }
+  );
 
 export { authRouter };
 export type AuthRouterType = typeof authRouter;
