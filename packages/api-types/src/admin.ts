@@ -507,6 +507,58 @@ export const adminBannerFormSchema = z.object({
 
 export type AdminBannerFormInput = z.infer<typeof adminBannerFormSchema>;
 
+export const adminHeroBannerFormSchema = z.object({
+	imageUrl: z.string().url("Invalid image URL"),
+	s3Key: z.string().min(1, "S3 key is required"),
+	linkUrl: z.string().refine(
+		(val) =>
+			val.startsWith("/") ||
+			val.startsWith("http://") ||
+			val.startsWith("https://"),
+		{
+			message:
+				"Link URL must be a relative path (starting with /) or absolute URL (starting with http:// or https://)",
+		},
+	),
+	altText: z.string().max(200).optional(),
+	isActive: z.boolean().default(true),
+	sortOrder: z.coerce.number().int().default(0),
+	startsAt: z.string().optional(), // ISO date
+	endsAt: z.string().optional(), // ISO date
+});
+
+export type AdminHeroBannerFormInput = z.infer<typeof adminHeroBannerFormSchema>;
+
+export const adminSideCardFormSchema = z.object({
+	titleEn: z.string().min(1, "English title is required").max(200),
+	titleBn: z.string().max(200).optional(),
+	subtitleEn: z.string().max(300).optional(),
+	subtitleBn: z.string().max(300).optional(),
+	imageUrl: z.string().url("Invalid image URL"),
+	s3Key: z.string().min(1, "S3 key is required"),
+	linkUrl: z
+		.string()
+		.refine(
+			(val) =>
+				!val ||
+				val.startsWith("/") ||
+				val.startsWith("http://") ||
+				val.startsWith("https://"),
+			{
+				message:
+					"Link URL must be a relative path (starting with /) or absolute URL (starting with http:// or https://)",
+			},
+		)
+		.optional(),
+	discountPercentage: z.coerce.number().int().min(1).max(100).optional(),
+	badgeText: z.string().max(50).optional(),
+	badgeColor: z.enum(["red", "teal", "purple", "orange", "green"]).optional(),
+	isActive: z.boolean().default(true),
+	sortOrder: z.coerce.number().int().min(0).max(2).default(0),
+});
+
+export type AdminSideCardFormInput = z.infer<typeof adminSideCardFormSchema>;
+
 export interface AdminBannerListItemDTO {
 	id: string;
 	titleEn: string;
@@ -526,6 +578,37 @@ export interface AdminBannerListItemDTO {
 	sortOrder: number;
 	startsAt: string | null;
 	endsAt: string | null;
+	createdAt: string;
+}
+
+export interface AdminHeroBannerListItemDTO {
+	id: string;
+	imageUrl: string;
+	s3Key: string;
+	linkUrl: string;
+	altText: string;
+	isActive: boolean;
+	sortOrder: number;
+	startsAt: string | null;
+	endsAt: string | null;
+	createdAt: string;
+	status: "active" | "scheduled" | "inactive";
+}
+
+export interface AdminSideCardListItemDTO {
+	id: string;
+	titleEn: string;
+	titleBn: string | null;
+	subtitleEn: string | null;
+	subtitleBn: string | null;
+	imageUrl: string;
+	s3Key: string;
+	linkUrl: string | null;
+	discountPercentage: number | null;
+	badgeText: string | null;
+	badgeColor: string | null;
+	isActive: boolean;
+	sortOrder: number;
 	createdAt: string;
 }
 
