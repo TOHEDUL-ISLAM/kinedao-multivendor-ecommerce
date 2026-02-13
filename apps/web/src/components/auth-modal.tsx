@@ -287,7 +287,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                         <Label htmlFor="login-password">Password</Label>
                         {checkingForgotPassword ? (
                           <span className="text-xs text-muted-foreground">Checking...</span>
-                        ) : canUseForgotPassword ? (
+                        ) : canUseForgotPassword !== false ? (
                           <Button 
                             variant="link" 
                             className="p-0 h-auto text-xs text-primary"

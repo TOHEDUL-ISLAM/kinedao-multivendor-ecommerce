@@ -138,16 +138,15 @@ const authRouter = new Hono()
     const { userExists, hasCredentialAccount } =
       await getPasswordCapabilityByEmail(normalizedEmail);
 
-    // If account exists but is OAuth-only (e.g. Google), block password reset.
-    // Once user sets a password from account settings, providerId "credential"
-    // exists and reset becomes allowed.
+    // Block OAuth-only accounts from reset flow, but return a generic success-style
+    // response to avoid account/provider enumeration.
     if (userExists && !hasCredentialAccount) {
       return c.json(
         {
           message:
-            "This account uses Google sign-in. Please set a password from My Account first.",
+            "If an account with that email exists, you will receive a password reset email shortly.",
         },
-        400
+        200
       );
     }
 
@@ -172,23 +171,9 @@ const authRouter = new Hono()
     "/password-reset-eligibility",
     zValidator("json", passwordResetEligibilitySchema),
     async (c) => {
-      const data = c.req.valid("json");
-      const normalizedEmail = data.email.trim().toLowerCase();
-      const { userExists, hasCredentialAccount } =
-        await getPasswordCapabilityByEmail(normalizedEmail);
-
-      if (userExists && !hasCredentialAccount) {
-        return c.json(
-          {
-            eligible: false,
-            message:
-              "This account uses Google sign-in. Please set a password from My Account first.",
-          },
-          200
-        );
-      }
-
-      // Keep non-existing users eligible to avoid account enumeration.
+      // Do not disclose account existence/provider details via this endpoint.
+      // Enforcement still happens in /forgot-password.
+      c.req.valid("json");
       return c.json({ eligible: true }, 200);
     }
   );

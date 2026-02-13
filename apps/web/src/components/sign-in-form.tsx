@@ -213,7 +213,7 @@ export default function SignInForm({
                   <Label htmlFor={field.name}>Password</Label>
                   {checkingForgotPassword ? (
                     <span className="text-xs text-muted-foreground">Checking...</span>
-                  ) : canUseForgotPassword ? (
+                  ) : canUseForgotPassword !== false ? (
                     <Button
                       asChild
                       variant="link"

@@ -12,13 +12,14 @@ import {
   Upload,
   User,
 } from "lucide-react";
-import { type ComponentType, useEffect, useRef, useState } from "react";
+import { type ComponentType, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api-client";
+import { getS3Url } from "@/lib/s3-helpers";
 
 export const Route = createFileRoute("/account/_layout/")({
   component: AccountProfilePage,
@@ -58,7 +59,7 @@ function AccountProfilePage() {
           <CardContent className="space-y-5">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border border-primary/30">
-                {profileImage ? <AvatarImage src={profileImage} alt={displayName} /> : null}
+                {profileImage ? <AvatarImage src={getS3Url(profileImage)} alt={displayName} /> : null}
                 <AvatarFallback className="bg-primary/15 text-primary text-lg font-semibold">
                   {initial || <User className="h-5 w-5" />}
                 </AvatarFallback>
@@ -160,6 +161,7 @@ function UpdateProfileCard({
     try {
       const response = await api.upload.$post({
         form: { file },
+        query: { category: "profile-images" },
       });
 
       if (!response.ok) {
@@ -168,14 +170,15 @@ function UpdateProfileCard({
         return;
       }
 
-      const data = (await response.json()) as { url?: string };
-      if (!data.url) {
-        toast.error("Upload failed: server response missing image URL");
+      const data = (await response.json()) as { url?: string; s3Key?: string };
+      if (!data.s3Key) {
+        toast.error("Upload failed: server response missing image key");
         return;
       }
 
-      setImageUrl(data.url);
-      onDraftChange?.({ image: data.url });
+      const persistedImageKey = data.s3Key;
+      setImageUrl(persistedImageKey);
+      onDraftChange?.({ image: persistedImageKey });
       toast.success("Photo uploaded successfully");
     } catch (error) {
       console.error("Profile photo upload error:", error);
@@ -226,8 +229,9 @@ function UpdateProfileCard({
       <CardContent>
         <form onSubmit={handleUpdateProfile} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium">Full Name</label>
+            <label htmlFor="profile-full-name" className="block text-sm font-medium">Full Name</label>
             <input
+              id="profile-full-name"
               type="text"
               value={name}
               onChange={(e) => {
@@ -244,7 +248,7 @@ function UpdateProfileCard({
             <label className="block text-sm font-medium">Profile Picture</label>
             <div className="flex items-center gap-3">
               <Avatar className="h-16 w-16 border border-primary/30">
-                {imageUrl ? <AvatarImage src={imageUrl} alt={name || "Profile"} /> : null}
+                {imageUrl ? <AvatarImage src={getS3Url(imageUrl)} alt={name || "Profile"} /> : null}
                 <AvatarFallback className="bg-primary/15 text-primary text-lg font-semibold">
                   {profileInitial || <User className="h-5 w-5" />}
                 </AvatarFallback>
@@ -322,11 +326,13 @@ function PasswordField({
   placeholder: string;
 }) {
   const [visible, setVisible] = useState(false);
+  const fieldId = useId();
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium">{label}</label>
+      <label htmlFor={fieldId} className="mb-1.5 block text-sm font-medium">{label}</label>
       <div className="relative">
         <input
+          id={fieldId}
           type={visible ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -337,6 +343,8 @@ function PasswordField({
           type="button"
           onClick={() => setVisible((v) => !v)}
           className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
         >
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -477,22 +485,25 @@ function AccountSecurity() {
 
         <CardContent className="space-y-5">
           {/* Linked OAuth providers */}
-          {oauthAccounts.map((acc) => (
-            <div
-              key={acc.id}
-              className="flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/15 p-3.5"
-            >
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-              <div>
-                <p className="text-sm font-semibold">
-                  Signed in with {getProviderLabel(acc.provider)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Your account is secured through {getProviderLabel(acc.provider)} OAuth
-                </p>
+          {oauthAccounts.map((acc) => {
+            const stableKey = acc.id || `${acc.provider}:${acc.accountId || "unknown"}`;
+            return (
+              <div
+                key={stableKey}
+                className="flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/15 p-3.5"
+              >
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">
+                    Signed in with {getProviderLabel(acc.provider)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your account is secured through {getProviderLabel(acc.provider)} OAuth
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Password status row */}
           <div className="flex items-center justify-between">
