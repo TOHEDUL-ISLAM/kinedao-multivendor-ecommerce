@@ -12,9 +12,10 @@ import {
   Skeleton,
   Badge,
   Avatar,
+  Alert,
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
-import { Search } from "lucide-react";
+import { Search, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -34,6 +35,7 @@ const labels = {
     orders: "Orders",
     totalSpent: "Total Spent",
     noResults: "No users found",
+    error: "Failed to load users. Please check your permissions.",
     yes: "Yes",
     no: "No",
   },
@@ -47,6 +49,7 @@ const labels = {
     orders: "অর্ডার",
     totalSpent: "মোট খরচ",
     noResults: "কোনো ব্যবহারকারী পাওয়া যায়নি",
+    error: "ব্যবহারকারী লোড করতে ব্যর্থ। আপনার অনুমতি পরীক্ষা করুন।",
     yes: "হ্যাঁ",
     no: "না",
   },
@@ -66,7 +69,7 @@ function AdminUsersPage() {
   const [debouncedSearch] = useDebouncedValue(search, 300);
 
   // Fetch user list
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, isError } = useQuery({
     queryKey: ["admin-users", debouncedSearch],
     queryFn: async () => {
       const response = await api.admin.users.$get({
@@ -106,7 +109,16 @@ function AdminUsersPage() {
             size="md"
           />
 
-          {isLoading ? (
+          {isError ? (
+            <Alert
+              icon={<AlertTriangle size={16} />}
+              color="red"
+              title="Error"
+              radius="md"
+            >
+              {t.error}
+            </Alert>
+          ) : isLoading ? (
             <Stack gap="xs">
               {Array.from({ length: 10 }).map((_, i) => (
                 <Skeleton key={i} height={60} radius="md" />

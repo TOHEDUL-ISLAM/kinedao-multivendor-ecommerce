@@ -90,9 +90,9 @@ export const CategoriesSection = ({ categories = [] }: CategoriesSectionProps) =
   if (categories.length === 0) return null;
 
   return (
-    <section className="container py-8 mx-auto px-4">
+    <section className="container py-2 mx-auto px-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-heading font-bold">
+        <h2 className="text-2xl md:text-3xl font-heading font-bold md:hidden">
           {t("home.shopByCategory")}
         </h2>
 

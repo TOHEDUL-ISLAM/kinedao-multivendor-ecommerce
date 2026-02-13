@@ -21,7 +21,7 @@ import {
 	type ShippingAddressSnapshot,
 	type OrderItemProductSnapshot,
 } from "@kineDao.com/db/schema";
-import { and, asc, desc, eq, sql, ilike, gte, lte, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, sql, ilike, gte, lte, inArray, isNull } from "drizzle-orm";
 import {
 	adminVendorListQuerySchema,
 	adminVendorStatusUpdateSchema,
@@ -398,7 +398,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorApplications)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: vendorApplications.id,
@@ -412,7 +412,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						reviewedAt: vendorApplications.reviewedAt,
 					})
 					.from(vendorApplications)
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(vendorApplications.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -756,7 +756,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(products)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: products.id,
@@ -791,7 +791,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(products)
 					.leftJoin(vendors, eq(products.vendorId, vendors.id))
 					.leftJoin(categories, eq(products.categoryId, categories.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(
 						query.sort === "newest"
 							? desc(products.createdAt)
@@ -1279,7 +1279,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(orders)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: orders.id,
@@ -1299,7 +1299,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(orders)
 					.leftJoin(user, eq(orders.userId, user.id))
 					.leftJoin(vendors, eq(orders.vendorId, vendors.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(
 						query.sort === "newest"
 							? desc(orders.createdAt)
@@ -1812,17 +1812,21 @@ export const adminRouter = new Hono<AdminEnv>()
 			const query = c.req.valid("query");
 			const offset = (query.page - 1) * query.limit;
 
-			// Build where conditions
-			const whereClause = query.search
-				? sql`(${user.name} ILIKE ${`%${query.search}%`} OR ${user.email} ILIKE ${`%${query.search}%`})`
-				: undefined;
+			// Build where conditions (always exclude soft-deleted users)
+			const conditions = [isNull(user.deletedAt)];
+			if (query.search) {
+				conditions.push(
+					sql`(${user.name} ILIKE ${`%${query.search}%`} OR ${user.email} ILIKE ${`%${query.search}%`})`,
+				);
+			}
+			const whereClause = and(...conditions);
 
 			// Get total count and paginated results
 			const [totalResult, items] = await Promise.all([
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(user)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: user.id,
@@ -1834,19 +1838,19 @@ export const adminRouter = new Hono<AdminEnv>()
 						// Order count subquery
 						orderCount: sql<number>`(
 							SELECT COUNT(*)::int
-							FROM ${orders}
-							WHERE ${orders.userId} = ${user.id}
+							FROM "orders"
+							WHERE "orders"."user_id" = "user"."id"
 						)`,
 						// Total spent subquery
 						totalSpent: sql<number>`(
-							SELECT COALESCE(SUM(${orders.total}), 0)::int
-							FROM ${orders}
-							WHERE ${orders.userId} = ${user.id}
-							AND ${orders.status} = 'delivered'
+							SELECT COALESCE(SUM("orders"."total"), 0)::int
+							FROM "orders"
+							WHERE "orders"."user_id" = "user"."id"
+							AND "orders"."status" = 'delivered'
 						)`,
 					})
 					.from(user)
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(user.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -2252,7 +2256,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorPayouts)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: vendorPayouts.id,
@@ -2274,7 +2278,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(vendorPayouts)
 					.leftJoin(vendors, eq(vendorPayouts.vendorId, vendors.id))
 					.leftJoin(user, eq(vendorPayouts.processedBy, user.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(vendorPayouts.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -2646,10 +2650,16 @@ export const adminRouter = new Hono<AdminEnv>()
 			const adminUserId = c.var.adminUserId;
 			const input = c.req.valid("json");
 
+			const managedSideCardSlots = and(
+				eq(banners.placement, "promotional_card"),
+				gte(banners.sortOrder, 0),
+				lte(banners.sortOrder, 2),
+			);
+
 			const [countResult] = await db
-				.select({ count: sql<number>`count(*)::int` })
+				.select({ count: sql<number>`count(distinct ${banners.sortOrder})::int` })
 				.from(banners)
-				.where(eq(banners.placement, "promotional_card"));
+				.where(managedSideCardSlots);
 
 			const sideCardCount = countResult?.count ?? 0;
 			if (sideCardCount >= 3) {
@@ -2661,7 +2671,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				.from(banners)
 				.where(
 					and(
-						eq(banners.placement, "promotional_card"),
+						managedSideCardSlots,
 						eq(banners.sortOrder, input.sortOrder),
 					),
 				)

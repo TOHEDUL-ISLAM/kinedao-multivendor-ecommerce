@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
+import { getS3Url } from "@/lib/s3-helpers";
 import { useTranslation } from "@/hooks/use-translation";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
@@ -102,7 +103,7 @@ export default function UserMenu() {
     >
       <Avatar className="h-8 w-8 border border-primary/30">
         {session.user.image ? (
-          <AvatarImage src={session.user.image} alt={displayName} />
+          <AvatarImage src={getS3Url(session.user.image)} alt={displayName} />
         ) : null}
         <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
           {initial || <User className="h-4 w-4" />}

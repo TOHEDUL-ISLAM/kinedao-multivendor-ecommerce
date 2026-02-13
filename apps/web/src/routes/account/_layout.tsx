@@ -6,6 +6,7 @@ import { getUser } from "@/functions/get-user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/use-translation";
+import { getS3Url } from "@/lib/s3-helpers";
 
 export const Route = createFileRoute("/account/_layout")({
   component: AccountLayout,
@@ -77,7 +78,7 @@ function AccountLayout() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-14 w-14 border border-primary/30">
                   {session.user.image ? (
-                    <AvatarImage src={session.user.image} alt={displayName} />
+                    <AvatarImage src={getS3Url(session.user.image)} alt={displayName} />
                   ) : null}
                   <AvatarFallback className="bg-primary/15 text-primary font-semibold">
                     {initial}
