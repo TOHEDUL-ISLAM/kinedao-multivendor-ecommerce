@@ -57,6 +57,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         rel: "stylesheet",
+        href: "https://unpkg.com/@mantine/dates@8.3.14/styles.css",
+      },
+      {
+        rel: "stylesheet",
         href: appCss,
       },
       {

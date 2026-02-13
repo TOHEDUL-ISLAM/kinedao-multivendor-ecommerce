@@ -5,6 +5,7 @@ import type { BannerDTO } from "@kineDao.com/api-types/catalog";
 interface PromotionalBannersProps {
 	banners: BannerDTO[];
 	layout?: "vertical" | "horizontal";
+	isLoading?: boolean;
 }
 
 const BADGE_COLORS: Record<string, string> = {
@@ -73,8 +74,36 @@ const DEFAULT_PROMOS: BannerDTO[] = [
 export function PromotionalBanners({
 	banners,
 	layout = "vertical",
+	isLoading = false,
 }: PromotionalBannersProps) {
 	const { language } = useLanguage();
+
+	if (isLoading && banners.length === 0) {
+		if (layout === "horizontal") {
+			return (
+				<>
+					{[0, 1, 2].map((idx) => (
+						<div
+							key={`promo-skeleton-${idx}`}
+							className="h-[92px] sm:h-[100px] rounded-lg bg-zinc-200/70 animate-pulse dark:bg-zinc-800/70"
+						/>
+					))}
+				</>
+			);
+		}
+
+		return (
+			<div className="flex flex-col gap-3 h-full">
+				{[0, 1, 2].map((idx) => (
+					<div
+						key={`promo-skeleton-${idx}`}
+						className="flex-1 min-h-[110px] sm:min-h-[120px] rounded-lg bg-zinc-200/70 animate-pulse dark:bg-zinc-800/70"
+					/>
+				))}
+			</div>
+		);
+	}
+
 	const displayBanners = banners.length > 0 ? banners.slice(0, 3) : DEFAULT_PROMOS;
 
 	if (layout === "horizontal") {

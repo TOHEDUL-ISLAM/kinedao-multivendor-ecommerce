@@ -35,6 +35,8 @@ import {
 	adminOrderReconcileSchema,
 	adminSettlementClearSchema,
 	adminBannerFormSchema,
+	adminHeroBannerFormSchema,
+	adminSideCardFormSchema,
 	adminBannerReorderSchema,
 	adminCategoryFormSchema,
 	type AdminOverviewDTO,
@@ -51,6 +53,8 @@ import {
 	type AdminPayoutHistoryResponseDTO,
 	type AdminWalletSummaryDTO,
 	type AdminBannerListItemDTO,
+	type AdminHeroBannerListItemDTO,
+	type AdminSideCardListItemDTO,
 	type AdminCategoryListItemDTO,
 } from "@kineDao.com/api-types/admin";
 import {
@@ -94,6 +98,22 @@ function defaultPayoutFeePaisa(paymentMethod: "bank" | "bkash" | "nagad") {
 	}
 	// Flat 10 BDT operational fee for MFS payout rail.
 	return 1000;
+}
+
+function getHeroBannerStatus(params: {
+	isActive: boolean;
+	startsAt: Date | null;
+	endsAt: Date | null;
+}): "active" | "scheduled" | "inactive" {
+	const { isActive, startsAt, endsAt } = params;
+
+	if (!isActive) return "inactive";
+
+	const now = new Date();
+	if (startsAt && startsAt > now) return "scheduled";
+	if (endsAt && endsAt < now) return "inactive";
+
+	return "active";
 }
 
 export const adminRouter = new Hono<AdminEnv>()
@@ -2340,6 +2360,456 @@ export const adminRouter = new Hono<AdminEnv>()
 			}));
 
 			return c.json(response, 200);
+		},
+	)
+
+	// GET /banners/hero - Hero carousel banners only
+	.get(
+		"/banners/hero",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "List hero carousel banners",
+			description: "Returns hero carousel banners ordered by sortOrder",
+			responses: {
+				200: {
+					description: "Hero banner list",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const items = await db
+				.select()
+				.from(banners)
+				.where(eq(banners.placement, "hero_carousel"))
+				.orderBy(asc(banners.sortOrder), desc(banners.createdAt));
+
+			const response: AdminHeroBannerListItemDTO[] = items.map((item) => ({
+				id: item.id,
+				imageUrl: item.s3Key ? getS3Url(item.s3Key) : item.imageUrl,
+				s3Key: item.s3Key,
+				linkUrl: item.linkUrl || "/",
+				altText: item.titleEn || "Hero Banner",
+				isActive: item.isActive,
+				sortOrder: item.sortOrder,
+				startsAt: item.startsAt?.toISOString() || null,
+				endsAt: item.endsAt?.toISOString() || null,
+				createdAt: item.createdAt.toISOString(),
+				status: getHeroBannerStatus({
+					isActive: item.isActive,
+					startsAt: item.startsAt,
+					endsAt: item.endsAt,
+				}),
+			}));
+
+			return c.json(response, 200);
+		},
+	)
+
+	// POST /banners/hero - Create hero carousel banner
+	.post(
+		"/banners/hero",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "Create hero banner",
+			description: "Create a hero carousel banner",
+			responses: {
+				201: {
+					description: "Hero banner created successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ message: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminHeroBannerFormSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			if (input.startsAt && input.endsAt) {
+				const start = new Date(input.startsAt);
+				const end = new Date(input.endsAt);
+				if (end <= start) {
+					return c.json({ error: "End date must be after start date" }, 400);
+				}
+			}
+
+			const altText = input.altText?.trim() || "Hero Banner";
+
+			const [newBanner] = await db
+				.insert(banners)
+				.values({
+					titleEn: altText,
+					titleBn: null,
+					subtitleEn: null,
+					subtitleBn: null,
+					priceLabel: null,
+					badgeText: null,
+					badgeColor: null,
+					ctaText: null,
+					discountPercentage: null,
+					imageUrl: getS3Url(input.s3Key),
+					s3Key: input.s3Key,
+					linkUrl: input.linkUrl,
+					placement: "hero_carousel",
+					isActive: input.isActive,
+					sortOrder: input.sortOrder,
+					startsAt: input.startsAt ? new Date(input.startsAt) : null,
+					endsAt: input.endsAt ? new Date(input.endsAt) : null,
+				})
+				.returning({ id: banners.id });
+
+			if (!newBanner) {
+				return c.json({ error: "Failed to create hero banner" }, 500);
+			}
+
+			await logAdminAction(
+				adminUserId,
+				"create_hero_banner",
+				"banner",
+				newBanner.id,
+				{ altText },
+			);
+
+			return c.json({ message: "Hero banner created successfully" }, 201);
+		},
+	)
+
+	// PUT /banners/hero/:bannerId - Update hero carousel banner
+	.put(
+		"/banners/hero/:bannerId",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "Update hero banner",
+			description: "Update an existing hero carousel banner",
+			responses: {
+				200: {
+					description: "Hero banner updated successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ message: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Hero banner not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminHeroBannerFormSchema),
+		async (c) => {
+			const bannerId = c.req.param("bannerId");
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const [heroBanner] = await db
+				.select()
+				.from(banners)
+				.where(
+					and(
+						eq(banners.id, bannerId),
+						eq(banners.placement, "hero_carousel"),
+					),
+				)
+				.limit(1);
+
+			if (!heroBanner) {
+				return c.json({ error: "Hero banner not found" }, 404);
+			}
+
+			if (input.startsAt && input.endsAt) {
+				const start = new Date(input.startsAt);
+				const end = new Date(input.endsAt);
+				if (end <= start) {
+					return c.json({ error: "End date must be after start date" }, 400);
+				}
+			}
+
+			if (heroBanner.s3Key && input.s3Key !== heroBanner.s3Key) {
+				deleteFile(heroBanner.s3Key).catch((err) =>
+					console.error("Failed to delete old hero banner image:", err),
+				);
+			}
+
+			const altText = input.altText?.trim() || "Hero Banner";
+
+			await db
+				.update(banners)
+				.set({
+					titleEn: altText,
+					titleBn: null,
+					subtitleEn: null,
+					subtitleBn: null,
+					priceLabel: null,
+					badgeText: null,
+					badgeColor: null,
+					ctaText: null,
+					discountPercentage: null,
+					imageUrl: getS3Url(input.s3Key),
+					s3Key: input.s3Key,
+					linkUrl: input.linkUrl,
+					placement: "hero_carousel",
+					isActive: input.isActive,
+					sortOrder: input.sortOrder,
+					startsAt: input.startsAt ? new Date(input.startsAt) : null,
+					endsAt: input.endsAt ? new Date(input.endsAt) : null,
+				})
+				.where(eq(banners.id, bannerId));
+
+			await logAdminAction(
+				adminUserId,
+				"update_hero_banner",
+				"banner",
+				bannerId,
+				{ altText },
+			);
+
+			return c.json({ message: "Hero banner updated successfully" }, 200);
+		},
+	)
+
+	// GET /banners/side-cards - Promotional side cards (max 3)
+	.get(
+		"/banners/side-cards",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "List side cards",
+			description: "Returns up to three promotional side cards",
+			responses: {
+				200: {
+					description: "Side cards list",
+					content: {
+						"application/json": { schema: resolver(z.any()) },
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const items = await db
+				.select()
+				.from(banners)
+				.where(eq(banners.placement, "promotional_card"))
+				.orderBy(asc(banners.sortOrder), desc(banners.createdAt))
+				.limit(3);
+
+			const response: AdminSideCardListItemDTO[] = items.map((item) => ({
+				id: item.id,
+				titleEn: item.titleEn,
+				titleBn: item.titleBn,
+				subtitleEn: item.subtitleEn,
+				subtitleBn: item.subtitleBn,
+				imageUrl: item.s3Key ? getS3Url(item.s3Key) : item.imageUrl,
+				s3Key: item.s3Key,
+				linkUrl: item.linkUrl,
+				discountPercentage: item.discountPercentage,
+				badgeText: item.badgeText,
+				badgeColor: item.badgeColor,
+				isActive: item.isActive,
+				sortOrder: item.sortOrder,
+				createdAt: item.createdAt.toISOString(),
+			}));
+
+			return c.json(response, 200);
+		},
+	)
+
+	// POST /banners/side-cards - Create promotional side card
+	.post(
+		"/banners/side-cards",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "Create side card",
+			description: "Create a promotional side card (maximum 3)",
+			responses: {
+				201: {
+					description: "Side card created successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ message: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminSideCardFormSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const [countResult] = await db
+				.select({ count: sql<number>`count(*)::int` })
+				.from(banners)
+				.where(eq(banners.placement, "promotional_card"));
+
+			const sideCardCount = countResult?.count ?? 0;
+			if (sideCardCount >= 3) {
+				return c.json({ error: "Maximum 3 side cards allowed" }, 400);
+			}
+
+			const [slotTaken] = await db
+				.select({ id: banners.id })
+				.from(banners)
+				.where(
+					and(
+						eq(banners.placement, "promotional_card"),
+						eq(banners.sortOrder, input.sortOrder),
+					),
+				)
+				.limit(1);
+
+			if (slotTaken) {
+				return c.json({ error: "This side card slot is already configured" }, 409);
+			}
+
+			const [newBanner] = await db
+				.insert(banners)
+				.values({
+					titleEn: input.titleEn,
+					titleBn: input.titleBn || null,
+					subtitleEn: input.subtitleEn || null,
+					subtitleBn: input.subtitleBn || null,
+					priceLabel: null,
+					badgeText: input.badgeText || null,
+					badgeColor: input.badgeColor || null,
+					ctaText: null,
+					discountPercentage: input.discountPercentage || null,
+					imageUrl: getS3Url(input.s3Key),
+					s3Key: input.s3Key,
+					linkUrl: input.linkUrl || null,
+					placement: "promotional_card",
+					isActive: input.isActive,
+					sortOrder: input.sortOrder,
+					startsAt: null,
+					endsAt: null,
+				})
+				.returning({ id: banners.id });
+
+			if (!newBanner) {
+				return c.json({ error: "Failed to create side card" }, 500);
+			}
+
+			await logAdminAction(
+				adminUserId,
+				"create_side_card",
+				"banner",
+				newBanner.id,
+				{ titleEn: input.titleEn, sortOrder: input.sortOrder },
+			);
+
+			return c.json({ message: "Side card created successfully" }, 201);
+		},
+	)
+
+	// PUT /banners/side-cards/:bannerId - Update promotional side card
+	.put(
+		"/banners/side-cards/:bannerId",
+		describeRoute({
+			tags: ["Admin - Banners"],
+			summary: "Update side card",
+			description: "Update an existing promotional side card",
+			responses: {
+				200: {
+					description: "Side card updated successfully",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ message: z.string() })),
+						},
+					},
+				},
+				404: {
+					description: "Side card not found",
+					content: {
+						"application/json": {
+							schema: resolver(z.object({ error: z.string() })),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminSideCardFormSchema),
+		async (c) => {
+			const bannerId = c.req.param("bannerId");
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const [sideCard] = await db
+				.select()
+				.from(banners)
+				.where(
+					and(
+						eq(banners.id, bannerId),
+						eq(banners.placement, "promotional_card"),
+					),
+				)
+				.limit(1);
+
+			if (!sideCard) {
+				return c.json({ error: "Side card not found" }, 404);
+			}
+
+			const slots = await db
+				.select({
+					id: banners.id,
+					sortOrder: banners.sortOrder,
+				})
+				.from(banners)
+				.where(eq(banners.placement, "promotional_card"));
+
+			const isSlotTaken = slots.some(
+				(item) => item.id !== bannerId && item.sortOrder === input.sortOrder,
+			);
+			if (isSlotTaken) {
+				return c.json({ error: "This side card slot is already configured" }, 409);
+			}
+
+			if (sideCard.s3Key && input.s3Key !== sideCard.s3Key) {
+				deleteFile(sideCard.s3Key).catch((err) =>
+					console.error("Failed to delete old side card image:", err),
+				);
+			}
+
+			await db
+				.update(banners)
+				.set({
+					titleEn: input.titleEn,
+					titleBn: input.titleBn || null,
+					subtitleEn: input.subtitleEn || null,
+					subtitleBn: input.subtitleBn || null,
+					priceLabel: null,
+					badgeText: input.badgeText || null,
+					badgeColor: input.badgeColor || null,
+					ctaText: null,
+					discountPercentage: input.discountPercentage || null,
+					imageUrl: getS3Url(input.s3Key),
+					s3Key: input.s3Key,
+					linkUrl: input.linkUrl || null,
+					placement: "promotional_card",
+					isActive: input.isActive,
+					sortOrder: input.sortOrder,
+					startsAt: null,
+					endsAt: null,
+				})
+				.where(eq(banners.id, bannerId));
+
+			await logAdminAction(
+				adminUserId,
+				"update_side_card",
+				"banner",
+				bannerId,
+				{ titleEn: input.titleEn, sortOrder: input.sortOrder },
+			);
+
+			return c.json({ message: "Side card updated successfully" }, 200);
 		},
 	)
 
