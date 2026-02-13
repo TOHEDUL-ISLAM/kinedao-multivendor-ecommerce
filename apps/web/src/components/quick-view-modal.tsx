@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Plus, Star, BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Minus, Plus, Star, BadgeCheck, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion } from "@/hooks/use-media-query";
@@ -23,6 +24,7 @@ export function QuickViewModal() {
   // const isMobile = useIsMobile();
   const { isOpen, productId, close } = useQuickViewStore();
   const addToCart = useCartStore((state) => state.addItem);
+  const navigate = useNavigate();
 
   const [product, setProduct] = useState<ProductQuickViewData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,6 +119,22 @@ export function QuickViewModal() {
     if (added) {
       toast.success(t("cart.itemAdded"));
       close();
+    } else {
+      toast.error(t("cart.addFailed"));
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!product || !selectedSku || !isInStock) return;
+
+    const added = await addToCart(
+      { productId: product.id, skuId: selectedSku.id },
+      quantity
+    );
+    if (added) {
+      toast.success(t("cart.itemAdded"));
+      close();
+      navigate({ to: "/checkout" });
     } else {
       toast.error(t("cart.addFailed"));
     }
@@ -374,14 +392,26 @@ export function QuickViewModal() {
                         </div>
                       </div>
 
-                      <Button
-                        onClick={handleAddToCart}
-                        disabled={!isInStock}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {isInStock ? t("quickView.addToCart") : t("product.outOfStock")}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleAddToCart}
+                          disabled={!isInStock}
+                          variant="outline"
+                          className="flex-1"
+                          size="lg"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          {isInStock ? t("quickView.addToCart") : t("product.outOfStock")}
+                        </Button>
+                        <Button
+                          onClick={handleBuyNow}
+                          disabled={!isInStock}
+                          className="flex-1"
+                          size="lg"
+                        >
+                          {isInStock ? t("product.buyNow") : t("product.outOfStock")}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
