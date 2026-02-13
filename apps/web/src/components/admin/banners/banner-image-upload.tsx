@@ -4,6 +4,8 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { Image as ImageIcon, Upload, X } from "lucide-react";
 import "@mantine/dropzone/styles.css";
 
+const MAX_BANNER_UPLOAD_SIZE = 10 * 1024 ** 2; // 10 MiB
+
 interface BannerImageUploadProps {
 	currentImageUrl?: string | null;
 	onFileSelect: (file: File | null) => void;
@@ -78,7 +80,7 @@ export function BannerImageUpload({
 					<img
 						src={previewUrl}
 						alt="Banner preview"
-						className="h-full w-full rounded-md border object-cover"
+						className="h-full w-full rounded-lg border border-border/70 object-cover shadow-sm"
 					/>
 				</AspectRatio>
 			) : null}
@@ -87,11 +89,12 @@ export function BannerImageUpload({
 				openRef={openRef}
 				onDrop={handleDrop}
 				accept={IMAGE_MIME_TYPE}
-				maxSize={5 * 1024 ** 2}
+				maxSize={MAX_BANNER_UPLOAD_SIZE}
 				disabled={isUploading}
+				className="rounded-lg border-dashed border-border/70 bg-card/50 transition-colors hover:border-primary/50 hover:bg-primary/5"
 			>
 				<Group gap="sm" justify="center" py="lg">
-					<Upload size={20} />
+					<Upload size={18} className="text-primary" />
 					<Text size="sm">{hint}</Text>
 				</Group>
 			</Dropzone>
@@ -101,6 +104,8 @@ export function BannerImageUpload({
 					<Button
 						variant="light"
 						leftSection={<ImageIcon size={16} />}
+						radius="xl"
+						className="border border-primary/20"
 						onClick={() => openRef.current?.()}
 					>
 						{replaceLabel}
@@ -109,6 +114,7 @@ export function BannerImageUpload({
 						variant="subtle"
 						color="red"
 						leftSection={<X size={16} />}
+						radius="xl"
 						onClick={handleRemove}
 					>
 						{removeLabel}

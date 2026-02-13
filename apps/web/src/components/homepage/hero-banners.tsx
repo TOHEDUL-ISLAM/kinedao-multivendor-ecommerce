@@ -7,6 +7,7 @@ import "@mantine/carousel/styles.css";
 
 interface HeroBannersProps {
 	banners: BannerDTO[];
+	isLoading?: boolean;
 }
 
 const DEFAULT_HERO_SLIDES: BannerDTO[] = [
@@ -46,8 +47,15 @@ const DEFAULT_HERO_SLIDES: BannerDTO[] = [
 	},
 ];
 
-export function HeroBanners({ banners }: HeroBannersProps) {
+export function HeroBanners({ banners, isLoading = false }: HeroBannersProps) {
 	const autoplay = useRef(Autoplay({ delay: 2000, stopOnInteraction: false }));
+
+	if (isLoading && banners.length === 0) {
+		return (
+			<div className="h-[220px] overflow-hidden rounded-lg bg-zinc-200/70 animate-pulse sm:h-[300px] md:h-[340px] lg:h-[420px] dark:bg-zinc-800/70" />
+		);
+	}
+
 	const displayBanners = banners.length > 0 ? banners : DEFAULT_HERO_SLIDES;
 
 	return (

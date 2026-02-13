@@ -5,12 +5,14 @@ import {
 	Button,
 	Group,
 	Modal,
+	Paper,
 	Skeleton,
 	Stack,
 	Text,
+	ThemeIcon,
 	Title,
 } from "@mantine/core";
-import { Plus } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type {
 	AdminHeroBannerFormInput,
@@ -149,20 +151,40 @@ export function HeroBannerTab({ labels }: HeroBannerTabProps) {
 
 	return (
 		<Stack gap="md">
-			<Group justify="space-between" align="flex-end">
-				<div>
-					<Title order={3}>{labels.heroSectionTitle}</Title>
-					<Text size="sm" c="dimmed">
-						{labels.dragHint}
-					</Text>
+			<Paper
+				withBorder
+				radius="lg"
+				p="md"
+				className="border-border/70 bg-card/70 backdrop-blur-sm"
+			>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<Group gap="sm">
+						<ThemeIcon radius="xl" size={34} color="teal" variant="light">
+							<GripVertical size={16} />
+						</ThemeIcon>
+						<div>
+							<Title order={3}>{labels.heroSectionTitle}</Title>
+							<Text size="sm" c="dimmed">
+								{labels.dragHint}
+							</Text>
+						</div>
+					</Group>
+					<Button
+						leftSection={<Plus size={16} />}
+						onClick={openCreateModal}
+						className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+					>
+						{labels.addHero}
+					</Button>
 				</div>
-				<Button leftSection={<Plus size={16} />} onClick={openCreateModal}>
-					{labels.addHero}
-				</Button>
-			</Group>
+			</Paper>
 
-			{isLoading ? <Skeleton h={260} /> : null}
-			{isError ? <Alert color="red">{labels.loadError}</Alert> : null}
+			{isLoading ? <Skeleton h={260} radius="lg" /> : null}
+			{isError ? (
+				<Alert color="red" radius="md" variant="light">
+					{labels.loadError}
+				</Alert>
+			) : null}
 			{!isLoading && !isError ? (
 				<HeroBannerList
 					banners={heroBanners}

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { Alert, Group, Paper, Skeleton, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { toast } from "sonner";
+import { LayoutTemplate } from "lucide-react";
 import type {
 	AdminSideCardFormInput,
 	AdminSideCardListItemDTO,
@@ -118,15 +119,31 @@ export function SideCardsTab({ labels }: SideCardsTabProps) {
 
 	return (
 		<Stack gap="md">
-			<div>
-				<Title order={3}>{labels.sideSectionTitle}</Title>
-				<Text size="sm" c="dimmed">
-					{labels.sideSlotsHint}
-				</Text>
-			</div>
+			<Paper
+				withBorder
+				radius="lg"
+				p="md"
+				className="border-border/70 bg-card/70 backdrop-blur-sm"
+			>
+				<Group gap="sm">
+					<ThemeIcon radius="xl" size={34} color="teal" variant="light">
+						<LayoutTemplate size={16} />
+					</ThemeIcon>
+					<div>
+						<Title order={3}>{labels.sideSectionTitle}</Title>
+						<Text size="sm" c="dimmed">
+							{labels.sideSlotsHint}
+						</Text>
+					</div>
+				</Group>
+			</Paper>
 
-			{isLoading ? <Skeleton h={220} /> : null}
-			{isError ? <Alert color="red">{labels.loadError}</Alert> : null}
+			{isLoading ? <Skeleton h={220} radius="lg" /> : null}
+			{isError ? (
+				<Alert color="red" radius="md" variant="light">
+					{labels.loadError}
+				</Alert>
+			) : null}
 
 			{!isLoading && !isError ? (
 				<Stack gap="sm">

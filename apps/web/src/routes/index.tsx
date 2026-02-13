@@ -77,14 +77,14 @@ function HomePage() {
   });
 
   // Fetch hero carousel banners
-  const { data: heroBanners = [] } = useQuery({
+  const { data: heroBanners = [], isLoading: isHeroBannersLoading } = useQuery({
     queryKey: ["banners", "hero_carousel"],
     queryFn: () => fetchBanners("hero_carousel"),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch promotional card banners
-  const { data: promoBanners = [] } = useQuery({
+  const { data: promoBanners = [], isLoading: isPromoBannersLoading } = useQuery({
     queryKey: ["banners", "promotional_card"],
     queryFn: () => fetchBanners("promotional_card"),
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -118,12 +118,19 @@ function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-4">
           {/* Left: Promotional side banners (large desktop only) */}
           <div className="hidden xl:flex xl:col-span-3 flex-col">
-            <PromotionalBanners banners={promoBanners} layout="vertical" />
+            <PromotionalBanners
+              banners={promoBanners}
+              layout="vertical"
+              isLoading={isPromoBannersLoading}
+            />
           </div>
 
           {/* Center: Hero carousel */}
           <div className="md:col-span-8 xl:col-span-6">
-            <HeroBanners banners={heroBanners} />
+            <HeroBanners
+              banners={heroBanners}
+              isLoading={isHeroBannersLoading}
+            />
           </div>
 
           {/* Right: New Arrivals / Top Trends (tablet and desktop) */}
@@ -138,7 +145,11 @@ function HomePage() {
 
         {/* Mobile + small tablet: Promo cards row */}
         <div className="xl:hidden mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          <PromotionalBanners banners={promoBanners} layout="horizontal" />
+          <PromotionalBanners
+            banners={promoBanners}
+            layout="horizontal"
+            isLoading={isPromoBannersLoading}
+          />
         </div>
       </section>
 

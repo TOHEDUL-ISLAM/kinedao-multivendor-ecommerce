@@ -140,7 +140,19 @@ export function HeroBannerModal({
 	const modalTitle = mode === "create" ? labels.createHeroTitle : labels.editHeroTitle;
 
 	return (
-		<Modal opened={opened} onClose={onClose} title={modalTitle} centered size="xl">
+		<Modal
+			opened={opened}
+			onClose={onClose}
+			title={modalTitle}
+			centered
+			size="xl"
+			classNames={{
+				content: "rounded-2xl",
+				header: "border-b border-border/70",
+				body: "pt-4",
+				title: "font-semibold",
+			}}
+		>
 			<form onSubmit={handleSubmit}>
 				<Stack gap="md">
 					<BannerImageUpload
@@ -188,25 +200,27 @@ export function HeroBannerModal({
 						}
 					/>
 
-						<Group grow>
-							<DateTimePicker
-								label={labels.startsAt}
-								clearable
-								value={form.values.startsAt}
-								onChange={(value) =>
-									form.setFieldValue("startsAt", value ? new Date(value) : null)
-								}
-							/>
-							<DateTimePicker
-								label={labels.endsAt}
-								clearable
-								value={form.values.endsAt}
-								onChange={(value) =>
-									form.setFieldValue("endsAt", value ? new Date(value) : null)
-								}
-								error={form.errors.endsAt}
-							/>
-						</Group>
+					<Group grow>
+						<DateTimePicker
+							label={labels.startsAt}
+							clearable
+							value={form.values.startsAt}
+							onChange={(value) =>
+								form.setFieldValue("startsAt", value ? new Date(value) : null)
+							}
+							popoverProps={{ withinPortal: true, zIndex: 500 }}
+						/>
+						<DateTimePicker
+							label={labels.endsAt}
+							clearable
+							value={form.values.endsAt}
+							onChange={(value) =>
+								form.setFieldValue("endsAt", value ? new Date(value) : null)
+							}
+							error={form.errors.endsAt}
+							popoverProps={{ withinPortal: true, zIndex: 500 }}
+						/>
+					</Group>
 
 					<Group justify="flex-end" mt="sm">
 						<Button variant="default" onClick={onClose} disabled={isSubmitting}>

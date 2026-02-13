@@ -190,7 +190,19 @@ export function SideCardModal({
 	const title = mode === "create" ? labels.createSideTitle : labels.editSideTitle;
 
 	return (
-		<Modal opened={opened} onClose={onClose} title={title} centered size="xl">
+		<Modal
+			opened={opened}
+			onClose={onClose}
+			title={title}
+			centered
+			size="xl"
+			classNames={{
+				content: "rounded-2xl",
+				header: "border-b border-border/70",
+				body: "pt-4",
+				title: "font-semibold",
+			}}
+		>
 			<form onSubmit={handleSubmit}>
 				<Grid gutter="md">
 					<Grid.Col span={{ base: 12, md: 7 }}>

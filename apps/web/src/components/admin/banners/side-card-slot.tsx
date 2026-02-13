@@ -25,7 +25,12 @@ export function SideCardSlot({
 
 	if (!card) {
 		return (
-			<Paper withBorder p="md" style={{ borderStyle: "dashed" }}>
+			<Paper
+				withBorder
+				p="md"
+				radius="lg"
+				className="border-dashed border-border/80 bg-card/60"
+			>
 				<Group justify="space-between" align="center">
 					<div>
 						<Text fw={600}>{title}</Text>
@@ -33,7 +38,12 @@ export function SideCardSlot({
 							{labels.configure}
 						</Text>
 					</div>
-					<Button variant="light" onClick={() => onConfigure(slotIndex, null)}>
+					<Button
+						variant="light"
+						radius="xl"
+						className="border border-primary/20"
+						onClick={() => onConfigure(slotIndex, null)}
+					>
 						{labels.configure}
 					</Button>
 				</Group>
@@ -42,13 +52,13 @@ export function SideCardSlot({
 	}
 
 	return (
-		<Paper withBorder p="md">
+		<Paper withBorder p="md" radius="lg" className="bg-card/70 backdrop-blur-sm">
 			<Group align="center" justify="space-between" wrap="nowrap">
 				<Group align="center" wrap="nowrap">
 					<img
 						src={card.imageUrl}
 						alt={card.titleEn}
-						className="h-16 w-28 rounded object-cover"
+						className="h-16 w-28 rounded-md border border-border/70 object-cover shadow-sm"
 					/>
 					<Stack gap={2}>
 						<Text fw={600}>{title}</Text>
@@ -62,7 +72,12 @@ export function SideCardSlot({
 						) : null}
 					</Stack>
 				</Group>
-				<Button variant="light" onClick={() => onConfigure(slotIndex, card)}>
+				<Button
+					variant="light"
+					radius="xl"
+					className="border border-primary/20"
+					onClick={() => onConfigure(slotIndex, card)}
+				>
 					{labels.edit}
 				</Button>
 			</Group>
