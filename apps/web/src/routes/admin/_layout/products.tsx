@@ -354,7 +354,7 @@ function AdminProductsPage() {
           />
 
           <Tabs value={activeTab} onChange={setActiveTab}>
-            <Tabs.List grow>
+            <Tabs.List>
               <Tabs.Tab value="pending" rightSection={counts && <Badge size="xs">{counts.pending}</Badge>}>
                 {t.pending}
               </Tabs.Tab>

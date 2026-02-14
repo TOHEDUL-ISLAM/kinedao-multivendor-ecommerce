@@ -46,10 +46,11 @@ export default function Header() {
   const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
   const mergeGuestWishlist = useFavoritesStore((state) => state.mergeGuestToServer);
 
+  const sellerAction = useHeaderSellerAction();
   const {
     session,
     isSessionPending,
-  } = useHeaderSellerAction();
+  } = sellerAction;
   const isLoggedIn = !!session;
 
   useEffect(() => {
@@ -104,6 +105,13 @@ export default function Header() {
                 <Phone className="w-3 h-3" />
                 {t("header.helpCenter")}
               </span>
+              <Link
+                to={sellerAction.action.to}
+                className="hidden md:flex items-center gap-1 hover:opacity-80 transition-opacity"
+              >
+                <Store className="w-3 h-3" />
+                {t(sellerAction.action.labelKey)}
+              </Link>
             </div>
             <span className="font-medium animate-pulse hidden sm:inline-block">
               🎉 {t("header.freeShipping")}
