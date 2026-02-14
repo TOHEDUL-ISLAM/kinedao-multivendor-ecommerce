@@ -1849,15 +1849,15 @@ export const adminRouter = new Hono<AdminEnv>()
 						// Order count subquery
 						orderCount: sql<number>`(
 							SELECT COUNT(*)::int
-							FROM "orders"
-							WHERE "orders"."user_id" = "user"."id"
+							FROM ${orders}
+							WHERE ${orders.userId} = ${user.id}
 						)`,
 						// Total spent subquery
 						totalSpent: sql<number>`(
-							SELECT COALESCE(SUM("orders"."total"), 0)::int
-							FROM "orders"
-							WHERE "orders"."user_id" = "user"."id"
-							AND "orders"."status" = 'delivered'
+							SELECT COALESCE(SUM(${orders.total}), 0)::int
+							FROM ${orders}
+							WHERE ${orders.userId} = ${user.id}
+							AND ${orders.status} = 'delivered'
 						)`,
 					})
 					.from(user)
