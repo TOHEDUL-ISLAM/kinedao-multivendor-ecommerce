@@ -32,6 +32,7 @@ export const api = {
   admin: apiClient.api.admin,
   adminManagement: apiClient.api["admin-management"],
   banners: apiClient.api.banners,
+  siteSettings: apiClient.api["site-settings"],
   notifications: apiClient.api.notifications,
   wishlist: apiClient.api.wishlist,
   account: apiClient.api.account,

@@ -50,6 +50,13 @@
       "when": 1771200000000,
       "tag": "0006_cod_financial_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771363200000,
+      "tag": "0007_top_bar_announcement_settings",
+      "breakpoints": true
     }
   ]
 }

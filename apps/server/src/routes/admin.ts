@@ -18,6 +18,7 @@ import {
 	vendorPayouts,
 	transactions,
 	banners,
+	siteSettings,
 	type ShippingAddressSnapshot,
 	type OrderItemProductSnapshot,
 } from "@kineDao.com/db/schema";
@@ -64,6 +65,16 @@ import {
 import { notify } from "../lib/notification-service";
 import { deleteFile } from "../lib/file-upload";
 import { grantRole, revokeRole } from "../lib/role-service";
+import {
+	adminTopBarAnnouncementUpdateSchema,
+	topBarAnnouncementSchema,
+	type TopBarAnnouncementDTO,
+} from "@kineDao.com/api-types/site-settings";
+import {
+	DEFAULT_TOP_BAR_ANNOUNCEMENT,
+	TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+	parseTopBarAnnouncement,
+} from "../lib/top-bar-announcement";
 
 // Helper: generate slug from name
 function generateSlug(name: string): string {
@@ -3084,6 +3095,194 @@ export const adminRouter = new Hono<AdminEnv>()
 			);
 
 			return c.json({ message: "Banners reordered successfully" }, 200);
+		},
+	)
+
+	// =====================
+	// Site Settings
+	// =====================
+
+	// GET /top-bar-announcement - Top bar announcement setting (compat alias)
+	.get(
+		"/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Get top bar announcement setting",
+			description:
+				"Returns the current top bar announcement text shown on the storefront header.",
+			responses: {
+				200: {
+					description: "Top bar announcement setting",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const [setting] = await db
+				.select({ value: siteSettings.value })
+				.from(siteSettings)
+				.where(eq(siteSettings.key, TOP_BAR_ANNOUNCEMENT_SETTING_KEY))
+				.limit(1);
+
+			if (!setting) {
+				return c.json(DEFAULT_TOP_BAR_ANNOUNCEMENT, 200);
+			}
+
+			return c.json(parseTopBarAnnouncement(setting.value), 200);
+		},
+	)
+
+	// PUT /top-bar-announcement - Update top bar announcement setting (compat alias)
+	.put(
+		"/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Update top bar announcement setting",
+			description:
+				"Updates the storefront top bar announcement text. Supports plain text and emoji.",
+			responses: {
+				200: {
+					description: "Top bar announcement updated",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminTopBarAnnouncementUpdateSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const payload: TopBarAnnouncementDTO = {
+				textEn: input.textEn.trim(),
+				textBn: input.textBn?.trim() ? input.textBn.trim() : null,
+				isActive: input.isActive,
+			};
+
+			await db
+				.insert(siteSettings)
+				.values({
+					key: TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+					value: payload,
+					updatedBy: adminUserId,
+				})
+				.onConflictDoUpdate({
+					target: siteSettings.key,
+					set: {
+						value: payload,
+						updatedBy: adminUserId,
+						updatedAt: new Date(),
+					},
+				});
+
+			await logAdminAction(
+				adminUserId,
+				"update_top_bar_announcement",
+				"site_setting",
+				TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+				payload,
+			);
+
+			return c.json(payload, 200);
+		},
+	)
+
+	// GET /settings/top-bar-announcement - Top bar announcement setting
+	.get(
+		"/settings/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Get top bar announcement setting",
+			description:
+				"Returns the current top bar announcement text shown on the storefront header.",
+			responses: {
+				200: {
+					description: "Top bar announcement setting",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const [setting] = await db
+				.select({ value: siteSettings.value })
+				.from(siteSettings)
+				.where(eq(siteSettings.key, TOP_BAR_ANNOUNCEMENT_SETTING_KEY))
+				.limit(1);
+
+			if (!setting) {
+				return c.json(DEFAULT_TOP_BAR_ANNOUNCEMENT, 200);
+			}
+
+			return c.json(parseTopBarAnnouncement(setting.value), 200);
+		},
+	)
+
+	// PUT /settings/top-bar-announcement - Update top bar announcement setting
+	.put(
+		"/settings/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Update top bar announcement setting",
+			description:
+				"Updates the storefront top bar announcement text. Supports plain text and emoji.",
+			responses: {
+				200: {
+					description: "Top bar announcement updated",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminTopBarAnnouncementUpdateSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const payload: TopBarAnnouncementDTO = {
+				textEn: input.textEn.trim(),
+				textBn: input.textBn?.trim() ? input.textBn.trim() : null,
+				isActive: input.isActive,
+			};
+
+			await db
+				.insert(siteSettings)
+				.values({
+					key: TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+					value: payload,
+					updatedBy: adminUserId,
+				})
+				.onConflictDoUpdate({
+					target: siteSettings.key,
+					set: {
+						value: payload,
+						updatedBy: adminUserId,
+						updatedAt: new Date(),
+					},
+				});
+
+			await logAdminAction(
+				adminUserId,
+				"update_top_bar_announcement",
+				"site_setting",
+				TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+				payload,
+			);
+
+			return c.json(payload, 200);
 		},
 	)
 

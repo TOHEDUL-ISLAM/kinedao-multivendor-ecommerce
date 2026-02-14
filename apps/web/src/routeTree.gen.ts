@@ -46,6 +46,7 @@ import { Route as VendorDashboardEarningsRouteImport } from './routes/vendor/_da
 import { Route as VendorDashboardDashboardRouteImport } from './routes/vendor/_dashboard/dashboard'
 import { Route as AdminLayoutVendorsRouteImport } from './routes/admin/_layout/vendors'
 import { Route as AdminLayoutUsersRouteImport } from './routes/admin/_layout/users'
+import { Route as AdminLayoutSettingsRouteImport } from './routes/admin/_layout/settings'
 import { Route as AdminLayoutReviewsRouteImport } from './routes/admin/_layout/reviews'
 import { Route as AdminLayoutProductsRouteImport } from './routes/admin/_layout/products'
 import { Route as AdminLayoutPayoutsRouteImport } from './routes/admin/_layout/payouts'
@@ -251,6 +252,11 @@ const AdminLayoutUsersRoute = AdminLayoutUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
+const AdminLayoutSettingsRoute = AdminLayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const AdminLayoutReviewsRoute = AdminLayoutReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
@@ -390,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/admin/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/products': typeof AdminLayoutProductsRoute
   '/admin/reviews': typeof AdminLayoutReviewsRoute
+  '/admin/settings': typeof AdminLayoutSettingsRoute
   '/admin/users': typeof AdminLayoutUsersRoute
   '/admin/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/dashboard': typeof VendorDashboardDashboardRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/admin/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/products': typeof AdminLayoutProductsRoute
   '/admin/reviews': typeof AdminLayoutReviewsRoute
+  '/admin/settings': typeof AdminLayoutSettingsRoute
   '/admin/users': typeof AdminLayoutUsersRoute
   '/admin/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/dashboard': typeof VendorDashboardDashboardRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/admin/_layout/payouts': typeof AdminLayoutPayoutsRoute
   '/admin/_layout/products': typeof AdminLayoutProductsRoute
   '/admin/_layout/reviews': typeof AdminLayoutReviewsRoute
+  '/admin/_layout/settings': typeof AdminLayoutSettingsRoute
   '/admin/_layout/users': typeof AdminLayoutUsersRoute
   '/admin/_layout/vendors': typeof AdminLayoutVendorsRoute
   '/vendor/_dashboard/dashboard': typeof VendorDashboardDashboardRoute
@@ -563,6 +572,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/products'
     | '/admin/reviews'
+    | '/admin/settings'
     | '/admin/users'
     | '/admin/vendors'
     | '/vendor/dashboard'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/products'
     | '/admin/reviews'
+    | '/admin/settings'
     | '/admin/users'
     | '/admin/vendors'
     | '/vendor/dashboard'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/admin/_layout/payouts'
     | '/admin/_layout/products'
     | '/admin/_layout/reviews'
+    | '/admin/_layout/settings'
     | '/admin/_layout/users'
     | '/admin/_layout/vendors'
     | '/vendor/_dashboard/dashboard'
@@ -988,6 +1000,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutUsersRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/admin/_layout/settings': {
+      id: '/admin/_layout/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminLayoutSettingsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/admin/_layout/reviews': {
       id: '/admin/_layout/reviews'
       path: '/reviews'
@@ -1151,6 +1170,7 @@ interface AdminLayoutRouteChildren {
   AdminLayoutPayoutsRoute: typeof AdminLayoutPayoutsRoute
   AdminLayoutProductsRoute: typeof AdminLayoutProductsRoute
   AdminLayoutReviewsRoute: typeof AdminLayoutReviewsRoute
+  AdminLayoutSettingsRoute: typeof AdminLayoutSettingsRoute
   AdminLayoutUsersRoute: typeof AdminLayoutUsersRoute
   AdminLayoutVendorsRoute: typeof AdminLayoutVendorsRoute
 }
@@ -1164,6 +1184,7 @@ const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutPayoutsRoute: AdminLayoutPayoutsRoute,
   AdminLayoutProductsRoute: AdminLayoutProductsRoute,
   AdminLayoutReviewsRoute: AdminLayoutReviewsRoute,
+  AdminLayoutSettingsRoute: AdminLayoutSettingsRoute,
   AdminLayoutUsersRoute: AdminLayoutUsersRoute,
   AdminLayoutVendorsRoute: AdminLayoutVendorsRoute,
 }
