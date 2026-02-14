@@ -1,6 +1,6 @@
 import { useTranslation } from "@/hooks/use-translation";
 import { useCheckoutStore } from "@/stores/checkout-store";
-import { useCartStore } from "@/stores/cart-store";
+import type { CartResponse } from "@kineDao.com/api-types/cart";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -9,9 +9,12 @@ import { Card } from "@/components/ui/card";
 import { Banknote, Info } from "lucide-react";
 import { useMemo } from "react";
 
-export function PaymentStep() {
+interface PaymentStepProps {
+	checkoutCart: CartResponse["cart"];
+}
+
+export function PaymentStep({ checkoutCart }: PaymentStepProps) {
 	const { t, language } = useTranslation();
-	const cart = useCartStore((state) => state.cart);
 	const { customerNotes, setCustomerNotes, shippingCost } = useCheckoutStore();
 
 	const formatPrice = (paisa: number) => {
@@ -23,12 +26,11 @@ export function PaymentStep() {
 
 	// Group cart items by vendor
 	const vendorGroups = useMemo(() => {
-		if (!cart) return [];
 		const groups = new Map<
 			string,
-			{ vendor: any; items: typeof cart.items }
+			{ vendor: any; items: typeof checkoutCart.items }
 		>();
-		cart.items.forEach((item) => {
+		checkoutCart.items.forEach((item) => {
 			const vendor = item.product.vendor;
 			if (!groups.has(vendor.id)) {
 				groups.set(vendor.id, { vendor, items: [] });
@@ -36,7 +38,7 @@ export function PaymentStep() {
 			groups.get(vendor.id)!.items.push(item);
 		});
 		return Array.from(groups.values());
-	}, [cart]);
+	}, [checkoutCart]);
 
 	const totalPackages = vendorGroups.length;
 
@@ -95,7 +97,7 @@ export function PaymentStep() {
 			</div>
 
 			{/* Selected Products */}
-			{cart && cart.items.length > 0 && (
+			{checkoutCart.items.length > 0 && (
 				<div className="space-y-6 mt-8">
 					<div className="border-t pt-6">
 						<h3 className="text-lg font-semibold mb-4">

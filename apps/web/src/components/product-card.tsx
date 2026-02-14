@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useBuyNowStore } from "@/stores/buy-now-store";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { useQuickViewStore } from "@/stores/quick-view-store";
 import { api } from "@/lib/api-client";
@@ -56,6 +57,7 @@ interface ProductCardProps {
 export function ProductCard({ product, onRemove }: ProductCardProps) {
   const { t, language } = useTranslation();
   const addToCart = useCartStore((state) => state.addItem);
+  const startBuyNow = useBuyNowStore((state) => state.startBuyNow);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const openQuickView = useQuickViewStore((state) => state.open);
   const navigate = useNavigate();
@@ -73,9 +75,7 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
   const isVariantProduct = product.hasVariants;
   const actionLabel = isOutOfStock
     ? t("product.outOfStock")
-    : isVariantProduct
-      ? t("product.viewOptions")
-      : t("product.buyNow");
+    : t("product.buyNow");
 
   useEffect(() => {
     return () => {
@@ -85,10 +85,10 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
     };
   }, []);
 
-  const addOneToCart = async (action: "buyNow" | "addToCart"): Promise<boolean> => {
+  const addOneToCart = async (): Promise<boolean> => {
     if (loadingAction || isOutOfStock) return false;
 
-    setLoadingAction(action);
+    setLoadingAction("addToCart");
     const startedAt = Date.now();
 
     try {
@@ -159,7 +159,7 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    await addOneToCart("addToCart");
+    await addOneToCart();
   };
 
   const handleBuyNow = async (e: React.MouseEvent) => {
@@ -169,9 +169,63 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    const added = await addOneToCart("buyNow");
-    if (added) {
-      navigate({ to: "/cart" });
+    if (loadingAction || isOutOfStock) return;
+
+    setLoadingAction("buyNow");
+    const startedAt = Date.now();
+
+    try {
+      const response = await api.products[":id"]["quick-view"].$get({
+        param: { id: product.id },
+      });
+
+      if (!response.ok) {
+        toast.error(t("cart.addFailed"));
+        return;
+      }
+
+      const data = await response.json();
+      if (data.hasVariants) {
+        setLoadingAction(null);
+        openQuickView(data.id);
+        return;
+      }
+
+      const availableSku = data.skus.find(
+        (sku) => (sku.isAvailable ?? true) && sku.stockQty > 0
+      );
+
+      if (!availableSku) {
+        toast.error(t("cart.justSoldOut"));
+        return;
+      }
+
+      const started = startBuyNow({
+        product: data,
+        skuId: availableSku.id,
+        quantity: 1,
+      });
+
+      if (!started) {
+        toast.error(t("cart.justSoldOut"));
+        return;
+      }
+
+      navigate({
+        to: "/checkout",
+        search: { mode: "buy_now" },
+      });
+    } catch {
+      toast.error(t("cart.addFailed"));
+    } finally {
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, 500 - elapsed);
+      if (addTimeoutRef.current) {
+        window.clearTimeout(addTimeoutRef.current);
+      }
+      addTimeoutRef.current = window.setTimeout(() => {
+        setLoadingAction(null);
+      }, remaining);
     }
   };
 
@@ -226,30 +280,32 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
           )}
         </div>
         
-        {/* Wishlist button */}
-        <button
-          className={cn(
-            "absolute top-3 right-3 rounded-full bg-white/90 shadow-sm transition-colors duration-200",
-            "h-10 w-10 flex items-center justify-center touch-manipulation",
-            isFav ? "text-red-500" : "text-gray-500 hover:text-red-500"
-          )}
-          onClick={handleToggleFavorite}
-          aria-label={isFav ? t("wishlist.remove") : t("header.wishlist")}
-        >
-          <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
-        </button>
+        {/* Wishlist & Quick view buttons */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          <button
+            className={cn(
+              "rounded-full bg-white/90 shadow-sm transition-colors duration-200",
+              "h-9 w-9 flex items-center justify-center touch-manipulation",
+              isFav ? "text-red-500" : "text-gray-500 hover:text-red-500"
+            )}
+            onClick={handleToggleFavorite}
+            aria-label={isFav ? t("wishlist.remove") : t("header.wishlist")}
+          >
+            <Heart className={cn("w-4 h-4", isFav && "fill-current")} />
+          </button>
 
-        {/* Quick view button */}
-        <button
-          className="absolute top-14 right-3 p-2 rounded-full bg-white/90 shadow-sm transition-all duration-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 delay-75 text-gray-500 hover:text-primary"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openQuickView(product.id);
-          }}
-        >
-          <Eye className="w-4 h-4" />
-        </button>
+          <button
+            className="h-9 w-9 flex items-center justify-center rounded-full bg-white/90 shadow-sm transition-all duration-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 delay-75 text-gray-500 hover:text-primary"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openQuickView(product.id);
+            }}
+            aria-label={t("product.quickView")}
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        </div>
 
       </div>
 
@@ -309,12 +365,11 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
         <div className="flex gap-1.5 sm:gap-2 mt-auto">
           <Button
             className="flex-1 rounded-full text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4 gap-1 sm:gap-2 min-w-0"
-            onClick={isVariantProduct ? handleViewOptions : handleBuyNow}
-            disabled={isOutOfStock || (!isVariantProduct && loadingAction !== null)}
-            aria-busy={!isVariantProduct && loadingAction === "buyNow"}
+            onClick={handleBuyNow}
+            disabled={isOutOfStock || loadingAction !== null}
+            aria-busy={loadingAction === "buyNow"}
           >
-            {!isOutOfStock && isVariantProduct && <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />}
-            {!isOutOfStock && !isVariantProduct && (
+            {!isOutOfStock && (
               <>
                 {loadingAction === "buyNow" ? (
                   <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin shrink-0" />
@@ -325,7 +380,7 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
             )}
             <span className="truncate">{actionLabel}</span>
           </Button>
-          {!isVariantProduct && !isOutOfStock && (
+          {!isOutOfStock && (
             <Button
               variant="secondary"
               className="rounded-full h-8 w-8 sm:h-10 sm:w-10 p-0 shrink-0"

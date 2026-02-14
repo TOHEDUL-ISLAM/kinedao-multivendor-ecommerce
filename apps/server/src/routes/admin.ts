@@ -18,10 +18,11 @@ import {
 	vendorPayouts,
 	transactions,
 	banners,
+	siteSettings,
 	type ShippingAddressSnapshot,
 	type OrderItemProductSnapshot,
 } from "@kineDao.com/db/schema";
-import { and, asc, desc, eq, sql, ilike, gte, lte, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, sql, ilike, gte, lte, inArray, isNull } from "drizzle-orm";
 import {
 	adminVendorListQuerySchema,
 	adminVendorStatusUpdateSchema,
@@ -64,6 +65,16 @@ import {
 import { notify } from "../lib/notification-service";
 import { deleteFile } from "../lib/file-upload";
 import { grantRole, revokeRole } from "../lib/role-service";
+import {
+	adminTopBarAnnouncementUpdateSchema,
+	topBarAnnouncementSchema,
+	type TopBarAnnouncementDTO,
+} from "@kineDao.com/api-types/site-settings";
+import {
+	DEFAULT_TOP_BAR_ANNOUNCEMENT,
+	TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+	parseTopBarAnnouncement,
+} from "../lib/top-bar-announcement";
 
 // Helper: generate slug from name
 function generateSlug(name: string): string {
@@ -398,7 +409,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorApplications)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: vendorApplications.id,
@@ -412,7 +423,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						reviewedAt: vendorApplications.reviewedAt,
 					})
 					.from(vendorApplications)
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(vendorApplications.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -756,7 +767,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(products)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: products.id,
@@ -791,7 +802,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(products)
 					.leftJoin(vendors, eq(products.vendorId, vendors.id))
 					.leftJoin(categories, eq(products.categoryId, categories.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(
 						query.sort === "newest"
 							? desc(products.createdAt)
@@ -1279,7 +1290,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(orders)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: orders.id,
@@ -1299,7 +1310,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(orders)
 					.leftJoin(user, eq(orders.userId, user.id))
 					.leftJoin(vendors, eq(orders.vendorId, vendors.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(
 						query.sort === "newest"
 							? desc(orders.createdAt)
@@ -1812,17 +1823,21 @@ export const adminRouter = new Hono<AdminEnv>()
 			const query = c.req.valid("query");
 			const offset = (query.page - 1) * query.limit;
 
-			// Build where conditions
-			const whereClause = query.search
-				? sql`(${user.name} ILIKE ${`%${query.search}%`} OR ${user.email} ILIKE ${`%${query.search}%`})`
-				: undefined;
+			// Build where conditions (always exclude soft-deleted users)
+			const conditions = [isNull(user.deletedAt)];
+			if (query.search) {
+				conditions.push(
+					sql`(${user.name} ILIKE ${`%${query.search}%`} OR ${user.email} ILIKE ${`%${query.search}%`})`,
+				);
+			}
+			const whereClause = and(...conditions);
 
 			// Get total count and paginated results
 			const [totalResult, items] = await Promise.all([
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(user)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: user.id,
@@ -1846,7 +1861,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						)`,
 					})
 					.from(user)
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(user.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -2252,7 +2267,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				db
 					.select({ count: sql<number>`count(*)::int` })
 					.from(vendorPayouts)
-					.where(whereClause ? whereClause : undefined),
+					.where(whereClause),
 				db
 					.select({
 						id: vendorPayouts.id,
@@ -2274,7 +2289,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					.from(vendorPayouts)
 					.leftJoin(vendors, eq(vendorPayouts.vendorId, vendors.id))
 					.leftJoin(user, eq(vendorPayouts.processedBy, user.id))
-					.where(whereClause ? whereClause : undefined)
+					.where(whereClause)
 					.orderBy(desc(vendorPayouts.createdAt))
 					.limit(query.limit)
 					.offset(offset),
@@ -2646,10 +2661,16 @@ export const adminRouter = new Hono<AdminEnv>()
 			const adminUserId = c.var.adminUserId;
 			const input = c.req.valid("json");
 
+			const managedSideCardSlots = and(
+				eq(banners.placement, "promotional_card"),
+				gte(banners.sortOrder, 0),
+				lte(banners.sortOrder, 2),
+			);
+
 			const [countResult] = await db
-				.select({ count: sql<number>`count(*)::int` })
+				.select({ count: sql<number>`count(distinct ${banners.sortOrder})::int` })
 				.from(banners)
-				.where(eq(banners.placement, "promotional_card"));
+				.where(managedSideCardSlots);
 
 			const sideCardCount = countResult?.count ?? 0;
 			if (sideCardCount >= 3) {
@@ -2661,7 +2682,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				.from(banners)
 				.where(
 					and(
-						eq(banners.placement, "promotional_card"),
+						managedSideCardSlots,
 						eq(banners.sortOrder, input.sortOrder),
 					),
 				)
@@ -3074,6 +3095,194 @@ export const adminRouter = new Hono<AdminEnv>()
 			);
 
 			return c.json({ message: "Banners reordered successfully" }, 200);
+		},
+	)
+
+	// =====================
+	// Site Settings
+	// =====================
+
+	// GET /top-bar-announcement - Top bar announcement setting (compat alias)
+	.get(
+		"/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Get top bar announcement setting",
+			description:
+				"Returns the current top bar announcement text shown on the storefront header.",
+			responses: {
+				200: {
+					description: "Top bar announcement setting",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const [setting] = await db
+				.select({ value: siteSettings.value })
+				.from(siteSettings)
+				.where(eq(siteSettings.key, TOP_BAR_ANNOUNCEMENT_SETTING_KEY))
+				.limit(1);
+
+			if (!setting) {
+				return c.json(DEFAULT_TOP_BAR_ANNOUNCEMENT, 200);
+			}
+
+			return c.json(parseTopBarAnnouncement(setting.value), 200);
+		},
+	)
+
+	// PUT /top-bar-announcement - Update top bar announcement setting (compat alias)
+	.put(
+		"/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Update top bar announcement setting",
+			description:
+				"Updates the storefront top bar announcement text. Supports plain text and emoji.",
+			responses: {
+				200: {
+					description: "Top bar announcement updated",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminTopBarAnnouncementUpdateSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const payload: TopBarAnnouncementDTO = {
+				textEn: input.textEn.trim(),
+				textBn: input.textBn?.trim() ? input.textBn.trim() : null,
+				isActive: input.isActive,
+			};
+
+			await db
+				.insert(siteSettings)
+				.values({
+					key: TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+					value: payload,
+					updatedBy: adminUserId,
+				})
+				.onConflictDoUpdate({
+					target: siteSettings.key,
+					set: {
+						value: payload,
+						updatedBy: adminUserId,
+						updatedAt: new Date(),
+					},
+				});
+
+			await logAdminAction(
+				adminUserId,
+				"update_top_bar_announcement",
+				"site_setting",
+				TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+				payload,
+			);
+
+			return c.json(payload, 200);
+		},
+	)
+
+	// GET /settings/top-bar-announcement - Top bar announcement setting
+	.get(
+		"/settings/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Get top bar announcement setting",
+			description:
+				"Returns the current top bar announcement text shown on the storefront header.",
+			responses: {
+				200: {
+					description: "Top bar announcement setting",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		async (c) => {
+			const [setting] = await db
+				.select({ value: siteSettings.value })
+				.from(siteSettings)
+				.where(eq(siteSettings.key, TOP_BAR_ANNOUNCEMENT_SETTING_KEY))
+				.limit(1);
+
+			if (!setting) {
+				return c.json(DEFAULT_TOP_BAR_ANNOUNCEMENT, 200);
+			}
+
+			return c.json(parseTopBarAnnouncement(setting.value), 200);
+		},
+	)
+
+	// PUT /settings/top-bar-announcement - Update top bar announcement setting
+	.put(
+		"/settings/top-bar-announcement",
+		describeRoute({
+			tags: ["Admin - Site Settings"],
+			summary: "Update top bar announcement setting",
+			description:
+				"Updates the storefront top bar announcement text. Supports plain text and emoji.",
+			responses: {
+				200: {
+					description: "Top bar announcement updated",
+					content: {
+						"application/json": {
+							schema: resolver(topBarAnnouncementSchema),
+						},
+					},
+				},
+			},
+		}),
+		zValidator("json", adminTopBarAnnouncementUpdateSchema),
+		async (c) => {
+			const adminUserId = c.var.adminUserId;
+			const input = c.req.valid("json");
+
+			const payload: TopBarAnnouncementDTO = {
+				textEn: input.textEn.trim(),
+				textBn: input.textBn?.trim() ? input.textBn.trim() : null,
+				isActive: input.isActive,
+			};
+
+			await db
+				.insert(siteSettings)
+				.values({
+					key: TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+					value: payload,
+					updatedBy: adminUserId,
+				})
+				.onConflictDoUpdate({
+					target: siteSettings.key,
+					set: {
+						value: payload,
+						updatedBy: adminUserId,
+						updatedAt: new Date(),
+					},
+				});
+
+			await logAdminAction(
+				adminUserId,
+				"update_top_bar_announcement",
+				"site_setting",
+				TOP_BAR_ANNOUNCEMENT_SETTING_KEY,
+				payload,
+			);
+
+			return c.json(payload, 200);
 		},
 	)
 

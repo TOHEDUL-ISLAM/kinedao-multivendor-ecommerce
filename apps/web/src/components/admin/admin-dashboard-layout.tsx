@@ -22,6 +22,7 @@ import {
   Package,
   FolderTree,
   MessageSquare,
+  Settings,
   Sun,
   Moon,
   type LucideIcon,
@@ -70,6 +71,11 @@ const navItems: NavItem[] = [
     icon: Image,
     label: { en: "Banners", bn: "ব্যানার" },
     href: "/admin/banners",
+  },
+  {
+    icon: Settings,
+    label: { en: "Announcement Bar", bn: "ঘোষণা বার" },
+    href: "/admin/settings",
   },
   {
     icon: Package,

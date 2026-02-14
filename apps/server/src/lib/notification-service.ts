@@ -89,9 +89,7 @@ function getNotificationUrl(
 		// Product notifications - go to vendor products
 		case "product_approved":
 		case "product_rejected":
-			return data?.productId
-				? `/vendor/products/${data.productId}/edit`
-				: "/vendor/products";
+			return "/vendor/products";
 
 		// Vendor application approved
 		case "vendor_approved":

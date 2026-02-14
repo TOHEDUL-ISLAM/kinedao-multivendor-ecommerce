@@ -39,6 +39,9 @@ export * from "./admin";
 // Banners schema
 export * from "./banners";
 
+// Site settings schema
+export * from "./site-settings";
+
 // Notifications schema
 export * from "./notifications";
 

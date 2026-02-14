@@ -58,6 +58,14 @@ function calculateShippingCost(district: string): ShippingCostDTO {
 	};
 }
 
+type CheckoutSourceItem = {
+	itemId: string;
+	productId: string;
+	skuId: string | null;
+	quantity: number;
+	unitPrice: number;
+};
+
 export const ordersRouter = new Hono<AppEnv>()
 	// Place order
 	.post(
@@ -66,7 +74,7 @@ export const ordersRouter = new Hono<AppEnv>()
 			tags: ["Orders"],
 			summary: "Place order",
 			description:
-				"Place order with items from cart. Creates separate orders per vendor. Uses transaction with stock locking to prevent race conditions.",
+				"Place order from cart or direct Buy Now item. Creates separate orders per vendor and uses stock locking to prevent race conditions.",
 			responses: {
 				201: {
 					description: "Order(s) created successfully",
@@ -109,7 +117,10 @@ export const ordersRouter = new Hono<AppEnv>()
 				return c.json({ error: "Unauthorized" }, 401);
 			}
 
-			const { shippingAddressId, customerNotes } = c.req.valid("json");
+			const payload = c.req.valid("json");
+			const { shippingAddressId, customerNotes } = payload;
+			const isBuyNowMode = payload.mode === "buy_now";
+			const mode = isBuyNowMode ? "buy_now" : "cart";
 
 			// 1. Verify shipping address belongs to user
 			const [address] = await db
@@ -127,37 +138,81 @@ export const ordersRouter = new Hono<AppEnv>()
 				return c.json({ error: "Shipping address not found" }, 404);
 			}
 
-			// 2. Get user's cart with items
-			const [cart] = await db
-				.select()
-				.from(carts)
-				.where(eq(carts.userId, userId))
-				.limit(1);
+			let sourceItems: CheckoutSourceItem[] = [];
+			let cartIdToClear: string | null = null;
 
-			if (!cart) {
-				return c.json({ error: "Cart is empty" }, 400);
-			}
+			if (isBuyNowMode) {
+				const buyNowItem = payload.item;
+				const [product] = await db
+					.select({
+						id: products.id,
+						status: products.status,
+						isActive: products.isActive,
+					})
+					.from(products)
+					.where(eq(products.id, buyNowItem.productId))
+					.limit(1);
 
-			const cartItemRows = await db
-				.select({
-					itemId: cartItems.id,
-					productId: cartItems.productId,
-					skuId: cartItems.skuId,
-					quantity: cartItems.quantity,
-					unitPrice: cartItems.unitPrice,
-				})
-				.from(cartItems)
-				.where(eq(cartItems.cartId, cart.id));
+				if (!product) {
+					return c.json({ error: "Product not found" }, 404);
+				}
 
-			if (cartItemRows.length === 0) {
-				return c.json({ error: "Cart is empty" }, 400);
+				if (product.status !== "approved" || !product.isActive) {
+					return c.json({ error: "Product unavailable" }, 400);
+				}
+
+				sourceItems = [
+					{
+						itemId: `buy-now-${buyNowItem.productId}-${buyNowItem.skuId ?? "default"}`,
+						productId: buyNowItem.productId,
+						skuId: buyNowItem.skuId ?? null,
+						quantity: buyNowItem.quantity,
+						unitPrice: 0,
+					},
+				];
+			} else {
+				const [cart] = await db
+					.select()
+					.from(carts)
+					.where(eq(carts.userId, userId))
+					.limit(1);
+
+				if (!cart) {
+					return c.json({ error: "Cart is empty" }, 400);
+				}
+
+				const cartItemRows = await db
+					.select({
+						itemId: cartItems.id,
+						productId: cartItems.productId,
+						skuId: cartItems.skuId,
+						quantity: cartItems.quantity,
+						unitPrice: cartItems.unitPrice,
+					})
+					.from(cartItems)
+					.where(eq(cartItems.cartId, cart.id));
+
+				if (cartItemRows.length === 0) {
+					return c.json({ error: "Cart is empty" }, 400);
+				}
+
+				cartIdToClear = cart.id;
+				sourceItems = cartItemRows.map((item) => ({
+					itemId: item.itemId,
+					productId: item.productId,
+					skuId: item.skuId ?? null,
+					quantity: item.quantity,
+					unitPrice: item.unitPrice,
+				}));
 			}
 
 			// 3. BEGIN TRANSACTION
 			const result = await db.transaction(async (tx) => {
 				const groupId = crypto.randomUUID();
 
-				const productIds = cartItemRows.map((item) => item.productId);
+				const productIds = Array.from(
+					new Set(sourceItems.map((item) => item.productId)),
+				);
 
 				// 3a. Lock product SKUs rows with SELECT FOR UPDATE
 				// This prevents race conditions on stock
@@ -206,12 +261,16 @@ export const ordersRouter = new Hono<AppEnv>()
 					}
 				}
 
-				// 3b. Resolve which SKU each cart item uses (prefer cart's skuId, fallback to cheapest available)
+				// 3b. Resolve which SKU each checkout item uses
 				const resolvedSkuMap = new Map<string, typeof stockMap extends Map<string, infer V> ? V : never>();
-				for (const item of cartItemRows) {
+				for (const item of sourceItems) {
 					const specific = item.skuId ? allSkuMap.get(item.skuId) : null;
 					const fallback = stockMap.get(item.productId);
-					const resolved = (specific && specific.stockQty > 0) ? specific : fallback;
+					const resolved = specific
+						? (specific.stockQty > 0 ? specific : mode === "buy_now" ? null : fallback)
+						: mode === "buy_now" && item.skuId
+							? null
+							: fallback;
 					if (!resolved || resolved.stockQty < item.quantity) {
 						const [prod] = await tx
 							.select({ title: products.title })
@@ -262,7 +321,7 @@ export const ordersRouter = new Hono<AppEnv>()
 					}
 				}
 
-				// 3e. Group cart items by vendorId
+				// 3e. Group checkout items by vendorId
 				const vendorGroups = new Map<
 					string,
 					Array<{
@@ -273,7 +332,7 @@ export const ordersRouter = new Hono<AppEnv>()
 					}>
 				>();
 
-				for (const item of cartItemRows) {
+				for (const item of sourceItems) {
 					const product = productDetailsMap.get(item.productId);
 					if (!product) continue;
 					const vendorId = product.vendorId;
@@ -319,7 +378,12 @@ export const ordersRouter = new Hono<AppEnv>()
 					const orderNumber = `KD-${year}-${String(orderNum).padStart(5, "0")}`;
 
 					const subtotal = items.reduce(
-						(sum, item) => sum + item.unitPrice * item.quantity,
+						(sum, item) => {
+							const resolvedSku = resolvedSkuMap.get(item.itemId)!;
+							const unitPrice =
+								mode === "buy_now" ? resolvedSku.priceAmount : item.unitPrice;
+							return sum + unitPrice * item.quantity;
+						},
 						0,
 					);
 					const total = subtotal + shippingCostInfo.costPaisa;
@@ -365,6 +429,9 @@ export const ordersRouter = new Hono<AppEnv>()
 						const product = productDetailsMap.get(item.productId)!;
 						const image = imageMap.get(item.productId) ?? null;
 						const resolvedSku = resolvedSkuMap.get(item.itemId)!;
+						const unitPrice =
+							mode === "buy_now" ? resolvedSku.priceAmount : item.unitPrice;
+						const lineTotal = unitPrice * item.quantity;
 
 						const productSnapshot: OrderItemProductSnapshot = {
 							title: product.title,
@@ -385,8 +452,8 @@ export const ordersRouter = new Hono<AppEnv>()
 								orderId: order.id,
 								productId: item.productId,
 								quantity: item.quantity,
-								unitPrice: item.unitPrice,
-								lineTotal: item.unitPrice * item.quantity,
+								unitPrice,
+								lineTotal,
 								productSnapshot,
 							})
 							.returning();
@@ -432,8 +499,10 @@ export const ordersRouter = new Hono<AppEnv>()
 					orderIndex++;
 				}
 
-				// 3k. Clear cart
-				await tx.delete(cartItems).where(eq(cartItems.cartId, cart.id));
+				// 3k. Clear cart only for cart-based checkout
+				if (mode === "cart" && cartIdToClear) {
+					await tx.delete(cartItems).where(eq(cartItems.cartId, cartIdToClear));
+				}
 
 				return { groupId, orders: createdOrders };
 			});

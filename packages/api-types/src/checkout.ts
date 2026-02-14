@@ -87,13 +87,29 @@ export type ShippingZone = keyof typeof SHIPPING_ZONES;
 // Place Order Schema
 // =====================
 
-export const placeOrderSchema = z.object({
+const placeOrderBaseSchema = z.object({
 	shippingAddressId: z.string().uuid(),
 	customerNotes: z.string().max(500).optional(),
 	acceptedTerms: z.literal(true, {
 		message: "You must accept the terms and conditions",
 	}),
 });
+
+export const buyNowOrderItemSchema = z.object({
+	productId: z.string().uuid(),
+	skuId: z.string().uuid().optional(),
+	quantity: z.number().int().min(1),
+});
+
+export const placeOrderSchema = z.union([
+	placeOrderBaseSchema.extend({
+		mode: z.literal("cart").optional(),
+	}),
+	placeOrderBaseSchema.extend({
+		mode: z.literal("buy_now"),
+		item: buyNowOrderItemSchema,
+	}),
+]);
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
 

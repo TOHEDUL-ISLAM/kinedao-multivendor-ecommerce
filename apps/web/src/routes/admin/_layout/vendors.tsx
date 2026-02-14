@@ -17,9 +17,11 @@ import {
   Image,
   Button,
   Skeleton,
+  Card,
+  Box,
 } from "@mantine/core";
 import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
-import { Search, Eye, Check, X, ExternalLink } from "lucide-react";
+import { Search, Eye, Check, X, ExternalLink, Store, Phone, Mail, Calendar } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -252,12 +254,16 @@ function AdminVendorsPage() {
 
   return (
     <Stack gap="xl">
-      <Title order={2} style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}>
+      <Title
+        order={2}
+        className="text-xl sm:text-2xl"
+        style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}
+      >
         {t.title}
       </Title>
 
       <Paper
-        p="lg"
+        p={{ base: "sm", sm: "lg" }}
         radius="lg"
         style={{
           background: isDark
@@ -277,13 +283,13 @@ function AdminVendorsPage() {
 
           <Tabs value={activeTab} onChange={setActiveTab}>
             <Tabs.List>
-              <Tabs.Tab value="pending" rightSection={counts && <Badge size="sm">{counts.pending}</Badge>}>
+              <Tabs.Tab value="pending" rightSection={counts && <Badge size="xs">{counts.pending}</Badge>}>
                 {t.pending}
               </Tabs.Tab>
-              <Tabs.Tab value="approved" rightSection={counts && <Badge size="sm">{counts.approved}</Badge>}>
+              <Tabs.Tab value="approved" rightSection={counts && <Badge size="xs">{counts.approved}</Badge>}>
                 {t.approved}
               </Tabs.Tab>
-              <Tabs.Tab value="rejected" rightSection={counts && <Badge size="sm">{counts.rejected}</Badge>}>
+              <Tabs.Tab value="rejected" rightSection={counts && <Badge size="xs">{counts.rejected}</Badge>}>
                 {t.rejected}
               </Tabs.Tab>
             </Tabs.List>
@@ -296,82 +302,177 @@ function AdminVendorsPage() {
                   ))}
                 </Stack>
               ) : vendors && vendors.vendors.length > 0 ? (
-                <Table highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t.shopName}</Table.Th>
-                      <Table.Th>{t.owner}</Table.Th>
-                      <Table.Th>{t.email}</Table.Th>
-                      <Table.Th>{t.phone}</Table.Th>
-                      <Table.Th>{t.status}</Table.Th>
-                      <Table.Th>{t.appliedDate}</Table.Th>
-                      <Table.Th>{t.actions}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
+                <>
+                  {/* Desktop table view */}
+                  <Box visibleFrom="md">
+                    <Table.ScrollContainer minWidth={800}>
+                      <Table highlightOnHover>
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>{t.shopName}</Table.Th>
+                            <Table.Th>{t.owner}</Table.Th>
+                            <Table.Th>{t.email}</Table.Th>
+                            <Table.Th>{t.phone}</Table.Th>
+                            <Table.Th>{t.status}</Table.Th>
+                            <Table.Th>{t.appliedDate}</Table.Th>
+                            <Table.Th>{t.actions}</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {vendors.vendors.map((vendor) => (
+                            <Table.Tr key={vendor.id}>
+                              <Table.Td>
+                                <Text size="sm" fw={500}>
+                                  {vendor.shopNameEn}
+                                </Text>
+                                {vendor.shopNameBn && (
+                                  <Text size="xs" c="dimmed">
+                                    {vendor.shopNameBn}
+                                  </Text>
+                                )}
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{vendor.ownerName}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{vendor.email}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{vendor.phone}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <StatusBadge status={vendor.status} />
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{new Date(vendor.createdAt).toLocaleDateString()}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Group gap="xs">
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="blue"
+                                    onClick={() => handleViewDetails(vendor)}
+                                    title={t.viewDetails}
+                                  >
+                                    <Eye size={18} />
+                                  </ActionIcon>
+                                  {vendor.status === "pending" && (
+                                    <>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="green"
+                                        onClick={() => handleApproveClick(vendor.id)}
+                                        title={t.approve}
+                                      >
+                                        <Check size={18} />
+                                      </ActionIcon>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => handleRejectClick(vendor.id)}
+                                        title={t.reject}
+                                      >
+                                        <X size={18} />
+                                      </ActionIcon>
+                                    </>
+                                  )}
+                                </Group>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </Table.ScrollContainer>
+                  </Box>
+
+                  {/* Mobile card view */}
+                  <Stack gap="sm" hiddenFrom="md">
                     {vendors.vendors.map((vendor) => (
-                      <Table.Tr key={vendor.id}>
-                        <Table.Td>
-                          <Text size="sm" fw={500}>
-                            {vendor.shopNameEn}
-                          </Text>
-                          {vendor.shopNameBn && (
-                            <Text size="xs" c="dimmed">
-                              {vendor.shopNameBn}
-                            </Text>
-                          )}
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{vendor.ownerName}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{vendor.email}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{vendor.phone}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <StatusBadge status={vendor.status} />
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{new Date(vendor.createdAt).toLocaleDateString()}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap="xs">
-                            <ActionIcon
-                              variant="subtle"
-                              color="blue"
-                              onClick={() => handleViewDetails(vendor)}
-                              title={t.viewDetails}
-                            >
-                              <Eye size={18} />
-                            </ActionIcon>
-                            {vendor.status === "pending" && (
-                              <>
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="green"
-                                  onClick={() => handleApproveClick(vendor.id)}
-                                  title={t.approve}
-                                >
-                                  <Check size={18} />
-                                </ActionIcon>
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="red"
-                                  onClick={() => handleRejectClick(vendor.id)}
-                                  title={t.reject}
-                                >
-                                  <X size={18} />
-                                </ActionIcon>
-                              </>
+                      <Card
+                        key={vendor.id}
+                        padding="sm"
+                        radius="md"
+                        style={{
+                          background: isDark ? "oklch(0.2 0.02 260)" : "oklch(0.99 0.005 260)",
+                          border: isDark
+                            ? "1px solid oklch(0.3 0.02 260 / 0.3)"
+                            : "1px solid oklch(0.92 0.01 260 / 0.2)",
+                        }}
+                      >
+                        <Group justify="space-between" mb="xs">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Group gap="xs" mb={2}>
+                              <Store size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+                              <Text size="sm" fw={600} truncate>
+                                {vendor.shopNameEn}
+                              </Text>
+                            </Group>
+                            {vendor.shopNameBn && (
+                              <Text size="xs" c="dimmed" truncate ml={22}>
+                                {vendor.shopNameBn}
+                              </Text>
                             )}
+                          </div>
+                          <StatusBadge status={vendor.status} />
+                        </Group>
+
+                        <Stack gap={4} mb="xs">
+                          <Group gap={4}>
+                            <Text size="xs" c="dimmed">{t.owner}:</Text>
+                            <Text size="xs" fw={500}>{vendor.ownerName}</Text>
                           </Group>
-                        </Table.Td>
-                      </Table.Tr>
+                          <Group gap={4}>
+                            <Mail size={12} style={{ opacity: 0.5 }} />
+                            <Text size="xs" c="dimmed" truncate>{vendor.email}</Text>
+                          </Group>
+                          <Group gap="md">
+                            <Group gap={4}>
+                              <Phone size={12} style={{ opacity: 0.5 }} />
+                              <Text size="xs" c="dimmed">{vendor.phone}</Text>
+                            </Group>
+                            <Group gap={4}>
+                              <Calendar size={12} style={{ opacity: 0.5 }} />
+                              <Text size="xs" c="dimmed">
+                                {new Date(vendor.createdAt).toLocaleDateString()}
+                              </Text>
+                            </Group>
+                          </Group>
+                        </Stack>
+
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleViewDetails(vendor)}
+                            title={t.viewDetails}
+                          >
+                            <Eye size={16} />
+                          </ActionIcon>
+                          {vendor.status === "pending" && (
+                            <>
+                              <ActionIcon
+                                variant="light"
+                                color="green"
+                                onClick={() => handleApproveClick(vendor.id)}
+                                title={t.approve}
+                              >
+                                <Check size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                color="red"
+                                onClick={() => handleRejectClick(vendor.id)}
+                                title={t.reject}
+                              >
+                                <X size={16} />
+                              </ActionIcon>
+                            </>
+                          )}
+                        </Group>
+                      </Card>
                     ))}
-                  </Table.Tbody>
-                </Table>
+                  </Stack>
+                </>
               ) : (
                 <Text c="dimmed" ta="center" py="xl">
                   {t.noResults}
@@ -389,36 +490,45 @@ function AdminVendorsPage() {
         title={t.applicationDetails}
         position="right"
         size="xl"
+        styles={{
+          content: { maxWidth: "100vw" },
+          body: { paddingBottom: 24 },
+        }}
+        className="[&_.mantine-Drawer-content]:w-full [&_.mantine-Drawer-content]:sm:w-auto"
       >
         {vendorDetail && (
           <Stack gap="lg">
             {/* Status and Actions */}
-            <Group justify="space-between">
-              <StatusBadge status={vendorDetail.status} size="lg" />
-              {vendorDetail.status === "pending" && (
-                <Group gap="xs">
-                  <Button
-                    leftSection={<Check size={18} />}
-                    color="green"
-                    onClick={() => handleApproveClick(vendorDetail.id)}
-                  >
-                    {t.approve}
-                  </Button>
-                  <Button
-                    leftSection={<X size={18} />}
-                    color="red"
-                    onClick={() => handleRejectClick(vendorDetail.id)}
-                  >
-                    {t.reject}
-                  </Button>
-                </Group>
-              )}
-            </Group>
+            <Stack gap="sm">
+              <Group justify="space-between" wrap="wrap">
+                <StatusBadge status={vendorDetail.status} size="lg" />
+                {vendorDetail.status === "pending" && (
+                  <Group gap="xs" wrap="wrap">
+                    <Button
+                      leftSection={<Check size={18} />}
+                      color="green"
+                      size="sm"
+                      onClick={() => handleApproveClick(vendorDetail.id)}
+                    >
+                      {t.approve}
+                    </Button>
+                    <Button
+                      leftSection={<X size={18} />}
+                      color="red"
+                      size="sm"
+                      onClick={() => handleRejectClick(vendorDetail.id)}
+                    >
+                      {t.reject}
+                    </Button>
+                  </Group>
+                )}
+              </Group>
+            </Stack>
 
             {/* Business Info */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.businessInfo}</Text>
-              <SimpleGrid cols={2} spacing="md">
+              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
                 <div>
                   <Text size="xs" c="dimmed">{t.shopName}</Text>
                   <Text size="sm">{vendorDetail.shopNameEn}</Text>
@@ -434,7 +544,7 @@ function AdminVendorsPage() {
                 </div>
                 <div>
                   <Text size="xs" c="dimmed">{t.email}</Text>
-                  <Text size="sm">{vendorDetail.email}</Text>
+                  <Text size="sm" style={{ wordBreak: "break-all" }}>{vendorDetail.email}</Text>
                 </div>
                 <div>
                   <Text size="xs" c="dimmed">{t.phone}</Text>
@@ -444,12 +554,12 @@ function AdminVendorsPage() {
             </Paper>
 
             {/* Address Info */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.addressInfo}</Text>
               <Stack gap="sm">
                 <Text size="sm">{vendorDetail.addressLine1}</Text>
                 {vendorDetail.addressLine2 && <Text size="sm">{vendorDetail.addressLine2}</Text>}
-                <Group gap="md">
+                <Group gap="md" wrap="wrap">
                   <Text size="sm">{vendorDetail.city}, {vendorDetail.district}</Text>
                   {vendorDetail.postalCode && <Text size="sm">- {vendorDetail.postalCode}</Text>}
                 </Group>
@@ -457,14 +567,14 @@ function AdminVendorsPage() {
             </Paper>
 
             {/* Documents */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.documents}</Text>
               <Stack gap="md">
                 <div>
                   <Text size="xs" c="dimmed" mb="xs">{t.nidNumber}</Text>
                   <Text size="sm" fw={500}>{vendorDetail.nidNumber}</Text>
                 </div>
-                <SimpleGrid cols={2} spacing="md">
+                <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
                   <div>
                     <Text size="xs" c="dimmed" mb="xs">{t.nidFront}</Text>
                     <Image
@@ -542,7 +652,7 @@ function AdminVendorsPage() {
             </Paper>
 
             {/* Payment Info */}
-            <Paper p="md" radius="md" withBorder>
+            <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
               <Text fw={600} mb="md">{t.paymentInfo}</Text>
               <Stack gap="sm">
                 {vendorDetail.bankName && (
@@ -580,7 +690,7 @@ function AdminVendorsPage() {
 
             {/* Review Notes */}
             {vendorDetail.reviewNotes && (
-              <Paper p="md" radius="md" withBorder>
+              <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
                 <Text fw={600} mb="md">{t.reviewNotes}</Text>
                 <Text size="sm">{vendorDetail.reviewNotes}</Text>
               </Paper>

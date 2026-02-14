@@ -33,3 +33,6 @@ export * from "./reviews";
 
 // Re-export all types from admin management
 export * from "./admin-management";
+
+// Re-export all types from site settings
+export * from "./site-settings";

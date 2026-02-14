@@ -9,7 +9,7 @@ import { CategoriesSection, CategoriesSectionSkeleton } from "@/components/home/
 import { ProductBlock, ProductBlockSkeleton } from "@/components/home/product-block";
 
 import { TrustBadges, TrustBadgesSkeleton } from "@/components/home/trust-badges";
-import { AgeGroupSection, AgeGroupSectionSkeleton } from "@/components/home/age-group-section";
+// import { AgeGroupSection, AgeGroupSectionSkeleton } from "@/components/home/age-group-section";
 import { TestimonialsSection, TestimonialsSectionSkeleton } from "@/components/home/testimonials-section";
 import { InstagramGallery, InstagramGallerySkeleton } from "@/components/home/instagram-gallery";
 import { FeaturedCollections, FeaturedCollectionsSkeleton } from "@/components/home/featured-collections";
@@ -144,7 +144,7 @@ function HomePage() {
         </div>
 
         {/* Mobile + small tablet: Promo cards row */}
-        <div className="xl:hidden mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="xl:hidden mt-3 flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
           <PromotionalBanners
             banners={promoBanners}
             layout="horizontal"
@@ -156,8 +156,8 @@ function HomePage() {
       {/* Trust Badges - Slim Info Bar */}
       {isLoading ? <TrustBadgesSkeleton /> : <TrustBadges />}
 
-      {/* Shop by Age Section */}
-      {isLoading ? <AgeGroupSectionSkeleton /> : <AgeGroupSection />}
+      {/* Shop by Age Section - hidden for now */}
+      {/* {isLoading ? <AgeGroupSectionSkeleton /> : <AgeGroupSection />} */}
 
       {/* Categories Section - Database Driven */}
       {isLoading ? (

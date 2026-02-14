@@ -1,6 +1,6 @@
 import { useTranslation } from "@/hooks/use-translation";
 import { useCheckoutStore } from "@/stores/checkout-store";
-import { useCartStore } from "@/stores/cart-store";
+import type { CartResponse } from "@kineDao.com/api-types/cart";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -10,12 +10,12 @@ import { Loader2, Edit, AlertTriangle, Package } from "lucide-react";
 import { useMemo, useEffect } from "react";
 
 interface ReviewStepProps {
+	checkoutCart: CartResponse["cart"];
 	onEditStep: (step: 1 | 2) => void;
 }
 
-export function ReviewStep({ onEditStep }: ReviewStepProps) {
+export function ReviewStep({ checkoutCart, onEditStep }: ReviewStepProps) {
 	const { t, language } = useTranslation();
-	const cart = useCartStore((state) => state.cart);
 	const {
 		selectedAddress,
 		shippingCost,
@@ -54,12 +54,11 @@ export function ReviewStep({ onEditStep }: ReviewStepProps) {
 
 	// Group cart items by vendor
 	const vendorGroups = useMemo(() => {
-		if (!cart) return [];
 		const groups = new Map<
 			string,
-			{ vendor: any; items: typeof cart.items }
+			{ vendor: any; items: typeof checkoutCart.items }
 		>();
-		cart.items.forEach((item) => {
+		checkoutCart.items.forEach((item) => {
 			const vendor = item.product.vendor;
 			if (!groups.has(vendor.id)) {
 				groups.set(vendor.id, { vendor, items: [] });
@@ -67,30 +66,20 @@ export function ReviewStep({ onEditStep }: ReviewStepProps) {
 			groups.get(vendor.id)!.items.push(item);
 		});
 		return Array.from(groups.values());
-	}, [cart]);
+	}, [checkoutCart]);
 
 	const totalPackages = vendorGroups.length;
 
 	// Check if any item has baby-specific attributes
 	const hasBabyProducts = useMemo(() => {
-		if (!cart) return false;
-		return cart.items.some(
+		return checkoutCart.items.some(
 			(item) =>
 				item.product.ageRange ||
 				item.product.isBpaFree ||
 				item.product.isOrganic ||
 				item.product.isHypoallergenic,
 		);
-	}, [cart]);
-
-	if (!cart) {
-		return (
-			<Alert variant="destructive">
-				<AlertTriangle className="w-4 h-4" />
-				<AlertDescription>Your cart is empty. Please add items to continue.</AlertDescription>
-			</Alert>
-		);
-	}
+	}, [checkoutCart]);
 
 	if (!selectedAddress) {
 		return (

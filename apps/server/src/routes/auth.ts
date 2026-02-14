@@ -1,10 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { auth } from "@kineDao.com/auth";
-import { db } from "@kineDao.com/db";
-import { account, user } from "@kineDao.com/db/schema/auth";
 import { env } from "@kineDao.com/env/server";
-import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { signUpSchema, forgotPasswordSchema } from "@kineDao.com/api-types/auth";
 
@@ -79,32 +76,6 @@ const passwordResetEligibilitySchema = z.object({
   email: z.string().email(),
 });
 
-async function getPasswordCapabilityByEmail(email: string): Promise<{
-  userExists: boolean;
-  hasCredentialAccount: boolean;
-}> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const accounts = await db
-    .select({ providerId: account.providerId, password: account.password })
-    .from(user)
-    .innerJoin(account, eq(account.userId, user.id))
-    .where(sql`lower(${user.email}) = ${normalizedEmail}`);
-
-  if (accounts.length === 0) {
-    return { userExists: false, hasCredentialAccount: false };
-  }
-
-  return {
-    userExists: true,
-    hasCredentialAccount: accounts.some(
-      (row) =>
-        row.providerId === "credential" &&
-        typeof row.password === "string" &&
-        row.password.length > 0
-    ),
-  };
-}
-
 // POST /api/auth/sign-up - Custom sign-up handler
 // POST /api/auth/forgot-password - Custom forgot password handler
 const authRouter = new Hono()
@@ -135,21 +106,6 @@ const authRouter = new Hono()
     const data = c.req.valid("json");
     const normalizedEmail = data.email.trim().toLowerCase();
 
-    const { userExists, hasCredentialAccount } =
-      await getPasswordCapabilityByEmail(normalizedEmail);
-
-    // Block OAuth-only accounts from reset flow, but return a generic success-style
-    // response to avoid account/provider enumeration.
-    if (userExists && !hasCredentialAccount) {
-      return c.json(
-        {
-          message:
-            "If an account with that email exists, you will receive a password reset email shortly.",
-        },
-        200
-      );
-    }
-
     const redirectTo = resolveFrontendUrl(
       data.redirectTo,
       "/reset-password",
@@ -172,7 +128,6 @@ const authRouter = new Hono()
     zValidator("json", passwordResetEligibilitySchema),
     async (c) => {
       // Do not disclose account existence/provider details via this endpoint.
-      // Enforcement still happens in /forgot-password.
       c.req.valid("json");
       return c.json({ eligible: true }, 200);
     }

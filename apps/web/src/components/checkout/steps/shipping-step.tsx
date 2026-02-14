@@ -1,10 +1,10 @@
 import { useTranslation } from "@/hooks/use-translation";
 import { useCheckoutStore } from "@/stores/checkout-store";
-import { useCartStore } from "@/stores/cart-store";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { shippingAddressSchema } from "@kineDao.com/api-types/checkout";
+import type { CartResponse } from "@kineDao.com/api-types/cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,11 +17,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DistrictSelect } from "@/components/vendor/district-select";
 
-export function ShippingStep() {
+interface ShippingStepProps {
+	checkoutCart: CartResponse["cart"];
+}
+
+export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 	const { t, language } = useTranslation();
 	const queryClient = useQueryClient();
 	const [showAddressForm, setShowAddressForm] = useState(false);
-	const cart = useCartStore((state) => state.cart);
 	const { setSelectedAddress, setShippingCost } = useCheckoutStore();
 	const selectedAddressId = useCheckoutStore(
 		(state) => state.selectedAddressId,
@@ -36,12 +39,11 @@ export function ShippingStep() {
 
 	// Group cart items by vendor
 	const vendorGroups = useMemo(() => {
-		if (!cart) return [];
 		const groups = new Map<
 			string,
-			{ vendor: any; items: typeof cart.items }
+			{ vendor: any; items: typeof checkoutCart.items }
 		>();
-		cart.items.forEach((item) => {
+		checkoutCart.items.forEach((item) => {
 			const vendor = item.product.vendor;
 			if (!groups.has(vendor.id)) {
 				groups.set(vendor.id, { vendor, items: [] });
@@ -49,7 +51,7 @@ export function ShippingStep() {
 			groups.get(vendor.id)!.items.push(item);
 		});
 		return Array.from(groups.values());
-	}, [cart]);
+	}, [checkoutCart]);
 
 	const totalPackages = vendorGroups.length;
 
@@ -213,7 +215,7 @@ export function ShippingStep() {
 			)}
 
 			{/* Selected Products */}
-			{!showAddressForm && cart && cart.items.length > 0 && (
+			{!showAddressForm && checkoutCart.items.length > 0 && (
 				<div className="space-y-6 mt-8">
 					<div className="border-t pt-6">
 						<h3 className="text-lg font-semibold mb-4">

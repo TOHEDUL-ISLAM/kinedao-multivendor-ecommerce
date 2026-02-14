@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ShoppingCart,
@@ -31,14 +32,28 @@ import { LanguageToggle } from "@/components/language-toggle";
 import UserMenu from "@/components/user-menu";
 import { api } from "@/lib/api-client";
 import { useHeaderSellerAction } from "@/hooks/use-header-seller-action";
+import type { TopBarAnnouncementDTO } from "@kineDao.com/api-types/site-settings";
 import { SearchBar } from "./search-bar";
 import { KineDaoLogo } from "./kinedao-logo";
+
+const TOP_BAR_ANNOUNCEMENT_QUERY_KEY = [
+  "site-settings",
+  "top-bar-announcement",
+] as const;
+
+async function fetchTopBarAnnouncement(): Promise<TopBarAnnouncementDTO> {
+  const response = await api.siteSettings["top-bar-announcement"].$get();
+  if (!response.ok) {
+    throw new Error("Failed to fetch top bar announcement");
+  }
+  return response.json();
+}
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { theme, setTheme } = useTheme();
   const cartCount = useCartStore((state) => state.itemCount);
   const favoriteCount = useFavoritesStore((state) => state.productIds.length);
@@ -46,13 +61,26 @@ export default function Header() {
   const mergeGuestCart = useCartStore((state) => state.mergeGuestCart);
   const mergeGuestWishlist = useFavoritesStore((state) => state.mergeGuestToServer);
 
+  const sellerAction = useHeaderSellerAction();
   const {
     session,
     isSessionPending,
-    action: sellerAction,
-    isLoading: isSellerActionLoading,
-  } = useHeaderSellerAction();
+  } = sellerAction;
   const isLoggedIn = !!session;
+  const { data: announcementData } = useQuery({
+    queryKey: TOP_BAR_ANNOUNCEMENT_QUERY_KEY,
+    queryFn: fetchTopBarAnnouncement,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const announcementText = !announcementData
+    ? t("header.freeShipping")
+    : announcementData.isActive
+      ? (language === "bn"
+        ? announcementData.textBn || announcementData.textEn
+        : announcementData.textEn || announcementData.textBn || t("header.freeShipping"))
+      : "";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -95,26 +123,35 @@ export default function Header() {
         isScrolled ? "bg-background/80 backdrop-blur-md shadow-sm" : "bg-background"
       }`}>
         {/* Top bar */}
-        <div className="bg-primary text-primary-foreground py-1 text-[11px] sm:text-sm">
-          <div className="container mx-auto px-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 cursor-pointer hover:opacity-80 whitespace-nowrap">
-                <MapPin className="w-3 h-3" />
-                {t("header.trackOrder")}
+        <div className="bg-primary text-primary-foreground text-[11px] sm:text-xs">
+          <div className="container mx-auto px-3 sm:px-4">
+            <div className="flex h-8 sm:h-9 items-center gap-2 sm:gap-3">
+              <span className="flex shrink-0 items-center gap-1 whitespace-nowrap cursor-pointer hover:opacity-80">
+                <MapPin className="h-3 w-3" />
+                <span className="hidden sm:inline">{t("header.trackOrder")}</span>
               </span>
-              <span className="hidden md:flex items-center gap-1 cursor-pointer hover:opacity-80">
-                <Phone className="w-3 h-3" />
-                {t("header.helpCenter")}
-              </span>
-            </div>
-            <span className="font-medium animate-pulse hidden sm:inline-block">
-              🎉 {t("header.freeShipping")}
-            </span>
-            <div className="flex items-center gap-4">
-              <span className="hidden md:flex items-center gap-1">
-                <Phone className="w-3 h-3" />
-                1-800-BABY
-              </span>
+
+              <p className="min-w-0 flex-1 truncate text-center font-semibold leading-none motion-safe:animate-pulse">
+                {announcementText || "\u00A0"}
+              </p>
+
+              <div className="hidden md:flex shrink-0 items-center gap-3 whitespace-nowrap">
+                <span className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+                  <Phone className="h-3 w-3" />
+                  {t("header.helpCenter")}
+                </span>
+                <Link
+                  to={sellerAction.action.to}
+                  className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                >
+                  <Store className="h-3 w-3" />
+                  {t(sellerAction.action.labelKey)}
+                </Link>
+                <span className="hidden xl:flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  1-800-BABY
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -187,18 +224,6 @@ export default function Header() {
                   )}
                 </Button>
               </Link>
-
-              {/* Seller CTA */}
-              {isSellerActionLoading ? (
-                <Skeleton className="hidden md:flex h-10 w-40 rounded-full" />
-              ) : (
-                <a href={sellerAction.href} className="hidden md:flex">
-                  <Button variant="secondary" className="gap-2 rounded-full">
-                    <Store className="w-4 h-4" />
-                    {t(sellerAction.labelKey)}
-                  </Button>
-                </a>
-              )}
 
               {/* Account */}
               {isSessionPending ? (

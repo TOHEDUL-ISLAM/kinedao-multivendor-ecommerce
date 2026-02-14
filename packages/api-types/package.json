@@ -13,6 +13,7 @@
     "./vendor-dashboard": "./src/vendor-dashboard.ts",
     "./admin": "./src/admin.ts",
     "./admin-management": "./src/admin-management.ts",
+    "./site-settings": "./src/site-settings.ts",
     "./wishlist": "./src/wishlist.ts",
     "./reviews": "./src/reviews.ts"
   },

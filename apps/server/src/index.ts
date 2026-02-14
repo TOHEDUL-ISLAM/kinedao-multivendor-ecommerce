@@ -30,6 +30,7 @@ import { accountRouter } from "./routes/account";
 import { reviewsRouter } from "./routes/reviews";
 import { vendorDashboardReviewsRouter } from "./routes/vendor-dashboard-reviews";
 import { adminReviewsRouter } from "./routes/admin-reviews";
+import { siteSettingsRouter } from "./routes/site-settings";
 import { openAPIRouteHandler } from 'hono-openapi';
 import { db } from "@kineDao.com/db";
 import { user } from "@kineDao.com/db/schema/auth";
@@ -159,6 +160,7 @@ const app = new Hono<AppEnv>()
   .route("/api/admin", adminRouter)
   .route("/api/admin-management", adminManagementRouter)
   .route("/api/banners", bannersRouter)
+  .route("/api/site-settings", siteSettingsRouter)
   .route("/api/notifications", notificationsRouter)
   .route("/api/wishlist", wishlistRouter)
   .route("/api/account", accountRouter)

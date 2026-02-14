@@ -17,9 +17,11 @@ import {
   Switch,
   NumberInput,
   ActionIcon,
+  Card,
+  Box,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Plus, Pencil, Trash2, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, Tag, FolderTree } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { useTheme } from "next-themes";
@@ -315,13 +317,18 @@ function AdminCategoriesPage() {
 
   return (
     <Stack gap="xl">
-      <Group justify="space-between">
-        <Title order={2} style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}>
+      <Group justify="space-between" wrap="wrap" gap="sm">
+        <Title
+          order={2}
+          className="text-xl sm:text-2xl"
+          style={{ color: isDark ? "oklch(0.95 0.02 260)" : "oklch(0.25 0.02 260)" }}
+        >
           {t.title}
         </Title>
         <Button
           leftSection={<Plus size={18} />}
           onClick={() => setAddModalOpen(true)}
+          size="sm"
           style={{
             background: "oklch(0.65 0.15 175)",
             color: "white",
@@ -332,7 +339,7 @@ function AdminCategoriesPage() {
       </Group>
 
       <Paper
-        p="lg"
+        p={{ base: "sm", sm: "lg" }}
         radius="lg"
         style={{
           background: isDark
@@ -348,76 +355,152 @@ function AdminCategoriesPage() {
             ))}
           </Stack>
         ) : categories && categories.length > 0 ? (
-          <Table highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t.icon}</Table.Th>
-                <Table.Th>{t.name}</Table.Th>
-                <Table.Th>{t.slug}</Table.Th>
-                <Table.Th>{t.productCount}</Table.Th>
-                <Table.Th>{t.status}</Table.Th>
-                <Table.Th>{t.actions}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+          <>
+            {/* Desktop table view */}
+            <Box visibleFrom="md">
+              <Table.ScrollContainer minWidth={650}>
+                <Table highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>{t.icon}</Table.Th>
+                      <Table.Th>{t.name}</Table.Th>
+                      <Table.Th>{t.slug}</Table.Th>
+                      <Table.Th>{t.productCount}</Table.Th>
+                      <Table.Th>{t.status}</Table.Th>
+                      <Table.Th>{t.actions}</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {categories.map((category) => (
+                      <Table.Tr key={category.id}>
+                        <Table.Td>
+                          {category.iconKey && (
+                            <Group gap="xs">
+                              <Tag size={20} color="oklch(0.65 0.15 175)" />
+                            </Group>
+                          )}
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {language === "en" ? category.name : category.nameBn || category.name}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs" c="dimmed">
+                            {category.slug}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{category.productCount}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap="xs">
+                            {category.isFeatured && (
+                              <Badge size="sm" color="blue" radius="md">
+                                {t.featured}
+                              </Badge>
+                            )}
+                            {category.isPopular && (
+                              <Badge size="sm" color="grape" radius="md">
+                                {t.popular}
+                              </Badge>
+                            )}
+                          </Group>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap="xs">
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              onClick={() => handleEdit(category)}
+                            >
+                              <Pencil size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => handleDelete(category)}
+                            >
+                              <Trash2 size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Box>
+
+            {/* Mobile card view */}
+            <Stack gap="sm" hiddenFrom="md">
               {categories.map((category) => (
-                <Table.Tr key={category.id}>
-                  <Table.Td>
-                    {category.iconKey && (
-                      <Group gap="xs">
-                        <Tag size={20} color="oklch(0.65 0.15 175)" />
-                      </Group>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" fw={500}>
-                      {language === "en" ? category.name : category.nameBn || category.name}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs" c="dimmed">
-                      {category.slug}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{category.productCount}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      {category.isFeatured && (
-                        <Badge size="sm" color="blue" radius="md">
-                          {t.featured}
-                        </Badge>
+                <Card
+                  key={category.id}
+                  padding="sm"
+                  radius="md"
+                  style={{
+                    background: isDark ? "oklch(0.2 0.02 260)" : "oklch(0.99 0.005 260)",
+                    border: isDark
+                      ? "1px solid oklch(0.3 0.02 260 / 0.3)"
+                      : "1px solid oklch(0.92 0.01 260 / 0.2)",
+                  }}
+                >
+                  <Group justify="space-between" mb="xs">
+                    <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                      {category.iconKey && (
+                        <Tag size={16} color="oklch(0.65 0.15 175)" style={{ flexShrink: 0 }} />
                       )}
-                      {category.isPopular && (
-                        <Badge size="sm" color="grape" radius="md">
-                          {t.popular}
-                        </Badge>
-                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <Text size="sm" fw={600} truncate>
+                          {language === "en" ? category.name : category.nameBn || category.name}
+                        </Text>
+                        <Text size="xs" c="dimmed" truncate>
+                          {category.slug}
+                        </Text>
+                      </div>
                     </Group>
-                  </Table.Td>
-                  <Table.Td>
                     <Group gap="xs">
                       <ActionIcon
-                        variant="subtle"
+                        variant="light"
                         color="blue"
+                        size="sm"
                         onClick={() => handleEdit(category)}
                       >
-                        <Pencil size={16} />
+                        <Pencil size={14} />
                       </ActionIcon>
                       <ActionIcon
-                        variant="subtle"
+                        variant="light"
                         color="red"
+                        size="sm"
                         onClick={() => handleDelete(category)}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </ActionIcon>
                     </Group>
-                  </Table.Td>
-                </Table.Tr>
+                  </Group>
+
+                  <Group gap="sm" wrap="wrap">
+                    <Group gap={4}>
+                      <FolderTree size={12} style={{ opacity: 0.5 }} />
+                      <Text size="xs" c="dimmed">{t.productCount}:</Text>
+                      <Text size="xs" fw={500}>{category.productCount}</Text>
+                    </Group>
+                    {category.isFeatured && (
+                      <Badge size="xs" color="blue" radius="md">
+                        {t.featured}
+                      </Badge>
+                    )}
+                    {category.isPopular && (
+                      <Badge size="xs" color="grape" radius="md">
+                        {t.popular}
+                      </Badge>
+                    )}
+                  </Group>
+                </Card>
               ))}
-            </Table.Tbody>
-          </Table>
+            </Stack>
+          </>
         ) : (
           <Text c="dimmed" ta="center" py="xl">
             {t.noResults}
@@ -434,6 +517,7 @@ function AdminCategoriesPage() {
         }}
         title={t.addCategoryTitle}
         size="lg"
+        fullScreen={false}
       >
         <form onSubmit={addForm.onSubmit((values) => createCategoryMutation.mutate(values))}>
           <Stack gap="md">
@@ -521,6 +605,7 @@ function AdminCategoriesPage() {
         }}
         title={t.editCategoryTitle}
         size="lg"
+        fullScreen={false}
       >
         <form
           onSubmit={editForm.onSubmit((values) =>
