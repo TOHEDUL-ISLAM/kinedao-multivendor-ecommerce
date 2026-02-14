@@ -7,6 +7,7 @@ import { PackageX, Truck, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useBuyNowStore } from "@/stores/buy-now-store";
 import { toast } from "sonner";
 import type { ProductDetailDTO } from "@kineDao.com/api-types/catalog";
 
@@ -58,6 +59,7 @@ function ProductDetailPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const addToCart = useCartStore((state) => state.addItem);
+  const startBuyNow = useBuyNowStore((state) => state.startBuyNow);
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
@@ -114,10 +116,23 @@ function ProductDetailPage() {
   };
 
   const handleCheckout = async () => {
-    const added = await handleAddToCart();
-    if (added) {
-      navigate({ to: "/cart" });
+    if (!product || !selectedSku || !isInStock) return;
+
+    const started = startBuyNow({
+      product,
+      skuId: selectedSku.id,
+      quantity,
+    });
+
+    if (!started) {
+      toast.error(t("cart.justSoldOut"));
+      return;
     }
+
+    navigate({
+      to: "/checkout",
+      search: { mode: "buy_now" },
+    });
   };
 
   // Build breadcrumb items

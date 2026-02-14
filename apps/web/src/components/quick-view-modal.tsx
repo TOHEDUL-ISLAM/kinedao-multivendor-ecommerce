@@ -9,6 +9,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion } from "@/hooks/use-media-query";
 import { useQuickViewStore } from "@/stores/quick-view-store";
 import { useCartStore } from "@/stores/cart-store";
+import { useBuyNowStore } from "@/stores/buy-now-store";
 import { formatPrice, formatRating } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ export function QuickViewModal() {
   // const isMobile = useIsMobile();
   const { isOpen, productId, close } = useQuickViewStore();
   const addToCart = useCartStore((state) => state.addItem);
+  const startBuyNow = useBuyNowStore((state) => state.startBuyNow);
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<ProductQuickViewData | null>(null);
@@ -127,17 +129,22 @@ export function QuickViewModal() {
   const handleBuyNow = async () => {
     if (!product || !selectedSku || !isInStock) return;
 
-    const added = await addToCart(
-      { productId: product.id, skuId: selectedSku.id },
-      quantity
-    );
-    if (added) {
-      toast.success(t("cart.itemAdded"));
-      close();
-      navigate({ to: "/checkout" });
-    } else {
-      toast.error(t("cart.addFailed"));
+    const started = startBuyNow({
+      product,
+      skuId: selectedSku.id,
+      quantity,
+    });
+
+    if (!started) {
+      toast.error(t("cart.justSoldOut"));
+      return;
     }
+
+    close();
+    navigate({
+      to: "/checkout",
+      search: { mode: "buy_now" },
+    });
   };
 
   const handleOptionChange = (optionName: string, value: string) => {

@@ -1,10 +1,12 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { CartResponse } from "@kineDao.com/api-types/cart";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useBuyNowStore } from "@/stores/buy-now-store";
 import { useCheckoutStore } from "@/stores/checkout-store";
 import { CheckoutStepper } from "./checkout-stepper";
 import { OrderSummarySidebar } from "./order-summary-sidebar";
@@ -12,10 +14,18 @@ import { ShippingStep } from "./steps/shipping-step";
 import { PaymentStep } from "./steps/payment-step";
 import { ReviewStep } from "./steps/review-step";
 
-export function CheckoutWizard() {
+type CheckoutMode = "cart" | "buy_now";
+
+interface CheckoutWizardProps {
+	mode: CheckoutMode;
+	checkoutCart: CartResponse["cart"];
+}
+
+export function CheckoutWizard({ mode, checkoutCart }: CheckoutWizardProps) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const fetchCart = useCartStore((state) => state.fetchCart);
+	const clearBuyNow = useBuyNowStore((state) => state.clearBuyNow);
 	const {
 		currentStep,
 		completedSteps,
@@ -60,14 +70,59 @@ export function CheckoutWizard() {
 			return;
 		}
 
+		const buyNowItem = mode === "buy_now" ? checkoutCart.items[0] : null;
+		if (mode === "buy_now" && !buyNowItem) {
+			toast.error(t("checkout.orderFailed"));
+			return;
+		}
+
 		setIsPlacingOrder(true);
 		try {
-			const response = await api.orders.place.$post({
-				json: {
+			let payload:
+				| {
+						shippingAddressId: string;
+						customerNotes?: string;
+						acceptedTerms: true;
+						mode: "buy_now";
+						item: {
+							productId: string;
+							skuId?: string;
+							quantity: number;
+						};
+				  }
+				| {
+						shippingAddressId: string;
+						customerNotes?: string;
+						acceptedTerms: true;
+				  };
+
+			if (mode === "buy_now") {
+				if (!buyNowItem) {
+					toast.error(t("checkout.orderFailed"));
+					return;
+				}
+
+				payload = {
 					shippingAddressId: selectedAddress.id,
 					customerNotes: customerNotes || undefined,
 					acceptedTerms: true,
-				},
+					mode: "buy_now",
+					item: {
+						productId: buyNowItem.product.id,
+						skuId: buyNowItem.skuId ?? undefined,
+						quantity: buyNowItem.quantity,
+					},
+				};
+			} else {
+				payload = {
+					shippingAddressId: selectedAddress.id,
+					customerNotes: customerNotes || undefined,
+					acceptedTerms: true,
+				};
+			}
+
+			const response = await api.orders.place.$post({
+				json: payload,
 			});
 
 			if (!response.ok) {
@@ -79,6 +134,10 @@ export function CheckoutWizard() {
 			}
 
 			const data = await response.json();
+
+			if (mode === "buy_now") {
+				clearBuyNow();
+			}
 
 			await fetchCart();
 			reset();
@@ -126,14 +185,19 @@ export function CheckoutWizard() {
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
 				<div className="bg-card border border-border rounded-2xl shadow-soft p-5 md:p-6">
-					{currentStep === 1 && <ShippingStep />}
-					{currentStep === 2 && <PaymentStep />}
-					{currentStep === 3 && <ReviewStep onEditStep={setCurrentStep} />}
+					{currentStep === 1 && <ShippingStep checkoutCart={checkoutCart} />}
+					{currentStep === 2 && <PaymentStep checkoutCart={checkoutCart} />}
+					{currentStep === 3 && (
+						<ReviewStep
+							checkoutCart={checkoutCart}
+							onEditStep={setCurrentStep}
+						/>
+					)}
 				</div>
 
 				<div className="hidden lg:block">
 					<div className="sticky top-24 space-y-4">
-						<OrderSummarySidebar />
+						<OrderSummarySidebar checkoutCart={checkoutCart} />
 						<CheckoutActionPanel
 							showBackButton={showBackButton}
 							onBack={goToPreviousStep}
@@ -149,7 +213,7 @@ export function CheckoutWizard() {
 
 			{/* Mobile summary at bottom */}
 			<div className="lg:hidden space-y-4">
-				<OrderSummarySidebar />
+				<OrderSummarySidebar checkoutCart={checkoutCart} />
 				<CheckoutActionPanel
 					showBackButton={showBackButton}
 					onBack={goToPreviousStep}

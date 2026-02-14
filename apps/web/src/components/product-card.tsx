@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartStore } from "@/stores/cart-store";
+import { useBuyNowStore } from "@/stores/buy-now-store";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import { useQuickViewStore } from "@/stores/quick-view-store";
 import { api } from "@/lib/api-client";
@@ -56,6 +57,7 @@ interface ProductCardProps {
 export function ProductCard({ product, onRemove }: ProductCardProps) {
   const { t, language } = useTranslation();
   const addToCart = useCartStore((state) => state.addItem);
+  const startBuyNow = useBuyNowStore((state) => state.startBuyNow);
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const openQuickView = useQuickViewStore((state) => state.open);
   const navigate = useNavigate();
@@ -83,10 +85,10 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
     };
   }, []);
 
-  const addOneToCart = async (action: "buyNow" | "addToCart"): Promise<boolean> => {
+  const addOneToCart = async (): Promise<boolean> => {
     if (loadingAction || isOutOfStock) return false;
 
-    setLoadingAction(action);
+    setLoadingAction("addToCart");
     const startedAt = Date.now();
 
     try {
@@ -157,7 +159,7 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    await addOneToCart("addToCart");
+    await addOneToCart();
   };
 
   const handleBuyNow = async (e: React.MouseEvent) => {
@@ -167,9 +169,63 @@ export function ProductCard({ product, onRemove }: ProductCardProps) {
       handleViewOptions(e);
       return;
     }
-    const added = await addOneToCart("buyNow");
-    if (added) {
-      navigate({ to: "/checkout" });
+    if (loadingAction || isOutOfStock) return;
+
+    setLoadingAction("buyNow");
+    const startedAt = Date.now();
+
+    try {
+      const response = await api.products[":id"]["quick-view"].$get({
+        param: { id: product.id },
+      });
+
+      if (!response.ok) {
+        toast.error(t("cart.addFailed"));
+        return;
+      }
+
+      const data = await response.json();
+      if (data.hasVariants) {
+        setLoadingAction(null);
+        openQuickView(data.id);
+        return;
+      }
+
+      const availableSku = data.skus.find(
+        (sku) => (sku.isAvailable ?? true) && sku.stockQty > 0
+      );
+
+      if (!availableSku) {
+        toast.error(t("cart.justSoldOut"));
+        return;
+      }
+
+      const started = startBuyNow({
+        product: data,
+        skuId: availableSku.id,
+        quantity: 1,
+      });
+
+      if (!started) {
+        toast.error(t("cart.justSoldOut"));
+        return;
+      }
+
+      navigate({
+        to: "/checkout",
+        search: { mode: "buy_now" },
+      });
+    } catch {
+      toast.error(t("cart.addFailed"));
+    } finally {
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, 500 - elapsed);
+      if (addTimeoutRef.current) {
+        window.clearTimeout(addTimeoutRef.current);
+      }
+      addTimeoutRef.current = window.setTimeout(() => {
+        setLoadingAction(null);
+      }, remaining);
     }
   };
 
