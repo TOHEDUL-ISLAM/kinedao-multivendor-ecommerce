@@ -3,11 +3,13 @@ import { getUser } from "@/functions/get-user";
 import { useTranslation } from "@/hooks/use-translation";
 import { api } from "@/lib/api-client";
 import { z } from "zod";
-import { Button, Pagination, Tabs, Select, Group } from "@mantine/core";
+import { Button, Pagination, Tabs, Select, Group, Loader, Center } from "@mantine/core";
 import { Package2, ShoppingBag, Store, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import type { OrderListResponseDTO } from "@kineDao.com/api-types/checkout";
 
 const ordersSearchSchema = z.object({
 	status: z.enum(["all", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]).optional().default("all"),
@@ -25,47 +27,38 @@ export const Route = createFileRoute("/account/_layout/orders/")({
 		}
 		return { session };
 	},
-	loaderDeps: ({ search }) => search,
-	loader: async ({ deps }) => {
-		try {
-			const response = await api.orders.$get({
-				query: {
-					status: deps.status || "all",
-					dateRange: deps.dateRange || "all",
-					page: String(deps.page || 1),
-					limit: "10",
-				},
-			})
-
-			if (!response.ok) {
-				console.error("Orders API error:", response.status, response.statusText);
-				return {
-					orders: [],
-					total: 0,
-					page: deps.page || 1,
-					totalPages: 0,
-				}
-			}
-
-			const data = await response.json();
-			return data;
-		} catch (error) {
-			console.error("Failed to load orders:", error);
-			return {
-				orders: [],
-				total: 0,
-				page: deps.page || 1,
-				totalPages: 0,
-			}
-		}
-	},
 });
 
 function OrderHistoryPage() {
 	const { t, language } = useTranslation();
 	const navigate = Route.useNavigate();
 	const search = Route.useSearch();
-	const data = Route.useLoaderData();
+
+	const { data, isLoading } = useQuery<OrderListResponseDTO>({
+		queryKey: ["orders", search.status, search.dateRange, search.page],
+		queryFn: async () => {
+			const response = await api.orders.$get({
+				query: {
+					status: search.status || "all",
+					dateRange: search.dateRange || "all",
+					page: String(search.page || 1),
+					limit: "10",
+				},
+			});
+			if (!response.ok) {
+				return { orders: [], total: 0, page: search.page || 1, totalPages: 0 };
+			}
+			return response.json() as Promise<OrderListResponseDTO>;
+		},
+	});
+
+	if (isLoading) {
+		return (
+			<Center py="xl">
+				<Loader />
+			</Center>
+		);
+	}
 
 	if (!data || !data.orders) {
 		return (

@@ -2,7 +2,7 @@ import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-ro
 import { getUser } from "@/functions/get-user";
 import { useTranslation } from "@/hooks/use-translation";
 import { api } from "@/lib/api-client";
-import { Button, Card, Text, Flex, Stack, Textarea, Badge, Modal, Group } from "@mantine/core";
+import { Button, Card, Text, Flex, Stack, Textarea, Badge, Modal, Group, Loader, Center } from "@mantine/core";
 import { ArrowLeft, MapPin, Package2, Star } from "lucide-react";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { StatusTimeline } from "@/components/orders/status-timeline";
@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { OrderDetailDTO } from "@kineDao.com/api-types/checkout";
 
 export const Route = createFileRoute("/account/_layout/orders/$orderId")({
 	component: OrderDetailPage,
@@ -20,36 +21,15 @@ export const Route = createFileRoute("/account/_layout/orders/$orderId")({
 		}
 		return { session };
 	},
-	loader: async ({ params }) => {
-		try {
-			const response = await api.orders[":orderId"].$get({
-				param: { orderId: params.orderId },
-			})
-
-			if (!response.ok) {
-				console.error("Order detail API error:", response.status, response.statusText);
-				if (response.status === 404) {
-					throw redirect({ to: "/account/orders" });
-				}
-				if (response.status === 403) {
-					throw redirect({ to: "/account/orders" });
-				}
-				throw redirect({ to: "/account/orders" });
-			}
-
-			return response.json();
-		} catch (error) {
-			console.error("Failed to load order:", error);
-			throw redirect({ to: "/account/orders" });
-		}
-	},
 });
 
 function OrderDetailPage() {
 	const { t, language } = useTranslation();
 	const navigate = useNavigate();
-	const order = Route.useLoaderData();
+	const { orderId } = Route.useParams();
 	const queryClient = useQueryClient();
+
+	// All useState hooks before any early returns
 	const [cancelModalOpen, setCancelModalOpen] = useState(false);
 	const [cancelReason, setCancelReason] = useState("");
 	const [cancelling, setCancelling] = useState(false);
@@ -62,15 +42,28 @@ function OrderDetailPage() {
 		productTitle: string;
 	} | null>(null);
 
-	const isDelivered = order.status === "delivered";
+	const { data: order, isLoading, isError } = useQuery<OrderDetailDTO>({
+		queryKey: ["order", orderId],
+		queryFn: async () => {
+			const response = await api.orders[":orderId"].$get({
+				param: { orderId },
+			});
+			if (!response.ok) {
+				throw new Error("Failed to load order");
+			}
+			return response.json() as Promise<OrderDetailDTO>;
+		},
+	});
+
+	const isDelivered = order?.status === "delivered";
 	const uniqueProductIds = useMemo(
-		() => Array.from(new Set(order.items.map((item) => item.productId))),
-		[order.items],
+		() => Array.from(new Set((order?.items ?? []).map((item) => item.productId))),
+		[order?.items],
 	);
 
 	const { data: reviewEligibilityMap = {}, isLoading: reviewEligibilityLoading } =
 		useQuery({
-			queryKey: ["order-review-eligibility", order.id, ...uniqueProductIds],
+			queryKey: ["order-review-eligibility", orderId, ...uniqueProductIds],
 			enabled: isDelivered && uniqueProductIds.length > 0,
 			queryFn: async () => {
 				const entries = await Promise.all(
@@ -136,7 +129,7 @@ function OrderDetailPage() {
 			setReviewContent("");
 			setReviewRating(5);
 			queryClient.invalidateQueries({
-				queryKey: ["order-review-eligibility", order.id],
+				queryKey: ["order-review-eligibility", orderId],
 				exact: false,
 			});
 		},
@@ -145,6 +138,32 @@ function OrderDetailPage() {
 			toast.error(message);
 		},
 	});
+
+	// Early returns after all hooks
+	if (isLoading) {
+		return (
+			<Center py="xl">
+				<Loader />
+			</Center>
+		);
+	}
+
+	if (isError || !order) {
+		return (
+			<div className="container max-w-5xl mx-auto px-4 py-8">
+				<Button
+					component={Link}
+					to="/account/orders"
+					variant="subtle"
+					leftSection={<ArrowLeft className="w-4 h-4" />}
+					className="mb-6"
+				>
+					{t("order.detail.backToOrders")}
+				</Button>
+				<Text c="dimmed">{t("orders.empty")}</Text>
+			</div>
+		);
+	}
 
 	const formatPrice = (paisa: number) => {
 		const amount = paisa / 100;
@@ -164,7 +183,6 @@ function OrderDetailPage() {
 			if (response.ok) {
 				toast.success(t("order.detail.cancelled"));
 				setCancelModalOpen(false);
-				// Navigate back to orders list
 				navigate({ to: "/account/orders" });
 			} else {
 				toast.error(t("order.detail.cancelError"));
@@ -217,6 +235,7 @@ function OrderDetailPage() {
 						status={order.status}
 						createdAt={order.createdAt}
 						confirmedAt={order.confirmedAt}
+						processingAt={order.processingAt}
 						shippedAt={order.shippedAt}
 						deliveredAt={order.deliveredAt}
 						cancelledAt={order.cancelledAt}

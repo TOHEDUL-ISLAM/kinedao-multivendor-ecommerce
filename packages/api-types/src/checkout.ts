@@ -277,6 +277,7 @@ export interface OrderListResponseDTO {
 
 export interface OrderDetailDTO extends OrderDTO {
 	confirmedAt: string | null;
+	processingAt: string | null;
 	shippedAt: string | null;
 	deliveredAt: string | null;
 	cancelledAt: string | null;

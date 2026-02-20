@@ -1303,8 +1303,8 @@ export const adminRouter = new Hono<AdminEnv>()
 						// Count items
 						itemCount: sql<number>`(
 							SELECT COUNT(*)::int
-							FROM ${orderItems}
-							WHERE ${orderItems.orderId} = ${orders.id}
+							FROM "order_items"
+							WHERE "order_items"."order_id" = "orders"."id"
 						)`,
 					})
 					.from(orders)
@@ -1399,6 +1399,7 @@ export const adminRouter = new Hono<AdminEnv>()
 					vendorName: vendors.name,
 					createdAt: orders.createdAt,
 					confirmedAt: orders.confirmedAt,
+					processingAt: orders.processingAt,
 					shippedAt: orders.shippedAt,
 					deliveredAt: orders.deliveredAt,
 					paidToAdminAt: orders.paidToAdminAt,
@@ -1493,6 +1494,7 @@ export const adminRouter = new Hono<AdminEnv>()
 				}),
 				createdAt: orderRow.createdAt.toISOString(),
 				confirmedAt: orderRow.confirmedAt?.toISOString() || null,
+				processingAt: orderRow.processingAt?.toISOString() || null,
 				shippedAt: orderRow.shippedAt?.toISOString() || null,
 				deliveredAt: orderRow.deliveredAt?.toISOString() || null,
 				paidToAdminAt: orderRow.paidToAdminAt?.toISOString() || null,
@@ -1849,15 +1851,15 @@ export const adminRouter = new Hono<AdminEnv>()
 						// Order count subquery
 						orderCount: sql<number>`(
 							SELECT COUNT(*)::int
-							FROM ${orders}
-							WHERE ${orders.userId} = ${user.id}
+							FROM "orders"
+							WHERE "orders"."user_id" = "user"."id"
 						)`,
 						// Total spent subquery
 						totalSpent: sql<number>`(
-							SELECT COALESCE(SUM(${orders.total}), 0)::int
-							FROM ${orders}
-							WHERE ${orders.userId} = ${user.id}
-							AND ${orders.status} = 'delivered'
+							SELECT COALESCE(SUM("orders"."total"), 0)::int
+							FROM "orders"
+							WHERE "orders"."user_id" = "user"."id"
+							AND "orders"."status" = 'delivered'
 						)`,
 					})
 					.from(user)
@@ -2004,7 +2006,7 @@ export const adminRouter = new Hono<AdminEnv>()
 						vendorName: vendor.vendorName,
 						vendorSlug: vendor.vendorSlug,
 						orderCount: orderCountByVendor.get(vendorBalance.vendorId) ?? 0,
-						pendingAmount: vendorBalance.availableAmount,
+						pendingAmount: vendorBalance.availableAmount + vendorBalance.pendingBalance,
 						availableAmount: vendorBalance.availableAmount,
 						pendingBalance: vendorBalance.pendingBalance,
 						paymentMethod: primaryMethod,

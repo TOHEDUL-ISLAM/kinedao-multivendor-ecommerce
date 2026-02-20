@@ -13,7 +13,6 @@ import {
 	categories,
 	orders,
 	orderItems,
-	vendorPayouts,
 	transactions,
 	type ShippingAddressSnapshot,
 	type OrderItemProductSnapshot,
@@ -117,26 +116,34 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 							sql`${orders.status} IN ('pending', 'confirmed', 'processing')`,
 						),
 					),
+				// Total net earnings from ledger (sale - commission - delivery - returns)
 				db
 					.select({
-						total: sql<number>`coalesce(sum(${orders.total}), 0)::int`,
+						total: sql<number>`coalesce(sum(${transactions.amountPaisa}), 0)::int`,
 					})
-					.from(orders)
+					.from(transactions)
 					.where(
 						and(
-							eq(orders.vendorId, vendorId),
-							eq(orders.status, "delivered"),
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, [
+								"sale",
+								"commission_deduction",
+								"delivery_charge",
+								"return_fee",
+								"adjustment",
+							]),
 						),
 					),
+				// Total paid out from ledger
 				db
 					.select({
-						total: sql<number>`coalesce(sum(${vendorPayouts.amountPaisa}), 0)::int`,
+						total: sql<number>`coalesce(sum(abs(${transactions.amountPaisa})), 0)::int`,
 					})
-					.from(vendorPayouts)
+					.from(transactions)
 					.where(
 						and(
-							eq(vendorPayouts.vendorId, vendorId),
-							eq(vendorPayouts.status, "completed"),
+							eq(transactions.vendorId, vendorId),
+							inArray(transactions.type, ["payout", "payout_fee"]),
 						),
 					),
 				db
@@ -1212,6 +1219,7 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 				}),
 				createdAt: order.createdAt.toISOString(),
 				confirmedAt: order.confirmedAt?.toISOString() ?? null,
+				processingAt: order.processingAt?.toISOString() ?? null,
 				shippedAt: order.shippedAt?.toISOString() ?? null,
 				deliveredAt: order.deliveredAt?.toISOString() ?? null,
 				cancelledAt: order.cancelledAt?.toISOString() ?? null,
@@ -1305,6 +1313,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 
 			if (newStatus === "confirmed") {
 				updateData.confirmedAt = new Date();
+			} else if (newStatus === "processing") {
+				updateData.processingAt = new Date();
 			} else if (newStatus === "shipped") {
 				updateData.shippedAt = new Date();
 				updateData.trackingNumber = trackingNumber;
@@ -1444,20 +1454,20 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 			);
 
 			const [
-				vendorBalanceRow,
+				ledgerBalanceResult,
 				totalNetResult,
 				thisMonthNetResult,
 				totalPaidOutResult,
 				orderCountResult,
 			] = await Promise.all([
+				// Real-time balances from ledger (not stale vendor cache)
 				db
 					.select({
-						availableBalance: vendors.balanceAvailablePaisa,
-						pendingBalance: vendors.balancePendingPaisa,
+						availableBalance: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.status} = 'cleared' THEN ${transactions.amountPaisa} ELSE 0 END), 0)::int`,
+						pendingBalance: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.status} = 'pending' THEN ${transactions.amountPaisa} ELSE 0 END), 0)::int`,
 					})
-					.from(vendors)
-					.where(eq(vendors.id, vendorId))
-					.limit(1),
+					.from(transactions)
+					.where(eq(transactions.vendorId, vendorId)),
 				db
 					.select({
 						total: sql<number>`coalesce(sum(${transactions.amountPaisa}), 0)::int`,
@@ -1519,8 +1529,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 
 			const totalEarnings = totalNetResult[0]?.total ?? 0;
 			const totalPaidOut = totalPaidOutResult[0]?.total ?? 0;
-			const availableBalance = vendorBalanceRow[0]?.availableBalance ?? 0;
-			const pendingBalance = vendorBalanceRow[0]?.pendingBalance ?? 0;
+			const availableBalance = ledgerBalanceResult[0]?.availableBalance ?? 0;
+			const pendingBalance = ledgerBalanceResult[0]?.pendingBalance ?? 0;
 
 			const response: VendorEarningsSummaryDTO = {
 				totalEarnings,
@@ -1558,15 +1568,15 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 		async (c) => {
 			const vendorId = c.var.vendorId;
 
-			const [vendorRow, paidOutResult] = await Promise.all([
+			const [ledgerResult, paidOutResult] = await Promise.all([
+				// Real-time balances from ledger
 				db
 					.select({
-						availableBalance: vendors.balanceAvailablePaisa,
-						pendingBalance: vendors.balancePendingPaisa,
+						availableBalance: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.status} = 'cleared' THEN ${transactions.amountPaisa} ELSE 0 END), 0)::int`,
+						pendingBalance: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.status} = 'pending' THEN ${transactions.amountPaisa} ELSE 0 END), 0)::int`,
 					})
-					.from(vendors)
-					.where(eq(vendors.id, vendorId))
-					.limit(1),
+					.from(transactions)
+					.where(eq(transactions.vendorId, vendorId)),
 				db
 					.select({
 						total: sql<number>`coalesce(sum(abs(${transactions.amountPaisa})), 0)::int`,
@@ -1581,8 +1591,8 @@ export const vendorDashboardRouter = new Hono<VendorEnv>()
 			]);
 
 			const response: VendorWalletSummaryDTO = {
-				availableBalance: vendorRow[0]?.availableBalance ?? 0,
-				pendingBalance: vendorRow[0]?.pendingBalance ?? 0,
+				availableBalance: ledgerResult[0]?.availableBalance ?? 0,
+				pendingBalance: ledgerResult[0]?.pendingBalance ?? 0,
 				totalPaidOut: paidOutResult[0]?.total ?? 0,
 			};
 

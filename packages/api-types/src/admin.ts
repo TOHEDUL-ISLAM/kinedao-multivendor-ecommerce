@@ -344,6 +344,7 @@ export interface AdminOrderDetailDTO {
 	}>;
 	createdAt: string;
 	confirmedAt: string | null;
+	processingAt: string | null;
 	shippedAt: string | null;
 	deliveredAt: string | null;
 	cancelledAt: string | null;
@@ -465,7 +466,7 @@ export const adminOrderReconcileSchema = z.object({
 export type AdminOrderReconcileInput = z.infer<typeof adminOrderReconcileSchema>;
 
 export const adminSettlementClearSchema = z.object({
-	maturityDays: z.coerce.number().int().min(1).max(30).optional().default(7),
+	maturityDays: z.coerce.number().int().min(0).max(30).optional().default(7),
 });
 
 export type AdminSettlementClearInput = z.infer<typeof adminSettlementClearSchema>;

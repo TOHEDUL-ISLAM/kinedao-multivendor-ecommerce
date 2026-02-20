@@ -378,6 +378,7 @@ export interface VendorOrderDetailDTO {
 	}>;
 	createdAt: string;
 	confirmedAt: string | null;
+	processingAt: string | null;
 	shippedAt: string | null;
 	deliveredAt: string | null;
 	cancelledAt: string | null;

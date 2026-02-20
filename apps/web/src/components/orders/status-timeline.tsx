@@ -5,6 +5,7 @@ interface StatusTimelineProps {
 	status: string;
 	createdAt: string;
 	confirmedAt?: string | null;
+	processingAt?: string | null;
 	shippedAt?: string | null;
 	deliveredAt?: string | null;
 	cancelledAt?: string | null;
@@ -14,6 +15,7 @@ export function StatusTimeline({
 	status: _status,
 	createdAt,
 	confirmedAt,
+	processingAt,
 	shippedAt,
 	deliveredAt,
 	cancelledAt,
@@ -41,6 +43,12 @@ export function StatusTimeline({
 			label: t("order.detail.status.confirmed"),
 			timestamp: confirmedAt,
 			completed: !!confirmedAt,
+		},
+		{
+			label: t("order.detail.status.processing"),
+			timestamp: processingAt,
+			// Infer completed if a later step (shipped/delivered) is done
+			completed: !!processingAt || !!shippedAt || !!deliveredAt,
 		},
 		{
 			label: t("order.detail.status.shipped"),

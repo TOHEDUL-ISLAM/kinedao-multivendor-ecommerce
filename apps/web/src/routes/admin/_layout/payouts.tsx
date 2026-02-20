@@ -44,8 +44,10 @@ const labels = {
     pendingClearing: "Pending Clearing",
     t7Notice: "Funds in pending clearing cannot be paid yet (T+7 rule).",
     runSettlement: "Run T+7 Settlement",
+    settleNow: "Settle All Now",
     settlementHint:
       "Use this to clear matured pending balances into available payouts.",
+    settleNowHint: "Skip T+7 hold and make all pending funds available immediately.",
     settlementSuccess: "Settlement clearing completed",
     settlementError: "Failed to run settlement clearing",
     paymentMethod: "Payment Method",
@@ -89,8 +91,10 @@ const labels = {
     pendingClearing: "ক্লিয়ারিংয়ে অপেক্ষমাণ",
     t7Notice: "Pending clearing এর টাকা T+7 হওয়ার আগে পরিশোধ করা যাবে না।",
     runSettlement: "T+7 সেটেলমেন্ট চালান",
+    settleNow: "এখনই সেটেল করুন",
     settlementHint:
       "মেয়াদ পূর্ণ pending ব্যালেন্স available payout এ আনতে এটি ব্যবহার করুন।",
+    settleNowHint: "T+7 হোল্ড এড়িয়ে সমস্ত pending ফান্ড এখনই উপলব্ধ করুন।",
     settlementSuccess: "সেটেলমেন্ট ক্লিয়ারিং সম্পন্ন হয়েছে",
     settlementError: "সেটেলমেন্ট ক্লিয়ারিং চালাতে ব্যর্থ",
     paymentMethod: "পেমেন্ট পদ্ধতি",
@@ -204,9 +208,9 @@ function AdminPayoutsPage() {
   });
 
   const settleMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (maturityDays: number) => {
       const response = await api.admin.settlement["clear-matured"].$post({
-        json: { maturityDays: 7 },
+        json: { maturityDays },
       });
       if (!response.ok) throw new Error("Failed to run settlement");
       return response.json();
@@ -272,14 +276,24 @@ function AdminPayoutsPage() {
         variant="light"
         title={t.settlementHint}
       >
-        <Group justify="flex-end" mt="xs">
+        <Group justify="flex-end" mt="xs" gap="sm">
           <Button
             size="xs"
             variant="light"
-            onClick={() => settleMutation.mutate()}
+            onClick={() => settleMutation.mutate(7)}
             loading={settleMutation.isPending}
           >
             {t.runSettlement}
+          </Button>
+          <Button
+            size="xs"
+            variant="filled"
+            color="orange"
+            onClick={() => settleMutation.mutate(0)}
+            loading={settleMutation.isPending}
+            title={t.settleNowHint}
+          >
+            {t.settleNow}
           </Button>
         </Group>
       </Alert>

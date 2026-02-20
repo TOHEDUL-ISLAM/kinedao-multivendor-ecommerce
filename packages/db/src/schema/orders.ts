@@ -120,6 +120,7 @@ export const orders = pgTable(
 			.$onUpdate(() => new Date())
 			.notNull(),
 		confirmedAt: timestamp("confirmed_at"),
+		processingAt: timestamp("processing_at"),
 		shippedAt: timestamp("shipped_at"),
 		deliveredAt: timestamp("delivered_at"),
 		paidToAdminAt: timestamp("paid_to_admin_at"),
