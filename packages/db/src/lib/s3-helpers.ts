@@ -1,28 +1,11 @@
+import { env } from "@kineDao.com/env/server";
+
 /**
  * S3 URL Generation Helpers
  *
- * Professional pattern: Store S3 keys in database, generate URLs on-demand
- * This allows switching CDN providers, changing storage backends, etc.
+ * Configured for Cloudflare R2 / S3-compatible storage.
  */
 
-function normalizeStorageBaseUrl(inputUrl: string): string {
-  const trimmed = inputUrl.replace(/\/+$/, "");
-  return trimmed
-    .replace(/\/rest\/v1$/i, "")
-    .replace(/\/storage\/v1\/s3$/i, "")
-    .replace(/\/storage\/v1$/i, "");
-}
-
-/**
- * Generate a public URL from an S3 key
- *
- * In production: Returns CDN URL (permanent, fast, cached)
- * In development: Returns presigned URL (temporary, for local testing)
- *
- * @param s3Key - The S3 key (e.g., "products/123/images/original/uuid.jpg")
- * @param expiresIn - Expiry time in seconds for presigned URLs (default: 7 days)
- * @returns Public URL to access the file
- */
 export function getS3Url(s3Key: string): string {
   if (!s3Key) {
     return "";
@@ -34,44 +17,22 @@ export function getS3Url(s3Key: string): string {
   }
 
   const normalizedKey = s3Key.replace(/^\/+/, "");
-  const explicitPublicBase = process.env.S3_PUBLIC_URL || process.env.CDN_URL;
-  if (explicitPublicBase) {
-    return `${explicitPublicBase.replace(/\/+$/, "")}/${normalizedKey}`;
+  
+  // Primary: Use R2 public domain or custom domain
+  if (env.S3_PUBLIC_BASE_URL) {
+    return `${env.S3_PUBLIC_BASE_URL.replace(/\/+$/, "")}/${normalizedKey}`;
   }
 
-  // Check environment
-  const isProduction = process.env.NODE_ENV === "production";
-  const cdnUrl = process.env.CDN_URL;
-
-  if (isProduction && cdnUrl) {
-    // Production: Use CDN (permanent URL, no expiry)
-    // Example: https://cdn.kinedao.com/products/123/images/original/uuid.jpg
-    return `${cdnUrl.replace(/\/+$/, "")}/${normalizedKey}`;
+  // Fallback: Path-style URL (e.g. for development MinIO or direct R2 if public)
+  if (env.S3_ENDPOINT && env.S3_BUCKET) {
+    const baseUrl = env.S3_ENDPOINT.replace(/\/+$/, "");
+    return `${baseUrl}/${env.S3_BUCKET}/${normalizedKey}`;
   }
 
-  // Development/fallback: Use Supabase public URL
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.S3_ENDPOINT;
-  const bucket = process.env.S3_BUCKET;
-
-  if (supabaseUrl && bucket) {
-    // Supabase public storage URL pattern
-    // Example: http://127.0.0.1:54321/storage/v1/object/public/kinedao-assets/products/...
-    const baseUrl = normalizeStorageBaseUrl(supabaseUrl);
-    return `${baseUrl}/storage/v1/object/public/${bucket}/${normalizedKey}`;
-  }
-
-  // Ultimate fallback: return key as-is (will be invalid but shows the issue)
-  console.warn(`No CDN_URL or SUPABASE_URL configured. Returning raw S3 key: ${s3Key}`);
+  console.warn(`No S3_PUBLIC_BASE_URL configured. Returning raw S3 key: ${s3Key}`);
   return s3Key;
 }
 
-/**
- * Get image URL with automatic variant selection
- *
- * @param s3Key - The S3 key
- * @param preferredVariant - Preferred variant (original, medium, thumbnail)
- * @returns URL for the requested variant
- */
 export function getImageUrl(
   s3Key: string,
   preferredVariant?: "original" | "medium" | "thumbnail"
@@ -85,12 +46,6 @@ export function getImageUrl(
   return getS3Url(s3Key);
 }
 
-/**
- * Get all variant URLs for an image
- *
- * @param baseS3Key - The base S3 key (usually 'original' variant)
- * @returns Object with URLs for all variants
- */
 export function getAllImageVariants(baseS3Key: string): {
   original: string;
   medium: string;
@@ -108,34 +63,22 @@ export function getAllImageVariants(baseS3Key: string): {
   };
 }
 
-/**
- * Extract S3 key from a full URL (for migration purposes)
- *
- * @param url - Full S3 or CDN URL
- * @returns S3 key (path without domain)
- */
 export function extractS3KeyFromUrl(url: string): string | null {
   try {
     const urlObj = new URL(url);
 
-    // Supabase pattern: /storage/v1/object/public/{bucket}/{key}
-    if (url.includes("/storage/v1/object/public/")) {
-      const parts = urlObj.pathname.split("/storage/v1/object/public/");
-      if (parts[1]) {
-        // Remove bucket name
-        const pathParts = parts[1].split("/");
-        pathParts.shift(); // Remove bucket name
-        return pathParts.join("/");
-      }
+    // 1. Check if it matches our public base URL
+    if (env.S3_PUBLIC_BASE_URL && url.startsWith(env.S3_PUBLIC_BASE_URL)) {
+      return url.replace(env.S3_PUBLIC_BASE_URL, "").replace(/^\/+/, "");
     }
 
-    // CDN pattern: https://cdn.kinedao.com/{key}
-    if (urlObj.hostname.includes("cdn.")) {
+    // 2. Fallback check for Cloudflare R2 public worker domain (r2.dev)
+    if (urlObj.hostname.includes("r2.dev")) {
       return urlObj.pathname.substring(1); // Remove leading slash
     }
 
-    // S3 direct pattern: https://s3.amazonaws.com/bucket/{key}
-    if (urlObj.hostname.includes("s3.")) {
+    // 3. Fallback check for Cloudflare R2 path-style (endpoint/bucket/key)
+    if (urlObj.hostname.includes("cloudflarestorage.com")) {
       const pathParts = urlObj.pathname.split("/");
       pathParts.shift(); // Remove leading slash
       pathParts.shift(); // Remove bucket name
@@ -149,13 +92,6 @@ export function extractS3KeyFromUrl(url: string): string | null {
   }
 }
 
-/**
- * Batch get URLs for multiple S3 keys
- *
- * @param s3Keys - Array of S3 keys
- * @param variant - Optional variant to use
- * @returns Array of URLs
- */
 export function batchGetUrls(
   s3Keys: string[],
   variant?: "original" | "medium" | "thumbnail"

@@ -1,5 +1,3 @@
-import { env } from "@/lib/env";
-
 const normalizeOrigin = (value: string) => value.replace(/\/+$/, "");
 
 const toAdminPath = (path: string) => {
@@ -7,9 +5,7 @@ const toAdminPath = (path: string) => {
   return path.startsWith("/") ? path : `/${path}`;
 };
 
-export const adminFrontendOrigin = ""
-  ? normalizeOrigin("")
-  : null;
+export const adminFrontendOrigin = null;
 
 export const getAdminPortalHref = (path: string = "/admin/login") => {
   const adminPath = toAdminPath(path);

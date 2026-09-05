@@ -18,10 +18,12 @@ export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
     VITE_SERVER_URL: z.string(),
+    VITE_S3_PUBLIC_BASE_URL: z.string().url().optional(),
   },
   // We explicitly map the values to ensure they are available even if the proxy doesn't work as expected in all environments
   runtimeEnv: {
     VITE_SERVER_URL: runtimeEnv.VITE_SERVER_URL || (runtimeEnv.NODE_ENV === "production" ? "" : "http://localhost:3000"),
+    VITE_S3_PUBLIC_BASE_URL: runtimeEnv.VITE_S3_PUBLIC_BASE_URL,
   },
   emptyStringAsUndefined: true,
 });
