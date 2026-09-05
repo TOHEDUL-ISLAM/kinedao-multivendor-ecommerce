@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.DS_Store
+apps/web/node_modules
+apps/web/dist
+apps/web/.output
+apps/web/.vinxi
+apps/server/node_modules
+packages/*/node_modules
+README.md
+docs

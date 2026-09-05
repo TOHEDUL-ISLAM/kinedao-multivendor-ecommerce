@@ -389,3 +389,18 @@ export async function notifyAdmin(
 		console.error("notifyAdmin error:", error);
 	}
 }
+
+export async function closeAllSSEConnections() {
+	for (const userStreams of sseConnections.values()) {
+		for (const stream of userStreams) {
+			try {
+				await stream.writeSSE({
+					data: JSON.stringify({ type: "shutdown" }),
+					event: "system",
+				});
+				await stream.close();
+			} catch (e) {}
+		}
+	}
+	sseConnections.clear();
+}

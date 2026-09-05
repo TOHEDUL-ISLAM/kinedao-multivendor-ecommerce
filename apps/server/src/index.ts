@@ -157,6 +157,7 @@ const app = new Hono<AppEnv>()
   .route("/api/admin", adminReviewsRouter)
   // Health check
   .get("/", (c) => c.text("OK"))
+  .get("/healthz", (c) => c.text("OK"))
   .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 
 app.get(
@@ -188,4 +189,24 @@ console.log(`[BOOT] SMTP Email configured via ${env.SMTP_HOST} (From: ${env.EMAI
 
 // Export app type for RPC client
 export type AppType = typeof app;
-export default app;
+
+export default {
+  port: env.PORT || 3000,
+  hostname: '0.0.0.0',
+  fetch: app.fetch,
+};
+
+// Graceful shutdown handling
+import { closeAllSSEConnections } from "./lib/notification-service";
+
+process.on("SIGTERM", async () => {
+  console.log("[BOOT] SIGTERM received, shutting down gracefully...");
+  await closeAllSSEConnections();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("[BOOT] SIGINT received, shutting down gracefully...");
+  await closeAllSSEConnections();
+  process.exit(0);
+});

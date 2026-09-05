@@ -68,10 +68,7 @@ const notificationsRouter = new Hono<AppEnv>()
 				// Heartbeat every 30 seconds
 				const heartbeatInterval = setInterval(async () => {
 					try {
-						await stream.writeSSE({
-							data: JSON.stringify({ type: "heartbeat" }),
-							event: "system",
-						});
+						await stream.write(": heartbeat\n\n");
 					} catch (error) {
 						console.error("Heartbeat error:", error);
 						clearInterval(heartbeatInterval);
