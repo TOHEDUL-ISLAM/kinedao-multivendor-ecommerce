@@ -184,6 +184,8 @@ app.get(
   })
 );
 
+console.log(`[BOOT] SMTP Email configured via ${env.SMTP_HOST} (From: ${env.EMAIL_FROM})`);
+
 // Export app type for RPC client
 export type AppType = typeof app;
 export default app;

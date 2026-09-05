@@ -84,7 +84,7 @@ export const auth = betterAuth({
       const token = pathParts[pathParts.length - 1] || "";
       const frontendUrl = buildFrontendUrl("/reset-password", {
         token,
-      });
+      }).catch(console.error);
       console.log("[AUTH] Reset URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
@@ -116,7 +116,7 @@ export const auth = betterAuth({
             </body>
           </html>
         `,
-      });
+      }).catch(console.error);
     },
   },
   emailVerification: {
@@ -133,11 +133,11 @@ export const auth = betterAuth({
       const frontendUrl = buildFrontendUrl("/verify-email", {
         token,
         callbackURL: callbackURL ?? "",
-      });
+      }).catch(console.error);
       console.log("[AUTH] Verification URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
-      void sendEmail({
+      sendEmail({
         to: user.email,
         subject: "Verify your email - KineDao",
         html: `
@@ -165,7 +165,7 @@ export const auth = betterAuth({
             </body>
           </html>
         `,
-      });
+      }).catch(console.error);
     },
     sendOnSignUp: true,
     autoSignInAfterVerification: false,
