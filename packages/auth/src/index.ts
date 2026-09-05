@@ -9,7 +9,7 @@ const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
 
 const isSecureOrigin = env.BETTER_AUTH_URL.startsWith("https://");
-const cookieSameSite = isSecureOrigin ? "none" : "lax";
+const cookieSameSite = "lax"; // Using lax because Vercel and Render share the same apex domain or use a proxy
 const frontendBaseUrl = normalizeBaseUrl(env.WEB_ORIGIN);
 const adminFrontendBaseUrl = frontendBaseUrl;
 const corsOriginBaseUrl = frontendBaseUrl;
@@ -84,7 +84,7 @@ export const auth = betterAuth({
       const token = pathParts[pathParts.length - 1] || "";
       const frontendUrl = buildFrontendUrl("/reset-password", {
         token,
-      }).catch(console.error);
+      });
       console.log("[AUTH] Reset URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
@@ -133,7 +133,7 @@ export const auth = betterAuth({
       const frontendUrl = buildFrontendUrl("/verify-email", {
         token,
         callbackURL: callbackURL ?? "",
-      }).catch(console.error);
+      });
       console.log("[AUTH] Verification URL (frontend):", frontendUrl);
 
       // Fire-and-forget to prevent timing attacks (per Better Auth docs)
