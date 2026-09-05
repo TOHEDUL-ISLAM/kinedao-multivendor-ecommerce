@@ -39,19 +39,7 @@ import { and, eq, isNotNull, lt } from "drizzle-orm";
 const normalizeOrigin = (value: string) => value.replace(/\/+$/, "");
 
 const getAllowedCorsOrigins = () => {
-  const configured = (env.CORS_ORIGINS ?? "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  return Array.from(
-    new Set([
-      normalizeOrigin(env.CORS_ORIGIN),
-      normalizeOrigin(env.FRONTEND_URL),
-      normalizeOrigin(env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL),
-      ...configured.map(normalizeOrigin),
-    ])
-  );
+  return [normalizeOrigin(env.WEB_ORIGIN)];
 };
 
 const allowedCorsOrigins = getAllowedCorsOrigins();

@@ -20,13 +20,13 @@ const parseCommaSeparatedUrls = (value: string | undefined) =>
       }
     });
 
-const frontendBaseUrl = normalizeBaseUrl(env.FRONTEND_URL);
+const frontendBaseUrl = normalizeBaseUrl(env.WEB_ORIGIN);
 const trustedFrontendUrls = Array.from(
   new Set([
     frontendBaseUrl,
-    normalizeBaseUrl(env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL),
-    normalizeBaseUrl(env.CORS_ORIGIN),
-    ...parseCommaSeparatedUrls(env.CORS_ORIGINS),
+    normalizeBaseUrl(env.WEB_ORIGIN),
+    normalizeBaseUrl(env.WEB_ORIGIN),
+    ...parseCommaSeparatedUrls(""),
   ])
 );
 const trustedFrontendOrigins = new Set(

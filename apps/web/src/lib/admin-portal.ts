@@ -7,8 +7,8 @@ const toAdminPath = (path: string) => {
   return path.startsWith("/") ? path : `/${path}`;
 };
 
-export const adminFrontendOrigin = env.VITE_ADMIN_FRONTEND_URL
-  ? normalizeOrigin(env.VITE_ADMIN_FRONTEND_URL)
+export const adminFrontendOrigin = ""
+  ? normalizeOrigin("")
   : null;
 
 export const getAdminPortalHref = (path: string = "/admin/login") => {

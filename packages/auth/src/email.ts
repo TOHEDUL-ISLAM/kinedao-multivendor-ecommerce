@@ -8,10 +8,12 @@ let transporter: Transporter | null = null;
 function getTransporter(): Transporter {
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: false,
       auth: {
-        user: env.EMAIL_USER,
-        pass: env.EMAIL_PASS,
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
       },
     });
   }
@@ -34,7 +36,7 @@ export async function sendEmail({
     console.log("[EMAIL] Subject:", subject);
 
     const result = await getTransporter().sendMail({
-      from: `"KineDao" <${env.EMAIL_USER}>`,
+      from: `"KineDao" <${env.EMAIL_FROM}>`,
       to,
       subject,
       html,
@@ -46,3 +48,4 @@ export async function sendEmail({
     throw error;
   }
 }
+

@@ -7,27 +7,13 @@ import { sendEmail } from "./email";
 
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
-const parseCommaSeparatedUrls = (value: string | undefined) =>
-  (value ?? "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .flatMap((item) => {
-      try {
-        return [normalizeBaseUrl(new URL(item).toString())];
-      } catch {
-        return [];
-      }
-    });
 
 const isSecureOrigin = env.BETTER_AUTH_URL.startsWith("https://");
 const cookieSameSite = isSecureOrigin ? "none" : "lax";
-const frontendBaseUrl = normalizeBaseUrl(env.FRONTEND_URL);
-const adminFrontendBaseUrl = normalizeBaseUrl(
-  env.ADMIN_FRONTEND_URL ?? env.FRONTEND_URL
-);
-const corsOriginBaseUrl = normalizeBaseUrl(env.CORS_ORIGIN);
-const additionalCorsOrigins = parseCommaSeparatedUrls(env.CORS_ORIGINS);
+const frontendBaseUrl = normalizeBaseUrl(env.WEB_ORIGIN);
+const adminFrontendBaseUrl = frontendBaseUrl;
+const corsOriginBaseUrl = frontendBaseUrl;
+const additionalCorsOrigins: string[] = [];
 const trustedFrontendUrls = Array.from(
   new Set([
     frontendBaseUrl,
@@ -185,14 +171,22 @@ export const auth = betterAuth({
     autoSignInAfterVerification: false,
   },
   socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
-    facebook: {
-      clientId: env.FACEBOOK_CLIENT_ID,
-      clientSecret: env.FACEBOOK_CLIENT_SECRET,
-    },
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(env.FACEBOOK_CLIENT_ID && env.FACEBOOK_CLIENT_SECRET
+      ? {
+          facebook: {
+            clientId: env.FACEBOOK_CLIENT_ID,
+            clientSecret: env.FACEBOOK_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   advanced: {
     defaultCookieAttributes: {

@@ -17,13 +17,11 @@ const runtimeEnv = getRuntimeEnv();
 export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
-    VITE_SERVER_URL: z.string().min(1).url(),
-    VITE_ADMIN_FRONTEND_URL: z.string().url().optional(),
+    VITE_SERVER_URL: z.string(),
   },
   // We explicitly map the values to ensure they are available even if the proxy doesn't work as expected in all environments
   runtimeEnv: {
-    VITE_SERVER_URL: runtimeEnv.VITE_SERVER_URL || "http://localhost:3000",
-    VITE_ADMIN_FRONTEND_URL: runtimeEnv.VITE_ADMIN_FRONTEND_URL,
+    VITE_SERVER_URL: runtimeEnv.VITE_SERVER_URL || (runtimeEnv.NODE_ENV === "production" ? "" : "http://localhost:3000"),
   },
   emptyStringAsUndefined: true,
 });
