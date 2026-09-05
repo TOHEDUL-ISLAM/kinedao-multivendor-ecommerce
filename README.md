@@ -1,20 +1,31 @@
 # kineDao.com
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Hono, and more.
+**কিনেদাও (KineDao.com)** is a multivendor baby products marketplace with bilingual support (Bangla/English).
 
-## Features
+## Tech Stack
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Start** - SSR framework with TanStack Router
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Hono** - Lightweight, performant server framework
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
-- **Husky** - Git hooks for code quality
+- **Runtime**: Bun (package manager and runtime environment)
+- **Frontend**: React 19 + TanStack Start (SSR) + TanStack Router
+- **Backend**: Hono (lightweight server framework) with Hono RPC for type-safe APIs
+- **Database**: PostgreSQL (Neon) with Drizzle ORM
+- **Authentication**: Better-Auth (email + Google/Facebook OAuth)
+- **Storage**: Cloudflare R2
+- **Email**: Brevo SMTP
+- **UI**: TailwindCSS 4 + Mantine UI
 
-## Getting Started
+## Deployment Architecture
+
+The application is deployed across multiple cloud providers for cost-effective scaling:
+
+- **Frontend**: Vercel (Edge network proxying `/api/*` to Render)
+- **Backend**: Render (Docker container running Bun)
+- **Database**: Neon (Serverless PostgreSQL)
+- **Storage**: Cloudflare R2 (S3-compatible object storage)
+- **Email**: Brevo SMTP
+
+For full deployment instructions, see `DEPLOYMENT.md`.
+
+## Getting Started Locally
 
 First, install the dependencies:
 
@@ -22,51 +33,48 @@ First, install the dependencies:
 bun install
 ```
 
-## Database Setup
+### Environment Variables
 
-This project uses PostgreSQL with Drizzle ORM.
+Copy `.env.example` to `apps/server/.env`, `apps/web/.env`, and `.env` and fill in the required values.
 
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
+### Database Setup
 
-3. Apply the schema to your database:
+1. Start your local database (or connect to a Neon preview branch).
+2. Push the schema to your database:
 
 ```bash
 bun run db:push
 ```
 
-Then, run the development server:
+3. (Optional) Seed the database:
+
+```bash
+bun run db:seed
+```
+
+### Running the App
+
+Run the development server:
 
 ```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-## Git Hooks and Formatting
-
-- Initialize hooks: `bun run prepare`
-
-## Project Structure
-
-```
-kineDao.com/
-├── apps/
-│   ├── web/         # Frontend application (React + TanStack Start)
-│   └── server/      # Backend API (Hono)
-├── packages/
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
-```
+- Frontend: [http://localhost:3001](http://localhost:3001)
+- Backend API: [http://localhost:3000](http://localhost:3000)
+- API Docs: [http://localhost:3000/docs](http://localhost:3000/docs)
 
 ## Available Scripts
 
-- `bun run dev`: Start all applications in development mode
+- `bun run dev`: Start all applications
 - `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
 - `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:studio`: Open database studio UI
+- `bun run db:push`: Push schema changes (Local only)
+- `bun run db:migrate`: Run production migrations
+- `bun run db:studio`: Open Drizzle Studio UI
+
+## Documentation
+
+- Cross-agent instructions: `AGENTS.md`
+- Product Requirements: `docs/product/prd.md`
+- Deployment Checklist: `DEPLOYMENT.md`
