@@ -1,4 +1,5 @@
-import { s3 } from "./s3-client";
+import { privateS3, s3 } from "./s3-client";
+import { toPrivateFileReference } from "./private-file-url";
 import { randomUUID } from "crypto";
 
 /**
@@ -71,18 +72,13 @@ export interface UploadResult {
  * @returns Promise resolving to upload result with URL and filename
  * @throws Error if validation fails or upload fails
  */
-export async function uploadFile(
-  file: File,
-  options: UploadOptions
-): Promise<UploadResult> {
+export async function uploadFile(file: File, options: UploadOptions): Promise<UploadResult> {
   const isImage = file.type.startsWith("image/");
   const isPdf = ALLOWED_DOCUMENT_TYPES.includes(file.type);
 
   // Validate file type
   if (!isImage && !isPdf) {
-    throw new Error(
-      `Invalid file type: ${file.type}. Allowed types: image/* or application/pdf`
-    );
+    throw new Error(`Invalid file type: ${file.type}. Allowed types: image/* or application/pdf`);
   }
 
   // Determine max size based on file type
@@ -92,7 +88,7 @@ export async function uploadFile(
   if (file.size > maxSize) {
     const maxSizeMB = maxSize / (1024 * 1024);
     throw new Error(
-      `File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB. Maximum allowed: ${maxSizeMB}MB`
+      `File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB. Maximum allowed: ${maxSizeMB}MB`,
     );
   }
 
@@ -143,7 +139,8 @@ export async function uploadFile(
 
   try {
     // Upload file to S3
-    const s3File = s3.file(s3Key);
+    const isPrivateDocument = options.category === "vendor-documents";
+    const s3File = (isPrivateDocument ? privateS3 : s3).file(s3Key);
     await s3File.write(file, {
       type: file.type,
     });
@@ -154,16 +151,14 @@ export async function uploadFile(
     });
 
     return {
-      s3Key,
+      s3Key: isPrivateDocument ? toPrivateFileReference(s3Key) : s3Key,
       url,
       filename: `${uuid}.${ext}`,
       variant: options.variant,
     };
   } catch (error) {
     console.error("S3 upload error:", error);
-    throw new Error(
-      `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
+    throw new Error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 

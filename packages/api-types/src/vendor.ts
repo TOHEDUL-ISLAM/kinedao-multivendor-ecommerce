@@ -133,9 +133,9 @@ export type AddressInput = z.infer<typeof addressSchema>;
 // Step 3: Documents
 export const documentsSchema = z.object({
   nidNumber: z.string().regex(nidRegex, "NID must be 10 or 17 digits"),
-  nidFrontUrl: z.string().url("Invalid NID front image URL"),
-  nidBackUrl: z.string().url("Invalid NID back image URL"),
-  tradeLicenseUrl: z.string().url("Invalid trade license URL").optional(),
+  nidFrontUrl: z.string().url().or(z.string().startsWith("private://")),
+  nidBackUrl: z.string().url().or(z.string().startsWith("private://")),
+  tradeLicenseUrl: z.string().url().or(z.string().startsWith("private://")).optional(),
   shopLogoUrl: z.string().url("Invalid shop logo URL").optional(),
 });
 
@@ -149,10 +149,7 @@ export const paymentSchema = z
       .string()
       .max(50, "Account number must not exceed 50 characters")
       .optional(),
-    bankAccountName: z
-      .string()
-      .max(200, "Account name must not exceed 200 characters")
-      .optional(),
+    bankAccountName: z.string().max(200, "Account name must not exceed 200 characters").optional(),
     bkashNumber: z
       .string()
       .regex(bdPhoneRegex, "Invalid bKash number")
@@ -173,7 +170,7 @@ export const paymentSchema = z
     },
     {
       message: "At least one payment method is required (Bank, bKash, or Nagad)",
-    }
+    },
   );
 
 export type PaymentInput = z.infer<typeof paymentSchema>;
@@ -192,7 +189,7 @@ export const vendorApplicationSchema = businessInfoSchema
       bankAccountName: z.string().max(200).optional(),
       bkashNumber: z.string().optional(),
       nagadNumber: z.string().optional(),
-    })
+    }),
   )
   .refine(
     (data) => {
@@ -204,7 +201,7 @@ export const vendorApplicationSchema = businessInfoSchema
     {
       message: "At least one payment method is required (Bank, bKash, or Nagad)",
       path: ["bankName"],
-    }
+    },
   );
 
 export type VendorApplicationInput = z.infer<typeof vendorApplicationSchema>;

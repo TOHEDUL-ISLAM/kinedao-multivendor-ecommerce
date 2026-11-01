@@ -1,9 +1,9 @@
-import { env } from "@kineDao.com/env/web";
 import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields } from "better-auth/client/plugins";
+import { getApiOrigin } from "./api-origin";
 
 export const authClient = createAuthClient({
-  baseURL: env.VITE_SERVER_URL,
+  baseURL: getApiOrigin(),
   plugins: [
     inferAdditionalFields({
       user: {

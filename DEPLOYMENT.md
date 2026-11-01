@@ -1,68 +1,174 @@
-# Deployment Guide
+# Showcase deployment
 
-This guide covers the manual provisioning and deployment of KineDao.com to free-tier production infrastructure (Vercel, Render, Neon, Cloudflare R2, Brevo).
+This project can run as a full personal showcase without removing customer,
+vendor, admin, upload, notification, or Cash on Delivery features.
 
-## Infrastructure Provisioning Checklist
+## Target services
 
-### 1. Database (Neon)
-1. Create a new project in [Neon.tech](https://neon.tech).
-2. Note the database connection string.
-3. In Neon, go to **Settings > Compute** and ensure **Autosuspend** is enabled to save compute hours.
-4. Go to **Settings > Pooling** and get the pooled connection string (e.g. `postgresql://user:pass@ep-pooler.region.aws.neon.tech/neondb?sslmode=require`).
+| Role                     | Service               | Public address            |
+| ------------------------ | --------------------- | ------------------------- |
+| React and TanStack Start | Vercel Hobby          | `<project>.vercel.app`    |
+| Bun and Hono API         | Render Free           | `<service>.onrender.com`  |
+| PostgreSQL               | Neon Free             | private connection string |
+| Object storage           | Supabase Storage Free | Supabase project URL      |
+| Transactional email      | Brevo Free            | no public endpoint        |
 
-### 2. Storage (Cloudflare R2)
-1. Create a Cloudflare account and navigate to R2.
-2. Create a new bucket (e.g. `kinedao-prod`).
-3. Enable **Public Access** by either:
-   - Connecting a custom domain (e.g., `cdn.kinedao.com`)
-   - Allowing `.r2.dev` subdomain (useful for testing).
-4. Go to **R2 API Tokens** and generate an API token with "Object Read & Write" permissions for this bucket.
-5. Save the Access Key ID, Secret Access Key, and the S3 endpoint URL.
+The Vercel deployment is suitable only for a personal, non-commercial
+showcase. A public marketplace that sells or advertises real products requires
+a Vercel paid plan or a different frontend host.
 
-### 3. Email (Brevo)
-1. Create a free account at [Brevo.com](https://brevo.com).
-2. Go to **Transactional > SMTP & API** and generate a new SMTP key.
-3. Configure the sender domain if you have a custom domain.
-4. Save the SMTP server (`smtp-relay.brevo.com`), port (`587`), user, and password.
+## 1. Export the local database
 
-### 4. Backend (Render)
-1. Push the repository to GitHub.
-2. In [Render](https://render.com), create a new **Web Service**.
-3. Connect the GitHub repository.
-4. Settings:
-   - **Environment**: Docker
-   - **Branch**: `main`
-   - **Plan**: Free
-5. Set the Environment Variables (`render.yaml` will automate most of this, but you need to supply the secrets in the Render dashboard):
-   - `DATABASE_URL` (Neon pooled connection string)
-   - `BETTER_AUTH_SECRET` (generate a secure random string)
-   - `BETTER_AUTH_URL` (e.g. `https://api.kinedao.com` or the `.onrender.com` URL)
-   - `WEB_ORIGIN` (e.g. `https://kinedao.com`)
-   - S3 Secrets: `S3_ENDPOINT`, `S3_REGION` (`auto`), `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`
-   - SMTP Secrets: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
-   - Web Push (VAPID): Generate VAPID keys via `npx web-push generate-vapid-keys` and set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`mailto:admin@kinedao.com`).
-6. Deploy the service. Wait for the `db:migrate` script to run and the container to go green. Note the Render URL.
+The local database is the source of truth. Do not run `bun run db:seed` during
+this process because the seed script deletes catalog and order data.
 
-### 5. Frontend (Vercel)
-1. In [Vercel](https://vercel.com), add a new project and import the GitHub repository.
-2. Set the **Framework Preset** to `Vite`.
-3. Set the **Root Directory** to `apps/web` (or leave it at the repo root depending on your Vercel preference, but standard is `apps/web` if `package.json` is selected).
-   *Note: Because of the Vercel rewrite in `vercel.json`, ensure the backend Render URL matches the destination in `vercel.json`.*
-4. Environment Variables:
-   - `VITE_SERVER_URL` (Set to `""` for proxying or the Render URL for absolute fetching during SSR - wait, the Vercel edge rewrite proxies `https://kinedao.com/api` to Render. Just ensure `vercel.json`'s destination is set to your Render URL.)
-5. Deploy.
+Use the local database's direct connection string to create a portable backup:
 
-### 6. Domain Alignment (Recommended)
-For `sameSite: "lax"` cookies to function seamlessly and to avoid preflight CORS:
-1. Map `kinedao.com` and `www.kinedao.com` to Vercel.
-2. Map `api.kinedao.com` to Render.
-3. Update `apps/web/vercel.json` to proxy `/api/(.*)` to `https://api.kinedao.com/api/$1`.
-4. Update Render's `BETTER_AUTH_URL` to `https://api.kinedao.com`.
+```bash
+pg_dump --format=custom --no-owner --no-privileges \
+  --file ./kinedao-local.dump \
+  '<local direct PostgreSQL URL>'
+```
 
-## Verification Steps
-- [ ] Backend health check responds successfully (`https://<render-url>/healthz`).
-- [ ] Vercel frontend loads without errors.
-- [ ] Navigating to a public product page works (SSR fetches products from Render).
-- [ ] Sign up/Login works (Auth cookies are set securely and persist).
-- [ ] Uploading an image as a vendor succeeds (hits Cloudflare R2).
-- [ ] Placing an order triggers a notification (hits Brevo).
+Keep the dump outside Git. Restore it only into a new, empty Neon project:
+
+```bash
+pg_restore --clean --if-exists --no-owner --no-privileges \
+  --dbname '<Neon direct PostgreSQL URL>' \
+  ./kinedao-local.dump
+```
+
+Use Neon’s direct, non-pooled URL for the restore. Use the pooled SSL URL as
+`DATABASE_URL` on Render. A full restore retains the current 41-table schema,
+accounts, roles, catalog, orders, sequences, and the existing Drizzle migration
+ledger. Do not run the incomplete historical migrations against this restored
+database.
+
+After restoring, compare table counts and test the first admin account. The
+existing `FIRST_ADMIN_EMAIL` script can grant admin roles to an imported user
+when needed.
+
+## 2. Copy object storage
+
+Create a Supabase Storage project and enable S3 protocol access. Create a public
+`kinedao-assets` bucket for storefront media and a private `kinedao-private`
+bucket for vendor NID and trade-license files. Generate server-only S3 access
+keys. Supabase S3 is compatible with the Bun S3 client already used by the API.
+
+Copy public objects from local Supabase storage to `kinedao-assets` while
+preserving their exact keys. Product and banner records store those keys, so
+their paths must not change. Copy `vendor-documents/` to `kinedao-private`
+instead. Never make identity documents public.
+
+The three existing local vendor applications store local Supabase URLs, which
+will not work after the move. After restoring the database and copying those
+objects, convert their document values to private object references in Neon:
+
+```sql
+UPDATE vendor_applications
+SET
+  nid_front_url = regexp_replace(nid_front_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1'),
+  nid_back_url = regexp_replace(nid_back_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1'),
+  trade_license_url = CASE
+    WHEN trade_license_url IS NULL THEN NULL
+    ELSE regexp_replace(trade_license_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1')
+  END;
+```
+
+New vendor-document uploads are stored in the private bucket. The API gives
+only the vendor or an admin a one-hour signed URL when they need to view one.
+
+Set these Render variables from the Supabase project’s S3 settings:
+
+```text
+S3_ENDPOINT=https://<project-ref>.supabase.co/storage/v1/s3
+S3_REGION=<region supplied by Supabase>
+S3_BUCKET=kinedao-assets
+S3_PRIVATE_BUCKET=kinedao-private
+S3_ACCESS_KEY_ID=<server-only access key>
+S3_SECRET_ACCESS_KEY=<server-only secret>
+S3_PUBLIC_BASE_URL=https://<project-ref>.supabase.co/storage/v1/object/public/kinedao-assets
+```
+
+Set `VITE_S3_PUBLIC_BASE_URL` to the same public base URL in Vercel.
+
+## 3. Create the backend service
+
+Create a Render Docker web service from this repository after the deployment
+changes are available to Render. It exposes `/healthz` without requiring a
+database connection. Set:
+
+```text
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=<Neon pooled SSL URL>
+BETTER_AUTH_SECRET=<new 32+ character secret>
+BETTER_AUTH_URL=https://<vercel-project>.vercel.app
+WEB_ORIGIN=https://<vercel-project>.vercel.app
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_USER=<Brevo SMTP login>
+SMTP_PASS=<Brevo SMTP key>
+EMAIL_FROM=<verified Brevo sender>
+VAPID_PUBLIC_KEY=<generated VAPID public key>
+VAPID_PRIVATE_KEY=<generated VAPID private key>
+VAPID_SUBJECT=mailto:<contact email>
+```
+
+Add the Supabase storage variables from the previous section and optional Google
+and Facebook OAuth credentials. Render Free blocks SMTP ports 25, 465, and 587;
+Brevo accepts port 2525. Generate VAPID keys with:
+
+```bash
+bun --cwd apps/server -e "import webPush from 'web-push'; console.log(webPush.generateVAPIDKeys())"
+```
+
+Verify `https://<render-service>.onrender.com/healthz` before connecting the
+frontend. The free service can take about a minute to wake after inactivity.
+
+## 4. Create the frontend deployment
+
+The Vercel build uses Nitro, which packages TanStack Start SSR and server
+functions for Vercel. Replace the placeholder host in
+`apps/web/vercel.json` with the actual Render service hostname before deployment.
+
+Configure the Vercel project with repository root as the project root and:
+
+```text
+Install command: bun install --frozen-lockfile
+Build command: bun run --filter web build
+VITE_SERVER_URL=https://<render-service>.onrender.com
+VITE_S3_PUBLIC_BASE_URL=https://<project-ref>.supabase.co/storage/v1/object/public/kinedao-assets
+```
+
+Browsers use Vercel’s `/api/*` rewrite for API calls, login, uploads, and live
+notifications. `VITE_SERVER_URL` is used by server-side rendering, so it must
+remain the Render URL rather than an empty string.
+
+Use the final Vercel URL in Render’s `BETTER_AUTH_URL` and `WEB_ORIGIN`. Add
+these OAuth redirect URLs to the Google and Facebook provider consoles:
+
+```text
+https://<vercel-project>.vercel.app/api/auth/callback/google
+https://<vercel-project>.vercel.app/api/auth/callback/facebook
+```
+
+## 5. Verify the full application
+
+- Open the catalog, filters, product details, cart, and checkout.
+- Sign in, refresh the browser, and confirm the session survives.
+- Test email verification, password reset, and each enabled OAuth provider.
+- Upload a product image, banner, and vendor document.
+- Place a test COD order; review it as vendor and admin.
+- Test vendor application, product editing, reviews, notifications, push
+  subscription, Bangla/English switching, and dark mode.
+- Open the site after the Render service has slept and confirm the UI recovers
+  without repeating a write operation.
+
+## Publishing without Git pushes
+
+Vercel can deploy from the local CLI, but that publishes the frontend. Render
+requires either a connected Git repository or a container image in a registry.
+Building the image locally is safe; uploading it to a registry or connecting a
+repository is the publishing step. Keep the deployment environment variables in
+provider dashboards and never commit them.

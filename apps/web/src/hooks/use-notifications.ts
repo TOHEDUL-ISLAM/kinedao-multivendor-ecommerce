@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { getApiOrigin } from "@/lib/api-origin";
 import { toast } from "sonner";
 
 const SSE_RECONNECT_DELAY = 3000; // 3 seconds
@@ -106,13 +107,7 @@ export function useNotifications() {
 		}
 
 		try {
-			// Normalize URL by removing trailing slash if present
-			const serverUrl = import.meta.env.VITE_SERVER_URL;
-			if (!serverUrl) {
-				setIsConnected(false);
-				return;
-			}
-			const baseUrl = serverUrl.replace(/\/$/, "");
+			const baseUrl = getApiOrigin();
 			const eventSource = new EventSource(
 				`${baseUrl}/api/notifications/stream`,
 				{ withCredentials: true }

@@ -13,22 +13,16 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/env/package.json ./packages/env/
 RUN bun install --frozen-lockfile
 
-# Build stage
-FROM base AS build
-COPY --from=install /app/node_modules ./node_modules
-COPY . .
-# We only need to build the server
-# (Though server in this repo might run with `bun run index.ts` directly, 
-# let's assume we build it if it has a build script, otherwise we just run it).
-RUN cd apps/server && bun run build || echo "No build script needed"
-
-# Final stage
+# Runtime stage
 FROM base AS release
 ENV NODE_ENV=production
 
-# Copy node_modules and built assets
+# The server runs TypeScript with Bun and resolves workspace packages from
+# their source directories, so both the workspace files and dependencies are
+# required at runtime.
 COPY --from=install /app/node_modules ./node_modules
 COPY . .
+RUN bun install --frozen-lockfile
 
 # Expose port (Render sets PORT env var)
 EXPOSE $PORT

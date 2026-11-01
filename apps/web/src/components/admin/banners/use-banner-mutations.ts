@@ -4,6 +4,7 @@ import type {
 	AdminSideCardFormInput,
 } from "@kineDao.com/api-types/admin";
 import { api } from "@/lib/api-client";
+import { getApiOrigin } from "@/lib/api-origin";
 
 interface UploadBannerImageResponse {
 	url: string;
@@ -66,7 +67,7 @@ export function useUploadBannerImage() {
 			formData.append("file", file);
 
 			const response = await fetch(
-				`${import.meta.env.VITE_SERVER_URL}/api/upload?category=banners`,
+				`${getApiOrigin()}/api/upload?category=banners`,
 				{
 					method: "POST",
 					body: formData,

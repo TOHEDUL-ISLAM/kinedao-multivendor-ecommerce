@@ -7,7 +7,6 @@ services:
     plan: free
     region: ohio
     healthCheckPath: /healthz
-    preDeployCommand: "bun run db:migrate"
     envVars:
       - key: PORT
         value: 3000
@@ -36,7 +35,7 @@ services:
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
-        sync: false
+        value: 2525
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS

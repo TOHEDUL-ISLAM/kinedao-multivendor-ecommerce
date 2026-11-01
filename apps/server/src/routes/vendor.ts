@@ -12,6 +12,7 @@ import {
   type VendorApplicationSubmitResponse,
 } from "@kineDao.com/api-types/vendor";
 import type { AppEnv } from "../index";
+import { resolvePrivateFileUrl } from "../lib/private-file-url";
 
 // Helper to create slug from text
 const slugify = (text: string): string =>
@@ -63,9 +64,9 @@ const mapToDTO = (row: typeof vendorApplications.$inferSelect): VendorApplicatio
   city: row.city,
   postalCode: row.postalCode,
   nidNumber: row.nidNumber,
-  nidFrontUrl: row.nidFrontUrl,
-  nidBackUrl: row.nidBackUrl,
-  tradeLicenseUrl: row.tradeLicenseUrl,
+  nidFrontUrl: resolvePrivateFileUrl(row.nidFrontUrl),
+  nidBackUrl: resolvePrivateFileUrl(row.nidBackUrl),
+  tradeLicenseUrl: row.tradeLicenseUrl ? resolvePrivateFileUrl(row.tradeLicenseUrl) : null,
   shopLogoUrl: row.shopLogoUrl,
   bankName: row.bankName,
   bankAccountNumber: row.bankAccountNumber,
@@ -100,7 +101,7 @@ const vendorRouter = new Hono<AppEnv>()
                   canApply: z.boolean(),
                   canResubmit: z.boolean(),
                   application: z.any().nullable(),
-                })
+                }),
               ),
             },
           },
@@ -144,7 +145,7 @@ const vendorRouter = new Hono<AppEnv>()
         application: mapToDTO(application),
       };
       return c.json(response, 200);
-    }
+    },
   )
   // POST /api/vendor/application - Submit or resubmit vendor application
   .post(
@@ -163,7 +164,7 @@ const vendorRouter = new Hono<AppEnv>()
                 z.object({
                   success: z.boolean(),
                   application: z.any(),
-                })
+                }),
               ),
             },
           },
@@ -184,7 +185,7 @@ const vendorRouter = new Hono<AppEnv>()
                 z.object({
                   error: z.string(),
                   status: z.string(),
-                })
+                }),
               ),
             },
           },
@@ -215,7 +216,7 @@ const vendorRouter = new Hono<AppEnv>()
               error: "Application already pending review",
               status: "pending",
             },
-            409
+            409,
           );
         }
 
@@ -225,7 +226,7 @@ const vendorRouter = new Hono<AppEnv>()
               error: "You are already a verified vendor",
               status: "approved",
             },
-            409
+            409,
           );
         }
 
@@ -315,7 +316,7 @@ const vendorRouter = new Hono<AppEnv>()
         application: mapToDTO(created),
       };
       return c.json(response, 201);
-    }
+    },
   );
 
 export { vendorRouter };

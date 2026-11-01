@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import { toast } from "sonner";
 import { useVendorTheme } from "@/lib/vendor-theme";
 import { getS3Url } from "@/lib/s3-helpers";
+import { getApiOrigin } from "@/lib/api-origin";
 
 // Import types and helpers
 import {
@@ -146,7 +147,7 @@ export function ProductForm({
           formData.append("file", file);
 
           const response = await fetch(
-            `${import.meta.env.VITE_SERVER_URL}/api/upload?category=product-images`,
+            `${getApiOrigin()}/api/upload?category=product-images`,
             {
               method: "POST",
               body: formData,

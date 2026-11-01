@@ -1,12 +1,10 @@
 import { hc } from "hono/client";
 import type { AppType } from "../../../../apps/server/src/index";
-import { env } from "./env";
+import { getApiOrigin } from "./api-origin";
 
 // Use relative path in browser in production to hit the Vercel rewrite proxy
 // In SSR (Node/Bun) or local dev, use the full absolute URL
-const isClient = typeof window !== "undefined";
-const isProd = import.meta.env.PROD;
-const baseUrl = isClient && isProd ? "" : env.VITE_SERVER_URL;
+const baseUrl = getApiOrigin();
 
 // Create typed RPC client with credentials to send authentication cookies
 export const apiClient = hc<AppType>(baseUrl, {

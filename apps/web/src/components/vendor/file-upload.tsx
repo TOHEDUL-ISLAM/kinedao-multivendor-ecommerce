@@ -3,6 +3,7 @@ import { Upload, X, Loader2, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
+import { getApiOrigin } from "@/lib/api-origin";
 
 interface FileUploadProps {
   value?: string;
@@ -83,8 +84,7 @@ export function FileUpload({
         formData.append("file", file);
 
         // Use fetch directly for file uploads with explicit category.
-        const serverUrl = (import.meta.env.VITE_SERVER_URL || "").replace(/\/$/, "");
-        const uploadUrl = `${serverUrl}/api/upload?category=vendor-documents`;
+        const uploadUrl = `${getApiOrigin()}/api/upload?category=vendor-documents`;
         const response = await fetch(uploadUrl, {
           method: "POST",
           body: formData,
@@ -95,14 +95,14 @@ export function FileUpload({
         setUploadProgress(100);
 
         const raw = await response.text();
-        let payload: { url?: string; error?: string } | null = null;
+        let payload: { s3Key?: string; url?: string; error?: string } | null = null;
 
         try {
           payload = raw ? (JSON.parse(raw) as { url?: string; error?: string }) : null;
         } catch {
           if (!response.ok) {
             throw new Error(
-              `Upload failed (${response.status}). Please check server connection and try again.`
+              `Upload failed (${response.status}). Please check server connection and try again.`,
             );
           }
           throw new Error("Upload failed due to an invalid server response.");
@@ -112,22 +112,20 @@ export function FileUpload({
           throw new Error(payload?.error || "Upload failed");
         }
 
-        if (!payload?.url) {
-          throw new Error("Upload failed: server response missing file URL.");
+        if (!payload?.s3Key) {
+          throw new Error("Upload failed: server response missing file reference.");
         }
 
-        onChange(payload.url);
+        onChange(payload.s3Key);
       } catch (err) {
-        setUploadError(
-          err instanceof Error ? err.message : t("vendor.form.upload.failed")
-        );
+        setUploadError(err instanceof Error ? err.message : t("vendor.form.upload.failed"));
       } finally {
         setIsUploading(false);
         // Reset progress after a short delay
         setTimeout(() => setUploadProgress(0), 500);
       }
     },
-    [accept, maxSizeMB, onChange, t]
+    [accept, maxSizeMB, onChange, t],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +160,7 @@ export function FileUpload({
         handleFile(file);
       }
     },
-    [handleFile]
+    [handleFile],
   );
 
   const handleClear = () => {
@@ -181,7 +179,7 @@ export function FileUpload({
         <div className="relative group rounded-xl overflow-hidden border-2 border-primary/30 bg-teal-50">
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
-              src={value}
+              src={value.startsWith("private://") ? undefined : value}
               alt="Uploaded preview"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -212,10 +210,12 @@ export function FileUpload({
           <label
             className={cn(
               "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200",
-              dragActive ? "border-primary bg-teal-50 scale-[1.02]" : "border-border bg-cream-50 hover:border-primary/50 hover:bg-teal-50/50",
+              dragActive
+                ? "border-primary bg-teal-50 scale-[1.02]"
+                : "border-border bg-cream-50 hover:border-primary/50 hover:bg-teal-50/50",
               isUploading && "opacity-50 pointer-events-none",
               disabled && "opacity-50 cursor-not-allowed",
-              displayError && "border-destructive bg-destructive/5"
+              displayError && "border-destructive bg-destructive/5",
             )}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -223,7 +223,12 @@ export function FileUpload({
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center justify-center py-4 px-6 text-center">
-              <div className={cn("icon-container w-12 h-12 mb-3", dragActive ? "icon-teal" : "bg-muted")}>
+              <div
+                className={cn(
+                  "icon-container w-12 h-12 mb-3",
+                  dragActive ? "icon-teal" : "bg-muted",
+                )}
+              >
                 {isUploading ? (
                   <Loader2 className="w-6 h-6 text-primary animate-spin" />
                 ) : dragActive ? (
@@ -233,7 +238,9 @@ export function FileUpload({
                 )}
               </div>
               <p className="text-sm text-muted-foreground mb-1">
-                <span className="text-primary font-medium">{t("vendor.form.upload.clickToUpload")}</span>{" "}
+                <span className="text-primary font-medium">
+                  {t("vendor.form.upload.clickToUpload")}
+                </span>{" "}
                 {t("vendor.form.upload.orDrag")}
               </p>
               {description && <p className="text-xs text-muted-foreground">{description}</p>}

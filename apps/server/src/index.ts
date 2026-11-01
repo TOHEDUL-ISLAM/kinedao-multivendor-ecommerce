@@ -53,6 +53,13 @@ export type AppEnv = {
 const app = new Hono<AppEnv>()
   .use(logger())
   .use("*", async (c, next) => {
+    // Render probes this endpoint while the database may be unavailable or
+    // waking. A liveness check must not depend on sessions or Postgres.
+    if (c.req.path === "/healthz") {
+      await next();
+      return;
+    }
+
     try {
       const now = new Date();
       await db
