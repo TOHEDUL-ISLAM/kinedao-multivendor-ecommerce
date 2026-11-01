@@ -50,11 +50,11 @@ export type AppEnv = {
   };
 };
 // Create main app with method chaining for RPC
-const app = new Hono<AppEnv>()
+export const app = new Hono<AppEnv>()
   .use(logger())
   .use("*", async (c, next) => {
-    // Render probes this endpoint while the database may be unavailable or
-    // waking. A liveness check must not depend on sessions or Postgres.
+    // Hosting probes this endpoint while the database may be unavailable.
+    // A liveness check must not depend on sessions or Postgres.
     if (c.req.path === "/healthz") {
       await next();
       return;

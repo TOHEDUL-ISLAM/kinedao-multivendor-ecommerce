@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://REPLACE_WITH_YOUR_RENDER_SERVICE.onrender.com/api/$1"
+      "destination": "https://kinedao-server.vercel.app/api/$1"
     }
   ]
 }
