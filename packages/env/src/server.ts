@@ -23,6 +23,7 @@ while (true) {
 }
 
 export const env = createEnv({
+  clientPrefix: "",
   server: {
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().default(3000),
