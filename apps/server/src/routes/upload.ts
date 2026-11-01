@@ -7,7 +7,7 @@ import { uploadFile } from "../lib/file-upload";
 /**
  * Upload Router
  *
- * Handles file uploads to S3 with security and validation:
+ * Handles file uploads to Cloudinary with security and validation:
  * - UUID-based filenames (prevents enumeration)
  * - File type validation (images and PDFs only)
  * - File size limits (10MB images, 20MB PDFs)
@@ -15,17 +15,17 @@ import { uploadFile } from "../lib/file-upload";
  * - Presigned URLs (7-day expiry)
  */
 const uploadRouter = new Hono<AppEnv>()
-  // POST /api/upload - Upload file to S3
+  // POST /api/upload - Upload file to Cloudinary
   .post(
     "/",
     describeRoute({
       tags: ["Upload"],
-      summary: "Upload a file to S3",
+      summary: "Upload a file to Cloudinary",
       description:
-        "Upload a file (image or PDF) to S3 storage for vendor applications. " +
+        "Upload a file (image or PDF) to Cloudinary for vendor applications. " +
         "Supports images (JPEG, PNG, WebP) up to 10MB and PDFs up to 20MB. " +
         "Files are stored with UUID-based filenames for security. " +
-        "Returns a presigned URL valid for 7 days.",
+        "Vendor documents are delivered only through a signed URL.",
       responses: {
         200: {
           description: "File uploaded successfully",
@@ -35,7 +35,7 @@ const uploadRouter = new Hono<AppEnv>()
                 z.object({
                   url: z.string(),
                   filename: z.string(),
-                })
+                }),
               ),
             },
           },
@@ -105,7 +105,7 @@ const uploadRouter = new Hono<AppEnv>()
       const effectiveProductId = productId || `temp-${userId}`;
 
       try {
-        // Upload file to S3 with structured path
+        // Upload file to Cloudinary with a structured public ID.
         const result = await uploadFile(file, {
           userId,
           category,
@@ -127,12 +127,11 @@ const uploadRouter = new Hono<AppEnv>()
         console.error("Upload error:", error);
 
         // Return user-friendly error message
-        const errorMessage =
-          error instanceof Error ? error.message : "Upload failed";
+        const errorMessage = error instanceof Error ? error.message : "Upload failed";
 
         return c.json({ error: errorMessage }, 500);
       }
-    }
+    },
   );
 
 export { uploadRouter };

@@ -5,13 +5,13 @@ vendor, admin, upload, notification, or Cash on Delivery features.
 
 ## Target services
 
-| Role                     | Service               | Public address            |
-| ------------------------ | --------------------- | ------------------------- |
-| React and TanStack Start | Vercel Hobby          | `<project>.vercel.app`    |
-| Bun and Hono API         | Render Free           | `<service>.onrender.com`  |
-| PostgreSQL               | Neon Free             | private connection string |
-| Object storage           | Supabase Storage Free | Supabase project URL      |
-| Transactional email      | Brevo Free            | no public endpoint        |
+| Role                     | Service         | Public address            |
+| ------------------------ | --------------- | ------------------------- |
+| React and TanStack Start | Vercel Hobby    | `<project>.vercel.app`    |
+| Bun and Hono API         | Render Free     | `<service>.onrender.com`  |
+| PostgreSQL               | Neon Free       | private connection string |
+| Media storage            | Cloudinary Free | Cloudinary CDN            |
+| Transactional email      | Brevo Free      | no public endpoint        |
 
 The Vercel deployment is suitable only for a personal, non-commercial
 showcase. A public marketplace that sells or advertises real products requires
@@ -48,49 +48,22 @@ After restoring, compare table counts and test the first admin account. The
 existing `FIRST_ADMIN_EMAIL` script can grant admin roles to an imported user
 when needed.
 
-## 2. Copy object storage
+## 2. Configure Cloudinary media
 
-Create a Supabase Storage project and enable S3 protocol access. Create a public
-`kinedao-assets` bucket for storefront media and a private `kinedao-private`
-bucket for vendor NID and trade-license files. Generate server-only S3 access
-keys. Supabase S3 is compatible with the Bun S3 client already used by the API.
+Create a free Cloudinary account. Product images, banners, and logos are public
+CDN assets. Vendor NID and trade-license uploads are authenticated Cloudinary
+assets; the API provides authorized users a signed one-hour download URL.
 
-Copy public objects from local Supabase storage to `kinedao-assets` while
-preserving their exact keys. Product and banner records store those keys, so
-their paths must not change. Copy `vendor-documents/` to `kinedao-private`
-instead. Never make identity documents public.
-
-The three existing local vendor applications store local Supabase URLs, which
-will not work after the move. After restoring the database and copying those
-objects, convert their document values to private object references in Neon:
-
-```sql
-UPDATE vendor_applications
-SET
-  nid_front_url = regexp_replace(nid_front_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1'),
-  nid_back_url = regexp_replace(nid_back_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1'),
-  trade_license_url = CASE
-    WHEN trade_license_url IS NULL THEN NULL
-    ELSE regexp_replace(trade_license_url, '^.*/kinedao-assets/(vendor-documents/.*)$', 'private://\\1')
-  END;
-```
-
-New vendor-document uploads are stored in the private bucket. The API gives
-only the vendor or an admin a one-hour signed URL when they need to view one.
-
-Set these Render variables from the Supabase project’s S3 settings:
+Set these Render variables from Cloudinary’s API Keys page:
 
 ```text
-S3_ENDPOINT=https://<project-ref>.supabase.co/storage/v1/s3
-S3_REGION=<region supplied by Supabase>
-S3_BUCKET=kinedao-assets
-S3_PRIVATE_BUCKET=kinedao-private
-S3_ACCESS_KEY_ID=<server-only access key>
-S3_SECRET_ACCESS_KEY=<server-only secret>
-S3_PUBLIC_BASE_URL=https://<project-ref>.supabase.co/storage/v1/object/public/kinedao-assets
+CLOUDINARY_CLOUD_NAME=<cloud name>
+CLOUDINARY_API_KEY=<API key>
+CLOUDINARY_API_SECRET=<API secret>
 ```
 
-Set `VITE_S3_PUBLIC_BASE_URL` to the same public base URL in Vercel.
+Existing external catalog image URLs continue to work. New uploads use
+Cloudinary and do not require a client-side secret.
 
 ## 3. Create the backend service
 
@@ -138,7 +111,6 @@ Configure the Vercel project with repository root as the project root and:
 Install command: bun install --frozen-lockfile
 Build command: bun run --filter web build
 VITE_SERVER_URL=https://<render-service>.onrender.com
-VITE_S3_PUBLIC_BASE_URL=https://<project-ref>.supabase.co/storage/v1/object/public/kinedao-assets
 ```
 
 Browsers use Vercel’s `/api/*` rewrite for API calls, login, uploads, and live

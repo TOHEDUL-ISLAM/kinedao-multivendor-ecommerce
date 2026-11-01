@@ -1,4 +1,4 @@
-import { privateS3 } from "./s3-client";
+import { signedPrivateCloudinaryUrl } from "./cloudinary";
 
 const PRIVATE_REFERENCE_PREFIX = "private://";
 
@@ -12,9 +12,9 @@ export function toPrivateFileReference(key: string): string {
 
 /** Resolve a private object reference only in an authorized API response. */
 export function resolvePrivateFileUrl(value: string): string {
+  const cloudinaryUrl = signedPrivateCloudinaryUrl(value);
+  if (cloudinaryUrl) return cloudinaryUrl;
   if (!isPrivateFileReference(value)) return value;
-
-  return privateS3.file(value.slice(PRIVATE_REFERENCE_PREFIX.length)).presign({
-    expiresIn: 60 * 60,
-  });
+  // Legacy S3 references remain readable while existing objects are migrated.
+  return value;
 }

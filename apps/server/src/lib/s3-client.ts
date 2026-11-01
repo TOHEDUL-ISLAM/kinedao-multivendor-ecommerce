@@ -13,18 +13,18 @@ import { env } from "@kineDao.com/env/server";
  * - Uses S3_PUBLIC_BASE_URL for public reads to maximize caching
  */
 export const s3 = new S3Client({
-  accessKeyId: env.S3_ACCESS_KEY_ID,
-  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-  endpoint: env.S3_ENDPOINT,
+  accessKeyId: env.S3_ACCESS_KEY_ID ?? "",
+  secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? "",
+  endpoint: env.S3_ENDPOINT ?? "",
   region: env.S3_REGION,
-  bucket: env.S3_BUCKET,
+  bucket: env.S3_BUCKET ?? "",
 });
 
 /** Vendor identity documents use a separate private bucket when configured. */
 export const privateS3 = new S3Client({
-  accessKeyId: env.S3_ACCESS_KEY_ID,
-  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-  endpoint: env.S3_ENDPOINT,
+  accessKeyId: env.S3_ACCESS_KEY_ID ?? "",
+  secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? "",
+  endpoint: env.S3_ENDPOINT ?? "",
   region: env.S3_REGION,
-  bucket: env.S3_PRIVATE_BUCKET ?? env.S3_BUCKET,
+  bucket: env.S3_PRIVATE_BUCKET ?? env.S3_BUCKET ?? "",
 });

@@ -25,6 +25,7 @@
     "@kineDao.com/env": "workspace:*",
     "@scalar/hono-api-reference": "^0.9.39",
     "better-auth": "catalog:",
+    "cloudinary": "^2.8.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.8.2",

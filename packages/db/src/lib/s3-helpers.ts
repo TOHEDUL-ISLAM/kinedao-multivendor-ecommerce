@@ -16,8 +16,15 @@ export function getS3Url(s3Key: string): string {
     return s3Key;
   }
 
+  if (s3Key.startsWith("cloudinary://")) {
+    const [resourceType, ...publicId] = s3Key.slice("cloudinary://".length).split("/");
+    if (env.CLOUDINARY_CLOUD_NAME && (resourceType === "image" || resourceType === "raw")) {
+      return `https://res.cloudinary.com/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId.join("/")}`;
+    }
+  }
+
   const normalizedKey = s3Key.replace(/^\/+/, "");
-  
+
   // Primary: Use R2 public domain or custom domain
   if (env.S3_PUBLIC_BASE_URL) {
     return `${env.S3_PUBLIC_BASE_URL.replace(/\/+$/, "")}/${normalizedKey}`;
@@ -35,7 +42,7 @@ export function getS3Url(s3Key: string): string {
 
 export function getImageUrl(
   s3Key: string,
-  preferredVariant?: "original" | "medium" | "thumbnail"
+  preferredVariant?: "original" | "medium" | "thumbnail",
 ): string {
   if (preferredVariant && preferredVariant !== "original") {
     // Replace /original/ with /medium/ or /thumbnail/
@@ -94,7 +101,7 @@ export function extractS3KeyFromUrl(url: string): string | null {
 
 export function batchGetUrls(
   s3Keys: string[],
-  variant?: "original" | "medium" | "thumbnail"
+  variant?: "original" | "medium" | "thumbnail",
 ): string[] {
   return s3Keys.map((key) => getImageUrl(key, variant));
 }

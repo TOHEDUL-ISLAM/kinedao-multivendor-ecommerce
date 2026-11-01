@@ -1,5 +1,9 @@
-import { privateS3, s3 } from "./s3-client";
-import { toPrivateFileReference } from "./private-file-url";
+import {
+  cloudinaryPrivateReference,
+  cloudinaryPublicReference,
+  deleteCloudinaryReference,
+  uploadToCloudinary,
+} from "./cloudinary";
 import { randomUUID } from "crypto";
 
 /**
@@ -138,26 +142,22 @@ export async function uploadFile(file: File, options: UploadOptions): Promise<Up
   }
 
   try {
-    // Upload file to S3
     const isPrivateDocument = options.category === "vendor-documents";
-    const s3File = (isPrivateDocument ? privateS3 : s3).file(s3Key);
-    await s3File.write(file, {
-      type: file.type,
-    });
-
-    // Generate presigned URL for retrieval (7 days expiry)
-    const url = s3File.presign({
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
+    const upload = await uploadToCloudinary(file, {
+      publicId: s3Key.replace(/\.[^.]+$/, ""),
+      privateAsset: isPrivateDocument,
     });
 
     return {
-      s3Key: isPrivateDocument ? toPrivateFileReference(s3Key) : s3Key,
-      url,
+      s3Key: isPrivateDocument
+        ? cloudinaryPrivateReference(upload)
+        : cloudinaryPublicReference(upload.resourceType, upload.publicId),
+      url: upload.secureUrl,
       filename: `${uuid}.${ext}`,
       variant: options.variant,
     };
   } catch (error) {
-    console.error("S3 upload error:", error);
+    console.error("Cloudinary upload error:", error);
     throw new Error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
@@ -240,7 +240,7 @@ export async function deleteVendorDocuments(vendorId: string): Promise<number> {
  */
 export async function deleteFile(s3Key: string): Promise<void> {
   try {
-    await s3.delete(s3Key);
+    await deleteCloudinaryReference(s3Key);
   } catch (error) {
     console.error(`Failed to delete file ${s3Key}:`, error);
     throw new Error("Failed to delete file");
