@@ -1,9 +1,10 @@
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, ScrollRestoration, createRootRouteWithContext, useLocation } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
-import { ReactLenis } from "@studio-freight/react-lenis";
+import { ReactLenis, useLenis } from "@studio-freight/react-lenis";
 import { MantineProvider } from "@mantine/core";
+import { useEffect } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { QuickViewModal } from "@/components/quick-view-modal";
@@ -113,6 +114,20 @@ function MantineThemeBridge({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+  const lenis = useLenis();
+
+  useEffect(() => {
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true });
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, [pathname, lenis]);
+
+  return null;
+}
+
 function RootDocument() {
   const location = useLocation();
   const locationHref =
@@ -173,6 +188,7 @@ function RootDocument() {
                 }
               >
                 <ReactLenis root options={lenisOptions}>
+                  <ScrollToTopOnNavigate />
                   <div className="min-h-svh flex flex-col">
                     {!hideMainChrome && <Header />}
                     <main className={`flex-1 ${!hideMainChrome ? "pb-16 md:pb-0" : ""}`}>
@@ -193,6 +209,7 @@ function RootDocument() {
         </ThemeProvider>
 
         <TanStackRouterDevtools position="bottom-left" />
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

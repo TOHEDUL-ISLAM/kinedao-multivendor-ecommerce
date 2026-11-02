@@ -71,6 +71,11 @@ function ProductDetailPage() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Ensure scroll is at the top when navigating to or loading a product
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, [slug, isLoading]);
+
   // Set default options when product loads
   useEffect(() => {
     if (product && product.options.length > 0) {
@@ -217,8 +222,8 @@ function ProductDetailPage() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
         {/* Breadcrumb */}
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
+        <Breadcrumb className="mb-4 sm:mb-6">
+          <BreadcrumbList className="flex-nowrap overflow-x-auto scrollbar-hide py-1 text-xs sm:text-sm">
             {buildBreadcrumbs().map((item, index, arr) => (
               <Fragment key={`${item.href ?? "current"}-${index}`}>
                 <BreadcrumbItem>
@@ -390,7 +395,7 @@ function ProductDetailSkeleton() {
                 <div key={i} className="aspect-square bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
-            <div className="flex-1 aspect-square bg-muted rounded-lg animate-pulse" />
+            <div className="flex-1 aspect-square max-h-[340px] sm:max-h-[440px] lg:max-h-none bg-muted rounded-lg animate-pulse" />
           </div>
 
           {/* Info skeleton */}

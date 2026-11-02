@@ -165,7 +165,7 @@ export function ImageGallery({ images, productTitle, productId, className }: Ima
         {/* Main image */}
         <div className="flex-1 relative">
           <div
-            className="relative aspect-square bg-muted rounded-lg overflow-hidden group"
+            className="relative aspect-square max-h-[340px] sm:max-h-[440px] lg:max-h-none w-full bg-muted rounded-lg overflow-hidden group"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -241,13 +241,13 @@ export function ImageGallery({ images, productTitle, productId, className }: Ima
 
           {/* Mobile & Tablet: Horizontal thumbnail grid below */}
           {sortedImages.length > 1 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide lg:hidden">
+            <div className="flex gap-2 mt-2 sm:mt-3 overflow-x-auto scrollbar-hide lg:hidden">
               {sortedImages.map((image, index) => (
                 <button
                   key={image.id}
                   onClick={() => setCurrentIndex(index)}
                   className={cn(
-                    "flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all",
+                    "flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all",
                     index === currentIndex
                       ? "border-primary ring-2 ring-primary/20"
                       : "border-border hover:border-primary/50"
