@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { app } from "./apps/server/src/index";
+import { app } from "./apps/server/dist/index.mjs";
 
 void Hono;
 

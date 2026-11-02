@@ -5,6 +5,7 @@ node_modules
 
 # Build outputs
 dist
+!apps/server/dist/index.mjs
 build
 *.tsbuildinfo
 
@@ -48,3 +49,8 @@ coverage
 .cache
 tmp
 temp
+
+# Local tooling state
+telemetry-id
+.sisyphus/
+.neon
