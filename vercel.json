@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "bunVersion": "1.x",
   "installCommand": "bun install --filter server --frozen-lockfile",
-  "buildCommand": null
+  "buildCommand": "bun run --filter server build"
 }
