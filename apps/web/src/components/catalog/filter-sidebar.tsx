@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, X, Star } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
+import { Drawer, Checkbox as MantineCheckbox } from "@mantine/core";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { usePrefersReducedMotion } from "@/hooks/use-media-query";
@@ -255,13 +256,16 @@ export function FilterSidebar({
               return (
                 <div key={category.id}>
                   <button
+                    aria-pressed={isSelected}
                     onClick={() => handleCategoryToggle(category.slug)}
                     className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
                   >
-                    <Checkbox
+                    <MantineCheckbox.Indicator
                       checked={isSelected}
-                      onCheckedChange={() => handleCategoryToggle(category.slug)}
-                      className="pointer-events-none"
+                      aria-hidden
+                      color="var(--primary)"
+                      size="xs"
+                      className="shrink-0"
                     />
                     <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
                       {displayName}
@@ -283,13 +287,16 @@ export function FilterSidebar({
                         return (
                           <button
                             key={child.id}
+                            aria-pressed={isChildSelected}
                             onClick={() => handleCategoryToggle(child.slug)}
                             className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
                           >
-                            <Checkbox
+                            <MantineCheckbox.Indicator
                               checked={isChildSelected}
-                              onCheckedChange={() => handleCategoryToggle(child.slug)}
-                              className="pointer-events-none"
+                              aria-hidden
+                              color="var(--primary)"
+                              size="xs"
+                              className="shrink-0"
                             />
                             <span className="text-sm group-hover:text-primary transition-colors flex-1 text-left">
                               {childName}
@@ -318,13 +325,16 @@ export function FilterSidebar({
             {brands.map((brand) => (
               <button
                 key={brand.name}
+                aria-pressed={selectedBrands.includes(brand.name)}
                 onClick={() => handleBrandToggle(brand.name)}
                 className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
               >
-                <Checkbox
+                <MantineCheckbox.Indicator
                   checked={selectedBrands.includes(brand.name)}
-                  onCheckedChange={() => handleBrandToggle(brand.name)}
-                  className="pointer-events-none"
+                  aria-hidden
+                  color="var(--primary)"
+                  size="xs"
+                  className="shrink-0"
                 />
                 <span className="text-sm group-hover:text-primary transition-colors truncate flex-1 text-left">
                   {brand.name}
@@ -424,17 +434,18 @@ export function FilterSidebar({
             {ratingOptions.map((rating) => (
               <button
                 key={rating}
+                aria-pressed={selectedRating === rating}
                 onClick={() =>
                   onRatingChange(selectedRating === rating ? undefined : rating)
                 }
                 className="w-full flex items-center gap-3 cursor-pointer group hover:opacity-80 transition-opacity"
               >
-                <Checkbox
+                <MantineCheckbox.Indicator
                   checked={selectedRating === rating}
-                  onCheckedChange={() =>
-                    onRatingChange(selectedRating === rating ? undefined : rating)
-                  }
-                  className="pointer-events-none"
+                  aria-hidden
+                  color="var(--primary)"
+                  size="xs"
+                  className="shrink-0"
                 />
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
@@ -465,13 +476,16 @@ export function FilterSidebar({
             {vendors.slice(0, 15).map((vendor) => (
               <button
                 key={vendor.id}
+                aria-pressed={selectedVendors.includes(vendor.slug)}
                 onClick={() => handleVendorToggle(vendor.slug)}
                 className="w-full flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors text-sm"
               >
-                <Checkbox
+                <MantineCheckbox.Indicator
                   checked={selectedVendors.includes(vendor.slug)}
-                  onCheckedChange={() => handleVendorToggle(vendor.slug)}
-                  className="pointer-events-none"
+                  aria-hidden
+                  color="var(--primary)"
+                  size="xs"
+                  className="shrink-0"
                 />
                 <span className="text-sm group-hover:text-primary transition-colors truncate flex-1 text-left">
                   {vendor.name}
@@ -505,52 +519,30 @@ export function MobileFilterDrawer({
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-
-          {/* Drawer */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={prefersReducedMotion ? {} : { x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-sm bg-background shadow-2xl overflow-y-auto"
-          >
-            {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-border bg-background">
-              <h2 className="font-semibold">{t("catalog.filters")}</h2>
-              <button
-                onClick={onClose}
-                className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-              <FilterSidebar {...props} className="border-0 p-0" />
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 p-4 border-t border-border bg-background safe-bottom">
-              <Button onClick={onClose} className="w-full">
-                Apply Filters
-              </Button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    <Drawer
+      opened={isOpen}
+      onClose={onClose}
+      title={t("catalog.filters")}
+      position="left"
+      size="85%"
+      zIndex={400}
+      closeButtonProps={{ "aria-label": t("common.close") }}
+      overlayProps={{ backgroundOpacity: 0.6, blur: 3 }}
+      transitionProps={{ duration: prefersReducedMotion ? 0 : 200 }}
+      styles={{
+        content: { maxWidth: 384, display: "flex", flexDirection: "column", background: "var(--background)", color: "var(--foreground)" },
+        header: { background: "var(--background)", color: "var(--foreground)" },
+        body: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: 0 },
+      }}
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <FilterSidebar {...props} className="border-0 p-0" />
+      </div>
+      <div className="shrink-0 p-4 border-t border-border bg-background" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
+        <Button onClick={onClose} className="w-full">
+          {t("catalog.applyFilters")}
+        </Button>
+      </div>
+    </Drawer>
   );
 }

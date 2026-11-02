@@ -300,13 +300,14 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 									</Label>
 									<Input
 										id="fullName"
+										aria-invalid={field.state.meta.errors.length > 0}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
 									/>
 									{field.state.meta.errors.map((error, i) => (
-										<p key={i} className="text-sm text-destructive mt-1">
-											{error}
+										<p key={i} role="alert" className="text-sm text-destructive mt-1">
+											{typeof error === "string" ? error : error?.message}
 										</p>
 									))}
 								</div>
@@ -322,14 +323,15 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 										</Label>
 										<Input
 											id="phone"
+											aria-invalid={field.state.meta.errors.length > 0}
 											placeholder="01712345678"
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
 										/>
 										{field.state.meta.errors.map((error, i) => (
-											<p key={i} className="text-sm text-destructive mt-1">
-												{error}
+											<p key={i} role="alert" className="text-sm text-destructive mt-1">
+												{typeof error === "string" ? error : error?.message}
 											</p>
 										))}
 									</div>
@@ -344,14 +346,15 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 										</Label>
 										<Input
 											id="alternatePhone"
+											aria-invalid={field.state.meta.errors.length > 0}
 											placeholder="01712345678"
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
 										/>
 										{field.state.meta.errors.map((error, i) => (
-											<p key={i} className="text-sm text-destructive mt-1">
-												{error}
+											<p key={i} role="alert" className="text-sm text-destructive mt-1">
+												{typeof error === "string" ? error : error?.message}
 											</p>
 										))}
 									</div>
@@ -367,13 +370,14 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 									</Label>
 									<Input
 										id="addressLine1"
+										aria-invalid={field.state.meta.errors.length > 0}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
 									/>
 									{field.state.meta.errors.map((error, i) => (
-										<p key={i} className="text-sm text-destructive mt-1">
-											{error}
+										<p key={i} role="alert" className="text-sm text-destructive mt-1">
+											{typeof error === "string" ? error : error?.message}
 										</p>
 									))}
 								</div>
@@ -405,13 +409,14 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 										</Label>
 										<Input
 											id="city"
+											aria-invalid={field.state.meta.errors.length > 0}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
 										/>
 										{field.state.meta.errors.map((error, i) => (
-											<p key={i} className="text-sm text-destructive mt-1">
-												{error}
+											<p key={i} role="alert" className="text-sm text-destructive mt-1">
+												{typeof error === "string" ? error : error?.message}
 											</p>
 										))}
 									</div>
@@ -429,8 +434,8 @@ export function ShippingStep({ checkoutCart }: ShippingStepProps) {
 											onChange={field.handleChange}
 										/>
 										{field.state.meta.errors.map((error, i) => (
-											<p key={i} className="text-sm text-destructive mt-1">
-												{error}
+											<p key={i} role="alert" className="text-sm text-destructive mt-1">
+												{typeof error === "string" ? error : error?.message}
 											</p>
 										))}
 									</div>

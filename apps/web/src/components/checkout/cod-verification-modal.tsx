@@ -7,6 +7,7 @@ import { toast } from "sonner";
 interface CODVerificationModalProps {
 	opened: boolean;
 	onClose: () => void;
+	onExitTransitionEnd?: () => void;
 	orderIds: string[];
 	totalAmount: number;
 	language: "en" | "bn";
@@ -15,6 +16,7 @@ interface CODVerificationModalProps {
 export function CODVerificationModal({
 	opened,
 	onClose,
+	onExitTransitionEnd,
 	orderIds,
 	totalAmount,
 	language,
@@ -71,6 +73,7 @@ export function CODVerificationModal({
 		<Modal
 			opened={opened}
 			onClose={onClose}
+			onExitTransitionEnd={onExitTransitionEnd}
 			title={
 				<Group gap="sm">
 					<Banknote size={24} style={{ color: "var(--mantine-color-blue-6)" }} />

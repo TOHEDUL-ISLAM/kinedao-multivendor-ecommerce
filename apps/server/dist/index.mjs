@@ -16722,12 +16722,12 @@ const catalogRouter = new Hono().get("/products", describeRoute({
 		productCount: row.productCount
 	}));
 	const categoryMap = new Map(categoryDTOs.map((c$1) => [c$1.id, c$1]));
+	const directProductCounts = new Map(categoryDTOs.map((c$1) => [c$1.id, c$1.productCount || 0]));
 	function getTotalCount(categoryId, visited = /* @__PURE__ */ new Set()) {
 		if (visited.has(categoryId)) return 0;
 		visited.add(categoryId);
-		const category = categoryMap.get(categoryId);
-		if (!category) return 0;
-		let total = category.productCount || 0;
+		if (!categoryMap.get(categoryId)) return 0;
+		let total = directProductCounts.get(categoryId) || 0;
 		const children = categoryDTOs.filter((c$1) => c$1.parentId === categoryId);
 		for (const child of children) total += getTotalCount(child.id, visited);
 		return total;

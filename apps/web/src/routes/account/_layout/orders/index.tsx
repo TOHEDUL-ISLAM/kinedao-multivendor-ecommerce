@@ -111,7 +111,7 @@ function OrderHistoryPage() {
 	}
 
 	return (
-		<div className="bg-gray-50 min-h-screen">
+		<div className="bg-background text-foreground min-h-screen">
 			<div className="container max-w-7xl mx-auto px-4 py-6">
 				{/* Header */}
 				<div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -136,7 +136,7 @@ function OrderHistoryPage() {
 				{/* Tabs */}
 				<div className="mb-6">
 					<Tabs value={search.status || "all"} onChange={handleStatusChange}>
-						<Tabs.List className="bg-white border-b overflow-x-auto flex-nowrap">
+						<Tabs.List className="bg-card border-b overflow-x-auto flex-nowrap">
 							<Tabs.Tab value="all">{t("orders.filter.all")}</Tabs.Tab>
 							<Tabs.Tab value="pending">{t("orders.filter.pending")}</Tabs.Tab>
 							<Tabs.Tab value="shipped">{t("orders.filter.shipped")}</Tabs.Tab>
@@ -149,20 +149,20 @@ function OrderHistoryPage() {
 				<div className="mb-6">
 					<Input
 						placeholder={t("orders.orderNumber") + ", " + t("orders.viewDetails")}
-						className="max-w-xl bg-white"
+						className="max-w-xl bg-card"
 					/>
 				</div>
 
 				{/* Orders List or Empty State */}
 				{data.orders.length === 0 ? (
-					<Card className="p-12 text-center bg-white">
+					<Card className="p-12 text-center bg-card">
 						<div className="flex flex-col items-center gap-4">
-							<div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-								<ShoppingBag className="w-8 h-8 text-gray-400" />
+							<div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+								<ShoppingBag className="w-8 h-8 text-muted-foreground" />
 							</div>
 							<div>
 								<h3 className="text-lg font-semibold mb-1">{t("orders.empty")}</h3>
-								<p className="text-gray-500 mb-4">{t("orders.emptyDesc")}</p>
+								<p className="text-muted-foreground mb-4">{t("orders.emptyDesc")}</p>
 								<Button component={Link} to="/">
 									{t("orders.startShopping")}
 								</Button>
@@ -174,15 +174,15 @@ function OrderHistoryPage() {
 						{/* Order Cards - Daraz Style */}
 						<div className="space-y-4 mb-8">
 							{data.orders.map((order) => (
-								<Card key={order.id} className="bg-white p-0 overflow-hidden hover:shadow-lg transition-shadow border border-gray-200">
+								<Card key={order.id} className="bg-card p-0 overflow-hidden hover:shadow-lg transition-shadow border border-border">
 									{/* Vendor Header */}
-									<div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
+									<div className="flex items-center justify-between px-5 py-3 border-b bg-background">
 										<div className="flex items-center gap-2">
-											<Store className="w-4 h-4 text-gray-600" />
+											<Store className="w-4 h-4 text-muted-foreground" />
 											<span className="font-semibold text-sm">{order.vendorName}</span>
 										</div>
 										<div className="flex items-center gap-3">
-											<span className="text-xs text-gray-500">
+											<span className="text-xs text-muted-foreground">
 												{new Date(order.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
 													year: "numeric",
 													month: "short",
@@ -198,7 +198,7 @@ function OrderHistoryPage() {
 										<Link
 											to="/account/orders/$orderId"
 											params={{ orderId: order.id }}
-											className="block hover:bg-gray-50 transition-colors"
+											className="block hover:bg-muted transition-colors"
 										>
 											{order.items.map((item, index) => (
 												<div key={index} className="flex items-center gap-4 px-5 py-4 border-b last:border-b-0">
@@ -210,8 +210,8 @@ function OrderHistoryPage() {
 															className="w-20 h-20 object-cover rounded border"
 														/>
 													) : (
-														<div className="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center">
-															<Package2 className="w-8 h-8 text-gray-400" />
+														<div className="w-20 h-20 bg-muted rounded border flex items-center justify-center">
+															<Package2 className="w-8 h-8 text-muted-foreground" />
 														</div>
 													)}
 
@@ -234,7 +234,7 @@ function OrderHistoryPage() {
 														<div className="text-sm font-semibold mb-1">
 															{formatPrice(item.lineTotal)}
 														</div>
-														<div className="text-xs text-gray-500">
+														<div className="text-xs text-muted-foreground">
 															{t("checkout.qty")}: {item.quantity}
 														</div>
 													</div>
@@ -243,25 +243,25 @@ function OrderHistoryPage() {
 
 											{/* Show more items indicator */}
 											{order.itemCount > order.items.length && (
-												<div className="px-5 py-2 text-sm text-gray-500 text-center border-t bg-gray-50">
+												<div className="px-5 py-2 text-sm text-muted-foreground text-center border-t bg-background">
 													+{order.itemCount - order.items.length} {t("common.items")}
 												</div>
 											)}
 										</Link>
 									) : (
-										<div className="px-5 py-4 text-center text-gray-500">
+										<div className="px-5 py-4 text-center text-muted-foreground">
 											No items in this order
 										</div>
 									)}
 
 									{/* Order Footer */}
-									<div className="px-5 py-3 border-t bg-white flex items-center justify-between">
-										<div className="text-sm text-gray-600">
+									<div className="px-5 py-3 border-t bg-card flex items-center justify-between">
+										<div className="text-sm text-muted-foreground">
 											{order.orderNumber}
 										</div>
 										<div className="flex items-center gap-4">
 											<div className="text-right">
-												<div className="text-xs text-gray-500 mb-1">{t("checkout.total")}</div>
+												<div className="text-xs text-muted-foreground mb-1">{t("checkout.total")}</div>
 												<div className="text-lg font-bold text-primary">
 													{formatPrice(order.total)}
 												</div>

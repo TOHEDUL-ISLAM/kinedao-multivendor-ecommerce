@@ -467,6 +467,8 @@ const catalogRouter = new Hono().get(
 
   // Recursively aggregate product counts from children to parents
   const categoryMap = new Map(categoryDTOs.map(c => [c.id, c]));
+  // Keep direct counts immutable while DTOs are updated with descendant totals.
+  const directProductCounts = new Map(categoryDTOs.map(c => [c.id, c.productCount || 0]));
 
   // Function to get total count including all descendants
   function getTotalCount(categoryId: string, visited = new Set<string>()): number {
@@ -477,7 +479,7 @@ const catalogRouter = new Hono().get(
     if (!category) return 0;
 
     // Start with direct product count
-    let total = category.productCount || 0;
+    let total = directProductCounts.get(categoryId) || 0;
 
     // Add counts from all children
     const children = categoryDTOs.filter(c => c.parentId === categoryId);

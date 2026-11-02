@@ -175,6 +175,7 @@ export const translations = {
     // Catalog
     "catalog.title": "All Products",
     "catalog.filters": "Filters",
+    "catalog.applyFilters": "Apply Filters",
     "catalog.sort": "Sort By",
     "catalog.sortPriceLow": "Price: Low to High",
     "catalog.sortPriceHigh": "Price: High to Low",
@@ -977,6 +978,7 @@ export const translations = {
     // Catalog
     "catalog.title": "সব পণ্য",
     "catalog.filters": "ফিল্টার",
+    "catalog.applyFilters": "ফিল্টার প্রয়োগ করুন",
     "catalog.sort": "সাজান",
     "catalog.sortPriceLow": "দাম: কম থেকে বেশি",
     "catalog.sortPriceHigh": "দাম: বেশি থেকে কম",
