@@ -4,12 +4,17 @@ import { db } from "@kineDao.com/db";
 import { pushSubscriptions } from "@kineDao.com/db/schema";
 import { eq } from "drizzle-orm";
 
-// Configure web-push with VAPID details
-webPush.setVapidDetails(
-	env.VAPID_SUBJECT,
-	env.VAPID_PUBLIC_KEY,
-	env.VAPID_PRIVATE_KEY,
-);
+// Configure web-push with VAPID details (only if all keys are present)
+const vapidConfigured =
+	env.VAPID_SUBJECT && env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY;
+
+if (vapidConfigured) {
+	webPush.setVapidDetails(
+		env.VAPID_SUBJECT!,
+		env.VAPID_PUBLIC_KEY!,
+		env.VAPID_PRIVATE_KEY!,
+	);
+}
 
 export interface PushNotificationPayload {
 	title: string;
@@ -29,6 +34,10 @@ export async function sendPushNotification(
 	userId: string,
 	payload: PushNotificationPayload,
 ): Promise<void> {
+	if (!vapidConfigured) {
+		console.warn("[PUSH] VAPID keys not configured — skipping push notification");
+		return;
+	}
 	try {
 		// Get all push subscriptions for this user
 		const subscriptions = await db
@@ -101,5 +110,8 @@ export async function sendPushNotification(
  * Get VAPID public key for client-side subscription
  */
 export function getVapidPublicKey(): string {
+	if (!env.VAPID_PUBLIC_KEY) {
+		throw new Error("VAPID_PUBLIC_KEY is not configured");
+	}
 	return env.VAPID_PUBLIC_KEY;
 }
