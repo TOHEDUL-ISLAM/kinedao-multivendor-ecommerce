@@ -1,12 +1,14 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Cross-tool guidance for agents working in this repository. `CLAUDE.md` and
+`GEMINI.md` are symlinks to this file.
 
 ## Project Overview
 
 **কিনেদাও (KineDao.com)** is a multivendor baby products marketplace with bilingual support (Bangla/English). The project is a 2-week MVP focused on core e-commerce functionality with Cash on Delivery (COD) payments only.
 
-For detailed product requirements and user stories, see [initial-prd.md](initial-prd.md).
+For the authoritative product requirements and user stories, see
+[docs/product/prd.md](docs/product/prd.md).
 
 ## Tech Stack
 
@@ -29,7 +31,6 @@ kineDao.com/
 │   ├── web/          # Frontend (TanStack Start)
 │   └── server/       # Backend API (Hono)
 ├── packages/
-│   ├── api/          # API layer / business logic
 │   ├── api-types/    # Shared API types & Zod schemas (for Hono RPC)
 │   ├── auth/         # Authentication configuration (Better-Auth)
 │   ├── db/           # Database schema & Drizzle ORM
@@ -707,4 +708,4 @@ loader: async () => {
 
 This project was generated using [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack) v3.18.0. The configuration is stored in [bts.jsonc](bts.jsonc).
 
-The MVP roadmap is defined in [initial-prd.md](initial-prd.md) with detailed user stories, acceptance criteria, and Fibonacci story points across 2 sprints (55 points total).
+The authoritative product PRD is [docs/product/prd.md](docs/product/prd.md).
