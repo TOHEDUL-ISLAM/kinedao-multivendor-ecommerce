@@ -56,7 +56,7 @@ export function ProductDetailInfo({
       : product.shortDescription;
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-4 sm:space-y-6", className)}>
       {/* Vendor Info */}
       <div className="inline-flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -84,7 +84,7 @@ export function ProductDetailInfo({
       </div>
 
       {/* Title */}
-      <h1 id="product-title" className="text-2xl md:text-3xl font-bold">
+      <h1 id="product-title" className="text-xl sm:text-2xl md:text-3xl font-bold">
         {displayTitle}
       </h1>
 

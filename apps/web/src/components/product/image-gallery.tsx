@@ -165,7 +165,7 @@ export function ImageGallery({ images, productTitle, productId, className }: Ima
         {/* Main image */}
         <div className="flex-1 relative">
           <div
-            className="relative aspect-square max-h-[340px] sm:max-h-[440px] lg:max-h-none w-full bg-muted rounded-lg overflow-hidden group"
+            className="relative aspect-square max-h-[300px] sm:max-h-[440px] lg:max-h-none w-full bg-muted rounded-lg overflow-hidden group"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}

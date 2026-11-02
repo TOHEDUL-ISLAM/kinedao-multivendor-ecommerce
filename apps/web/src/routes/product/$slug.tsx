@@ -220,13 +220,13 @@ function ProductDetailPage() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+      <div className="container mx-auto px-4 py-2 sm:py-6 lg:py-8">
         {/* Breadcrumb */}
-        <Breadcrumb className="mb-4 sm:mb-6">
-          <BreadcrumbList className="flex-nowrap overflow-x-auto scrollbar-hide py-1 text-xs sm:text-sm">
+        <Breadcrumb className="mb-3 sm:mb-6">
+          <BreadcrumbList className="flex-nowrap overflow-x-auto whitespace-nowrap scrollbar-hide py-0.5 text-xs sm:text-sm">
             {buildBreadcrumbs().map((item, index, arr) => (
               <Fragment key={`${item.href ?? "current"}-${index}`}>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="shrink-0 whitespace-nowrap">
                   {item.href ? (
                     <BreadcrumbLink href={item.href}>
                       {language === "bn" && item.labelBn ? item.labelBn : item.label}
@@ -237,7 +237,7 @@ function ProductDetailPage() {
                     </BreadcrumbPage>
                   )}
                 </BreadcrumbItem>
-                {index < arr.length - 1 && <BreadcrumbSeparator />}
+                {index < arr.length - 1 && <BreadcrumbSeparator className="shrink-0" />}
               </Fragment>
             ))}
           </BreadcrumbList>
@@ -395,7 +395,7 @@ function ProductDetailSkeleton() {
                 <div key={i} className="aspect-square bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
-            <div className="flex-1 aspect-square max-h-[340px] sm:max-h-[440px] lg:max-h-none bg-muted rounded-lg animate-pulse" />
+            <div className="flex-1 aspect-square max-h-[300px] sm:max-h-[440px] lg:max-h-none bg-muted rounded-lg animate-pulse" />
           </div>
 
           {/* Info skeleton */}
